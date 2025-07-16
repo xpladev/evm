@@ -1,6 +1,7 @@
 package erc20_test
 
 import (
+	"fmt"
 	"math/big"
 	"slices"
 	"strings"
@@ -455,6 +456,12 @@ var _ = Describe("ERC20 Extension -", func() {
 					txArgs.Amount = amountToSend
 
 					transferCheck := passCheck.WithExpEvents(erc20.EventTypeTransfer)
+					fmt.Println("CHOI - contractAddr: ", revertContractAddr)
+					fmt.Println("CHOI - contractAddr(bech32): ", sdk.MustBech32ifyAddressBytes("cosmos", revertContractAddr.Bytes()))
+					fmt.Println("CHOI - sender: ", sender.AccAddr)
+					fmt.Println("CHOI - sender(bech32): ", sdk.MustBech32ifyAddressBytes("cosmos", sender.AccAddr.Bytes()))
+					fmt.Println("CHOI - receiver: ", receiver.AccAddr)
+					fmt.Println("CHOI - receiver(bech32): ", sdk.MustBech32ifyAddressBytes("cosmos", receiver.AccAddr.Bytes()))
 					res, _, err := is.factory.CallContractAndCheckLogs(sender.Priv, txArgs, args, transferCheck)
 					Expect(err).To(BeNil())
 					Expect(is.network.NextBlock()).To(BeNil())

@@ -2,6 +2,7 @@ package statedb
 
 import (
 	"bytes"
+	"fmt"
 	"sort"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -111,7 +112,16 @@ func (s *stateObject) AddBalance(amount *uint256.Int) uint256.Int {
 	if amount.IsZero() {
 		return *(s.Balance())
 	}
-	return s.SetBalance(new(uint256.Int).Add(s.Balance(), amount))
+	// print oldBal
+	fmt.Println("old balance:", s.Balance().String())
+
+	newBal := s.SetBalance(new(uint256.Int).Add(s.Balance(), amount))
+
+	// print newBal
+	fmt.Println("new balance:", newBal.String())
+
+	// return newBal
+	return newBal
 }
 
 // SubBalance removes amount from s's balance.
@@ -121,7 +131,16 @@ func (s *stateObject) SubBalance(amount *uint256.Int) uint256.Int {
 	if amount.IsZero() {
 		return *(s.Balance())
 	}
-	return s.SetBalance(new(uint256.Int).Sub(s.Balance(), amount))
+	// print oldBal
+	fmt.Println("old balance:", s.Balance().String())
+
+	newBal := s.SetBalance(new(uint256.Int).Sub(s.Balance(), amount))
+
+	// print newBal
+	fmt.Println("new balance:", newBal.String())
+
+	// return newBal
+	return newBal
 }
 
 // SetBalance updates account balance.

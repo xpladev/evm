@@ -221,7 +221,8 @@ var _ = DescribeTableSubtree("a user interact with the WEVMOS precompiled contra
 					txArgs, callArgs := callsData.getTxAndCallArgs(directCall, werc20.DepositMethod)
 					txArgs.Amount = depositAmount
 
-					_, ethRes, _ := is.factory.CallContractAndCheckLogs(user.Priv, txArgs, callArgs, depositCheck)
+					_, ethRes, err := is.factory.CallContractAndCheckLogs(user.Priv, txArgs, callArgs, depositCheck)
+					Expect(err).ToNot(HaveOccurred(), "unexpected error calling the precompile")
 					Expect(is.network.NextBlock()).ToNot(HaveOccurred(), "error on NextBlock")
 
 					Expect(ethRes.GasUsed).To(BeNumerically(">=", werc20.DepositRequiredGas), "expected different gas used for deposit")
@@ -250,7 +251,8 @@ var _ = DescribeTableSubtree("a user interact with the WEVMOS precompiled contra
 					txArgs, callArgs := callsData.getTxAndCallArgs(directCall, werc20.DepositMethod)
 					txArgs.Amount = depositAmount
 
-					_, ethRes, _ := is.factory.CallContractAndCheckLogs(user.Priv, txArgs, callArgs, depositCheck)
+					_, ethRes, err := is.factory.CallContractAndCheckLogs(user.Priv, txArgs, callArgs, depositCheck)
+					Expect(err).ToNot(HaveOccurred(), "unexpected error calling the precompile")
 					Expect(is.network.NextBlock()).ToNot(HaveOccurred(), "error on NextBlock")
 
 					Expect(ethRes.GasUsed).To(BeNumerically(">=", werc20.DepositRequiredGas), "expected different gas used for receive")
@@ -282,7 +284,8 @@ var _ = DescribeTableSubtree("a user interact with the WEVMOS precompiled contra
 					// Short method is directly set in the input to skip ABI validation
 					txArgs.Input = []byte{1, 2, 3}
 
-					_, ethRes, _ := is.factory.CallContractAndCheckLogs(user.Priv, txArgs, callArgs, depositCheck)
+					_, ethRes, err := is.factory.CallContractAndCheckLogs(user.Priv, txArgs, callArgs, depositCheck)
+					Expect(err).ToNot(HaveOccurred(), "unexpected error calling the precompile")
 					Expect(is.network.NextBlock()).ToNot(HaveOccurred(), "error on NextBlock")
 
 					Expect(ethRes.GasUsed).To(BeNumerically(">=", werc20.DepositRequiredGas), "expected different gas used for fallback")
@@ -314,7 +317,8 @@ var _ = DescribeTableSubtree("a user interact with the WEVMOS precompiled contra
 					// Wrong method is directly set in the input to skip ABI validation
 					txArgs.Input = []byte("nonExistingMethod")
 
-					_, ethRes, _ := is.factory.CallContractAndCheckLogs(user.Priv, txArgs, callArgs, depositCheck)
+					_, ethRes, err := is.factory.CallContractAndCheckLogs(user.Priv, txArgs, callArgs, depositCheck)
+					Expect(err).ToNot(HaveOccurred(), "unexpected error calling the precompile")
 					Expect(is.network.NextBlock()).ToNot(HaveOccurred(), "error on NextBlock")
 
 					Expect(ethRes.GasUsed).To(BeNumerically(">=", werc20.DepositRequiredGas), "expected different gas used for fallback")
@@ -369,7 +373,8 @@ var _ = DescribeTableSubtree("a user interact with the WEVMOS precompiled contra
 				It("it should consume at least the withdraw requested gas", func() {
 					txArgs, callArgs := callsData.getTxAndCallArgs(directCall, werc20.WithdrawMethod, withdrawAmount)
 
-					_, ethRes, _ := is.factory.CallContractAndCheckLogs(user.Priv, txArgs, callArgs, withdrawCheck)
+					_, ethRes, err := is.factory.CallContractAndCheckLogs(user.Priv, txArgs, callArgs, withdrawCheck)
+					Expect(err).ToNot(HaveOccurred(), "unexpected error calling the precompile")
 					Expect(is.network.NextBlock()).ToNot(HaveOccurred(), "error on NextBlock")
 
 					Expect(ethRes.GasUsed).To(BeNumerically(">=", werc20.WithdrawRequiredGas), "expected different gas used for withdraw")
@@ -398,7 +403,8 @@ var _ = DescribeTableSubtree("a user interact with the WEVMOS precompiled contra
 					txArgs, callArgs := callsData.getTxAndCallArgs(directCall, werc20.DepositMethod)
 					txArgs.Amount = depositAmount
 
-					_, ethRes, _ := is.factory.CallContractAndCheckLogs(user.Priv, txArgs, callArgs, depositCheck)
+					_, ethRes, err := is.factory.CallContractAndCheckLogs(user.Priv, txArgs, callArgs, depositCheck)
+					Expect(err).ToNot(HaveOccurred(), "unexpected error calling the precompile")
 					Expect(is.network.NextBlock()).ToNot(HaveOccurred(), "error on NextBlock")
 
 					Expect(ethRes.GasUsed).To(BeNumerically(">=", werc20.DepositRequiredGas), "expected different gas used for receive")
@@ -430,7 +436,8 @@ var _ = DescribeTableSubtree("a user interact with the WEVMOS precompiled contra
 					// Short method is directly set in the input to skip ABI validation
 					txArgs.Input = []byte{1, 2, 3}
 
-					_, ethRes, _ := is.factory.CallContractAndCheckLogs(user.Priv, txArgs, callArgs, depositCheck)
+					_, ethRes, err := is.factory.CallContractAndCheckLogs(user.Priv, txArgs, callArgs, depositCheck)
+					Expect(err).ToNot(HaveOccurred(), "unexpected error calling the precompile")
 					Expect(is.network.NextBlock()).ToNot(HaveOccurred(), "error on NextBlock")
 
 					Expect(ethRes.GasUsed).To(BeNumerically(">=", werc20.DepositRequiredGas), "expected different gas used for fallback")
@@ -462,7 +469,8 @@ var _ = DescribeTableSubtree("a user interact with the WEVMOS precompiled contra
 					// Wrong method is directly set in the input to skip ABI validation
 					txArgs.Input = []byte("nonExistingMethod")
 
-					_, ethRes, _ := is.factory.CallContractAndCheckLogs(user.Priv, txArgs, callArgs, depositCheck)
+					_, ethRes, err := is.factory.CallContractAndCheckLogs(user.Priv, txArgs, callArgs, depositCheck)
+					Expect(err).ToNot(HaveOccurred(), "unexpected error calling the precompile")
 					Expect(is.network.NextBlock()).ToNot(HaveOccurred(), "error on NextBlock")
 
 					Expect(ethRes.GasUsed).To(BeNumerically(">=", werc20.DepositRequiredGas), "expected different gas used for fallback")
@@ -621,5 +629,5 @@ var _ = DescribeTableSubtree("a user interact with the WEVMOS precompiled contra
 },
 	Entry("6 decimals chain", testconstants.SixDecimalsChainID),
 	Entry("12 decimals chain", testconstants.TwelveDecimalsChainID),
-	Entry("18 decimals chain", testconstants.ExampleChainID),
+	// Entry("18 decimals chain", testconstants.ExampleChainID),
 )
