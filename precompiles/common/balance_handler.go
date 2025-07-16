@@ -5,6 +5,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/core/tracing"
 
+	"github.com/cosmos/evm/x/precisebank/types"
 	"github.com/cosmos/evm/x/vm/statedb"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -63,6 +64,10 @@ func (bh *BalanceHandler) AfterBalanceChange(ctx sdk.Context, stateDB *statedb.S
 			}
 
 			stateDB.AddBalance(receiverHexAddr, amount, tracing.BalanceChangeUnspecified)
+
+		case types.EventTypePreciseCoinSpent, types.EventTypePreciseCoinReceived:
+			// Ignore precisebank events - they're handled separately and should not affect stateDB
+			continue
 		}
 	}
 

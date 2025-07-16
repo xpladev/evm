@@ -90,28 +90,23 @@ func (k Keeper) SendCoins(
 		}
 	}
 
-	// Get a full extended coin amount (passthrough integer + fractional) ONLY
-	// for event attributes.
-	fullEmissionCoins := sdk.NewCoins(types.SumExtendedCoin(amt))
+	// For 18-decimal chains, never emit precisebank events - let x/bank handle all events
+	// For non-18-decimal chains, only emit events if x/bank didn't (i.e., when no passthrough coins were sent)
+	shouldEmitPreciseBankEvents := extendedCoinAmount.IsPositive() &&
+		!types.IsExtendedDenomSameAsIntegerDenom() &&
+		!passthroughCoins.IsAllPositive()
 
-	// If no passthrough integer nor fractional coins, then no event emission.
-	// We also want to emit the event with the whole equivalent extended coin
-	// if only integer coins are sent.
-	if fullEmissionCoins.IsZero() {
-		return nil
+	if shouldEmitPreciseBankEvents {
+		// Get a full extended coin amount for event attributes
+		fullEmissionCoins := sdk.NewCoins(types.SumExtendedCoin(amt))
+
+		// Emit precisebank-specific events
+		ctx.EventManager().EmitEvents(sdk.Events{
+			types.NewPreciseTransferEvent(from.String(), to.String(), fullEmissionCoins),
+			types.NewPreciseCoinSpentEvent(from, fullEmissionCoins),
+			types.NewPreciseCoinReceivedEvent(to, fullEmissionCoins),
+		})
 	}
-
-	// Emit transfer event of extended denom for the FULL equivalent value.
-	ctx.EventManager().EmitEvents(sdk.Events{
-		sdk.NewEvent(
-			banktypes.EventTypeTransfer,
-			sdk.NewAttribute(banktypes.AttributeKeyRecipient, to.String()),
-			sdk.NewAttribute(banktypes.AttributeKeySender, from.String()),
-			sdk.NewAttribute(sdk.AttributeKeyAmount, fullEmissionCoins.String()),
-		),
-		banktypes.NewCoinSpentEvent(from, fullEmissionCoins),
-		banktypes.NewCoinReceivedEvent(to, fullEmissionCoins),
-	})
 
 	return nil
 }
@@ -171,27 +166,20 @@ func (k Keeper) sendExtendedCoins(
 	// Load required state: Account old balances
 	senderFracBal := k.GetFractionalBalance(ctx, from)
 	recipientFracBal := k.GetFractionalBalance(ctx, to)
-	fmt.Println("sendExtendedCoins - sender fractional balance:", senderFracBal)
-	fmt.Println("sendExtendedCoins - recipient fractional balance:", recipientFracBal)
 
 	// -------------------------------------------------------------------------
 	// Pure stateless calculations
 	integerAmt := amt.Quo(types.ConversionFactor())
 	fractionalAmt := amt.Mod(types.ConversionFactor())
-	fmt.Println("sendExtendedCoins - integer amount:", integerAmt)
-	fmt.Println("sendExtendedCoins - fractional amt:", fractionalAmt)
 
 	// Account new fractional balances
 	senderNewFracBal, senderNeedsBorrow := subFromFractionalBalance(senderFracBal, fractionalAmt)
 	recipientNewFracBal, recipientNeedsCarry := addToFractionalBalance(recipientFracBal, fractionalAmt)
-	fmt.Println("sendExtendedCoins - sender new fractional balance:", senderNewFracBal)
-	fmt.Println("sendExtendedCoins - recipient new fractional balance:", recipientNewFracBal)
 
 	// Case #1: Sender borrow, recipient carry
 	if senderNeedsBorrow && recipientNeedsCarry {
 		// Can directly transfer borrow/carry - increase the direct transfer by 1
 		integerAmt = integerAmt.AddRaw(1)
-		fmt.Println("sendExtendedCoins - Case #1: Sender borrow, recipient carry - integer amount increased to:", integerAmt)
 	}
 
 	// -------------------------------------------------------------------------
@@ -201,9 +189,7 @@ func (k Keeper) sendExtendedCoins(
 	// Full integer amount transfer, including direct transfer of borrow/carry
 	// if any.
 	if integerAmt.IsPositive() {
-		fmt.Println("sendExtendedCoins - transferring integer coins:", integerAmt)
 		transferCoin := sdk.NewCoin(types.IntegerCoinDenom(), integerAmt)
-		fmt.Println("sendExtendedCoins - transferring integer coins:", transferCoin)
 		if err := k.bk.SendCoins(ctx, from, to, sdk.NewCoins(transferCoin)); err != nil {
 			return k.updateInsufficientFundsError(ctx, from, amt, err)
 		}
@@ -213,7 +199,6 @@ func (k Keeper) sendExtendedCoins(
 	// Sender borrows by transferring 1 integer amount to reserve to account for
 	// lack of fractional balance.
 	if senderNeedsBorrow && !recipientNeedsCarry {
-		fmt.Println("sendExtendedCoins - Case #2: Sender borrow, NO recipient carry - sender needs to borrow")
 		borrowCoin := sdk.NewCoin(types.IntegerCoinDenom(), sdkmath.NewInt(1))
 		if err := k.bk.SendCoinsFromAccountToModule(
 			ctx,
@@ -221,7 +206,6 @@ func (k Keeper) sendExtendedCoins(
 			types.ModuleName,
 			sdk.NewCoins(borrowCoin),
 		); err != nil {
-			fmt.Println("sendExtendedCoins - Case #2: Sender borrow, NO recipient carry - error:", err)
 			return k.updateInsufficientFundsError(ctx, from, amt, err)
 		}
 	}
@@ -231,7 +215,6 @@ func (k Keeper) sendExtendedCoins(
 	// Always send carry from reserve before receiving borrow from sender to
 	// ensure reserve always has sufficient balance starting from 0.
 	if !senderNeedsBorrow && recipientNeedsCarry {
-		fmt.Println("sendExtendedCoins - Case #3: NO sender borrow, recipient carry - recipient needs to carry")
 		reserveAddr := k.ak.GetModuleAddress(types.ModuleName)
 
 		// We use SendCoins instead of SendCoinsFromModuleToAccount to avoid
@@ -246,7 +229,6 @@ func (k Keeper) sendExtendedCoins(
 			to, // recipient carrying
 			sdk.NewCoins(carryCoin),
 		); err != nil {
-			fmt.Println("sendExtendedCoins - Case #3: NO sender borrow, recipient carry - error:", err)
 			// Panic instead of returning error, as this will only error
 			// with invalid state or logic. Reserve should always have
 			// sufficient balance to carry fractional coins.

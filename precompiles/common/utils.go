@@ -38,24 +38,20 @@ func ParseAmount(event sdk.Event) (*uint256.Int, error) {
 		return nil, fmt.Errorf("failed to parse coins from %q: %w", amountAttr.Value, err)
 	}
 
-	// // Check if event contains extended denom (already in 18 decimals)
-	// extendedAmount := amountCoins.AmountOf(evmtypes.GetEVMCoinExtendedDenom())
-	// if extendedAmount.IsPositive() {
-	// 	// Extended denom is already in 18 decimals, use directly
-	// 	amount, err := utils.Uint256FromBigInt(extendedAmount.BigInt())
-	// 	if err != nil {
-	// 		return nil, fmt.Errorf("failed to convert extended coin amount to Uint256: %w", err)
-	// 	}
-	// 	return amount, nil
-	// }
+	// Check if event contains extended denom (already in 18 decimals)
+	extendedAmount := amountCoins.AmountOf(evmtypes.GetEVMCoinExtendedDenom())
+	if extendedAmount.IsPositive() {
+		// Extended denom is already in 18 decimals, use directly
+		amount, err := utils.Uint256FromBigInt(extendedAmount.BigInt())
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert extended coin amount to Uint256: %w", err)
+		}
+		return amount, nil
+	}
 
-	// // Otherwise, use regular denom and convert to 18 decimals
-	// regularAmount := amountCoins.AmountOf(evmtypes.GetEVMCoinDenom())
-	// amount, err :=
-	// 	utils.Uint256FromBigInt(evmtypes.ConvertAmountTo18DecimalsBigInt(regularAmount.BigInt()))
-
-	amountBigInt := amountCoins.AmountOf(evmtypes.GetEVMCoinDenom()).BigInt()
-	amount, err := utils.Uint256FromBigInt(evmtypes.ConvertAmountTo18DecimalsBigInt(amountBigInt))
+	// Otherwise, use regular denom and convert to 18 decimals
+	regularAmount := amountCoins.AmountOf(evmtypes.GetEVMCoinDenom())
+	amount, err := utils.Uint256FromBigInt(evmtypes.ConvertAmountTo18DecimalsBigInt(regularAmount.BigInt()))
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert coin amount to Uint256: %w", err)
 	}

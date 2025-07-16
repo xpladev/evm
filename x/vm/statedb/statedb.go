@@ -3,7 +3,6 @@ package statedb
 import (
 	"errors"
 	"fmt"
-	"math/big"
 	"slices"
 	"sort"
 
@@ -437,12 +436,6 @@ func (s *StateDB) AddBalance(addr common.Address, amount *uint256.Int, reason tr
 	stateObject := s.getOrNewStateObject(addr)
 	if stateObject == nil {
 		return uint256.Int{}
-	}
-
-	amt := uint256.MustFromBig(big.NewInt(int64(1_000_000_000_000_000_000)))
-	if amount.Gt(amt) {
-		fmt.Println("AddBalance - addr: ", addr.Hex())
-		fmt.Println("AddBalance - amount: ", amount.String())
 	}
 	return stateObject.AddBalance(amount)
 }

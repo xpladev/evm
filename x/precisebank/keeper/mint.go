@@ -47,18 +47,14 @@ func (k Keeper) MintCoins(goCtx context.Context, moduleName string, amt sdk.Coin
 	passthroughCoins := amt
 
 	extendedAmount := amt.AmountOf(types.ExtendedCoinDenom())
-	fmt.Println("mintExtendedCoin - extended amount:", extendedAmount)
 	if extendedAmount.IsPositive() {
 		// Remove ExtendedCoinDenom from the coins as it is managed by x/precisebank
 		removeCoin := sdk.NewCoin(types.ExtendedCoinDenom(), extendedAmount)
-		fmt.Println("mintExtendedCoin - removing extended coin:", removeCoin)
 		passthroughCoins = amt.Sub(removeCoin)
-		fmt.Println("mintExtendedCoin - passthrough coins after removing extended denom:", passthroughCoins)
 	}
 
 	// Coins unmanaged by x/precisebank are passed through to x/bank
 	if !passthroughCoins.Empty() {
-		fmt.Println("mintExtendedCoin - minting passthrough coins:", passthroughCoins)
 		if err := k.bk.MintCoins(ctx, moduleName, passthroughCoins); err != nil {
 			return err
 		}
@@ -66,7 +62,6 @@ func (k Keeper) MintCoins(goCtx context.Context, moduleName string, amt sdk.Coin
 
 	// Only mint extended coin if the amount is positive
 	if extendedAmount.IsPositive() {
-		fmt.Println("mintExtendedCoin - minting extended coin:", extendedAmount)
 		if err := k.mintExtendedCoin(ctx, moduleName, extendedAmount); err != nil {
 			return err
 		}
@@ -74,7 +69,6 @@ func (k Keeper) MintCoins(goCtx context.Context, moduleName string, amt sdk.Coin
 
 	fullEmissionCoins := sdk.NewCoins(types.SumExtendedCoin(amt))
 	if fullEmissionCoins.IsZero() {
-		fmt.Println("mintExtendedCoin - no coins to mint, returning nil")
 		return nil
 	}
 

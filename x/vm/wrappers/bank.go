@@ -45,7 +45,6 @@ func (w BankWrapper) MintAmountToAccount(ctx context.Context, recipientAddr sdk.
 	}
 
 	coinsToMint := sdk.Coins{convertedCoin}
-	fmt.Println("Minting coins to account:", coinsToMint)
 	if err := w.MintCoins(ctx, types.ModuleName, coinsToMint); err != nil {
 		return errors.Wrap(err, "failed to mint coins to account in bank wrapper")
 	}
@@ -64,7 +63,6 @@ func (w BankWrapper) BurnAmountFromAccount(ctx context.Context, account sdk.AccA
 	}
 
 	coinsToBurn := sdk.Coins{convertedCoin}
-	fmt.Println("Burning coins to account:", coinsToBurn)
 	if err := w.BankKeeper.SendCoinsFromAccountToModule(ctx, account, types.ModuleName, coinsToBurn); err != nil {
 		return errors.Wrap(err, "failed to burn coins from account in bank wrapper")
 	}
