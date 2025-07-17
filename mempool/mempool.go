@@ -185,6 +185,9 @@ func (m EVMMempool) SelectBy(goCtx context.Context, i [][]byte, f func(sdk.Tx) b
 		bondDenom:      m.vmKeeper.GetParams(ctx).EvmDenom,
 	}
 
+	// todo: ensure that this is not an infinite loop
+	// both txPool and PriorityNonceMempool should eventually be exhausted
+	// should write tests to make sure of this
 	for combinedIterator != nil && f(combinedIterator.Tx()) {
 		combinedIterator = combinedIterator.Next()
 	}
