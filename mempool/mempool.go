@@ -41,6 +41,12 @@ type (
 )
 
 func NewEVMMempool(vmKeeper vmkeeper.Keeper, txPool *txpool.TxPool, legacyPool *legacypool.LegacyPool, cosmosPool mempool.ExtMempool, txDecoder sdk.TxDecoder) *EVMMempool {
+	if len(txPool.Subpools) != 1 {
+		panic("tx pool should contain only one subpool")
+	}
+	if _, ok := txPool.Subpools[0].(*legacypool.LegacyPool); !ok {
+		panic("tx pool should contain only legacypool")
+	}
 	return &EVMMempool{
 		vmKeeper:     vmKeeper,
 		txPool:       txPool,
@@ -154,8 +160,22 @@ func (m *EVMMempool) CountTx() int {
 }
 
 func (m *EVMMempool) Remove(tx sdk.Tx) error {
-	//TODO implement me
-	panic("implement me")
+	// check if evm tx
+	for _, msg := range tx.GetMsgs() {
+		ethMsg, ok := msg.(*evmtypes.MsgEthereumTx)
+		if ok {
+			if len(tx.GetMsgs()) != 1 {
+				return fmt.Errorf("expected 1 MsgEthereumTx, got %d", len(tx.GetMsgs()))
+			}
+			m.txPool.Subpools[0].RemoveTx(ethMsg.AsTransaction().Hash(), true, true) //todo: set proper outofbound and unreserve cases
+		} else {
+			err := m.cosmosPool.Remove(tx)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func (m *EVMMempool) SelectBy(goCtx context.Context, i [][]byte, f func(sdk.Tx) bool) {
