@@ -31,9 +31,12 @@ type (
 		txDecoder sdk.TxDecoder
 	}
 	EVMMempoolIterator struct {
+		/** Mempool Iterators **/
 		evmIterator    *miner.TransactionsByPriceAndNonce
 		cosmosIterator mempool.Iterator
-		bondDenom      string
+
+		/** Chain Params **/
+		bondDenom string
 	}
 )
 
@@ -162,11 +165,19 @@ func (m EVMMempool) SelectBy(ctx context.Context, i [][]byte, f func(sdk.Tx) boo
 }
 
 func (i EVMMempoolIterator) Next() mempool.Iterator {
-	_, evmFee := i.evmIterator.Peek()
+	nextEVMTx, evmFee := i.evmIterator.Peek()
+	if nextEVMTx == nil {
+		i.cosmosIterator.Next()
+	}
+
 	nextCosmosTx, ok := i.cosmosIterator.Tx().(sdk.FeeTx)
 	if !ok {
 		panic("expected fee Tx") // not supporting ambiguous priorities, since evm is based on fees
 	}
+	if nextCosmosTx == nil {
+		i.evmIterator.Pop()
+	}
+
 	cosmosFees := nextCosmosTx.GetFee()
 
 	// We prioritize the bond denom. Everything else gets pushed to lowest priority.
