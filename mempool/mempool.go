@@ -119,6 +119,7 @@ func (m EVMMempool) InsertInvalidSequence(txBytes []byte) error {
 }
 
 func (m EVMMempool) Select(goCtx context.Context, i [][]byte) mempool.Iterator {
+	// todo: reuse logic in selectby
 	ctx := sdk.UnwrapSDKContext(goCtx)
 	baseFee := m.vmKeeper.GetBaseFee(ctx)
 	var baseFeeUint *uint256.Int
@@ -138,7 +139,7 @@ func (m EVMMempool) Select(goCtx context.Context, i [][]byte) mempool.Iterator {
 
 	cosmosPendingTxes := m.cosmosPool.Select(ctx, i)
 
-	combinedIterator := EVMMempoolIterator{
+	combinedIterator := &EVMMempoolIterator{
 		evmIterator:    orderedEVMPendingTxes,
 		cosmosIterator: cosmosPendingTxes,
 		bondDenom:      m.vmKeeper.GetParams(ctx).EvmDenom,
@@ -148,8 +149,8 @@ func (m EVMMempool) Select(goCtx context.Context, i [][]byte) mempool.Iterator {
 }
 
 func (m EVMMempool) CountTx() int {
-	//TODO implement me
-	panic("implement me")
+	pending, _ := m.txPool.Stats()
+	return m.cosmosPool.CountTx() + pending
 }
 
 func (m EVMMempool) Remove(tx sdk.Tx) error {
@@ -157,14 +158,39 @@ func (m EVMMempool) Remove(tx sdk.Tx) error {
 	panic("implement me")
 }
 
-func (m EVMMempool) SelectBy(ctx context.Context, i [][]byte, f func(sdk.Tx) bool) {
-	// TODO: we need to handle both cosmos and EVM transactions
-	// both are ordered by priority nonce
-	//TODO implement me
-	panic("implement me")
+func (m EVMMempool) SelectBy(goCtx context.Context, i [][]byte, f func(sdk.Tx) bool) {
+	//todo: reuse logic in select
+	ctx := sdk.UnwrapSDKContext(goCtx)
+	baseFee := m.vmKeeper.GetBaseFee(ctx)
+	var baseFeeUint *uint256.Int
+	if baseFee != nil {
+		baseFeeUint = uint256.MustFromBig(baseFee)
+	}
+
+	pendingFilter := txpool.PendingFilter{
+		MinTip:       nil,
+		BaseFee:      baseFeeUint,
+		BlobFee:      nil,
+		OnlyPlainTxs: true,
+		OnlyBlobTxs:  false,
+	}
+	evmPendingTxes := m.txPool.Pending(pendingFilter)
+	orderedEVMPendingTxes := miner.NewTransactionsByPriceAndNonce(nil, evmPendingTxes, baseFee)
+
+	cosmosPendingTxes := m.cosmosPool.Select(ctx, i)
+
+	var combinedIterator mempool.Iterator = &EVMMempoolIterator{
+		evmIterator:    orderedEVMPendingTxes,
+		cosmosIterator: cosmosPendingTxes,
+		bondDenom:      m.vmKeeper.GetParams(ctx).EvmDenom,
+	}
+
+	for combinedIterator != nil && f(combinedIterator.Tx()) {
+		combinedIterator = combinedIterator.Next()
+	}
 }
 
-func (i EVMMempoolIterator) Next() mempool.Iterator {
+func (i *EVMMempoolIterator) Next() mempool.Iterator {
 	nextEVMTx, evmFee := i.evmIterator.Peek()
 	if nextEVMTx == nil {
 		i.cosmosIterator.Next()
@@ -205,7 +231,7 @@ func (i EVMMempoolIterator) Next() mempool.Iterator {
 	return i
 }
 
-func (i EVMMempoolIterator) Tx() sdk.Tx {
+func (i *EVMMempoolIterator) Tx() sdk.Tx {
 	nextEVMTx, evmFee := i.evmIterator.Peek()
 	msgEthereumTx := &evmtypes.MsgEthereumTx{}
 	if err := msgEthereumTx.FromEthereumTx(nextEVMTx.Tx); err != nil {
