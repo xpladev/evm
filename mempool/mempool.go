@@ -15,7 +15,7 @@ import (
 )
 
 var _ mempool.ExtMempool = EVMMempool{}
-var _ mempool.Iterator = EVMMempoolIterator{}
+var _ mempool.Iterator = &EVMMempoolIterator{}
 
 type (
 	EVMMempool struct {
