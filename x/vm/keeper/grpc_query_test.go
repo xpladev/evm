@@ -12,13 +12,16 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	ethlogger "github.com/ethereum/go-ethereum/eth/tracers/logger"
 	ethparams "github.com/ethereum/go-ethereum/params"
+	"github.com/holiman/uint256"
 
 	"github.com/cosmos/evm/server/config"
 	testconstants "github.com/cosmos/evm/testutil/constants"
 	"github.com/cosmos/evm/testutil/integration/os/factory"
 	testkeyring "github.com/cosmos/evm/testutil/integration/os/keyring"
 	"github.com/cosmos/evm/testutil/integration/os/network"
+	"github.com/cosmos/evm/testutil/tx"
 	feemarkettypes "github.com/cosmos/evm/x/feemarket/types"
+	types2 "github.com/cosmos/evm/x/precisebank/types"
 	"github.com/cosmos/evm/x/vm/keeper/testdata"
 	"github.com/cosmos/evm/x/vm/statedb"
 	"github.com/cosmos/evm/x/vm/types"
@@ -27,6 +30,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	vestingtypes "github.com/cosmos/cosmos-sdk/x/auth/vesting/types"
 )
 
 // Not valid Ethereum address
@@ -1072,6 +1076,21 @@ func (suite *KeeperTestSuite) TestTraceTx() {
 				"" + "\"structLogs\":[{\"pc\":0,\"op\":\"PUSH1\",\"gas",
 		},
 		{
+			msg: "invalid too many predecessors",
+			getRequest: func() types.QueryTraceTxRequest {
+				return getDefaultTraceTxRequest(suite.network)
+			},
+			getPredecessors: func() []*types.MsgEthereumTx {
+				pred := make([]*types.MsgEthereumTx, 10001)
+				for i := 0; i < 10001; i++ {
+					pred[i] = &types.MsgEthereumTx{}
+				}
+
+				return pred
+			},
+			expPass: false,
+		},
+		{
 			msg: "invalid trace config - Negative Limit",
 			getRequest: func() types.QueryTraceTxRequest {
 				defaultRequest := getDefaultTraceTxRequest(suite.network)
@@ -1683,6 +1702,147 @@ func (suite *KeeperTestSuite) TestEthCall() {
 			defaultEvmParams := types.DefaultParams()
 			err = suite.network.App.EVMKeeper.SetParams(suite.network.GetContext(), defaultEvmParams)
 			suite.Require().NoError(err)
+		})
+	}
+}
+
+func (suite *KeeperTestSuite) TestBalance() {
+	testCases := []struct {
+		name        string
+		returnedBal func() *uint256.Int
+		expBalance  *uint256.Int
+	}{
+		{
+			"Account method, vesting account (0 spendable, large locked balance)",
+			func() *uint256.Int {
+				addr := tx.GenerateAddress()
+				accAddr := sdk.AccAddress(addr.Bytes())
+				err := suite.network.App.BankKeeper.MintCoins(suite.network.GetContext(), "mint", sdk.NewCoins(sdk.NewCoin(suite.network.GetBaseDenom(), sdkmath.NewInt(100))))
+				suite.Require().NoError(err)
+				err = suite.network.App.BankKeeper.SendCoinsFromModuleToAccount(suite.network.GetContext(), "mint", addr.Bytes(), sdk.NewCoins(sdk.NewCoin(suite.network.GetBaseDenom(), sdkmath.NewInt(100))))
+				suite.Require().NoError(err)
+
+				// Make tx cost greater than balance
+				balanceResp, err := suite.handler.GetBalanceFromEVM(accAddr)
+				suite.Require().NoError(err)
+
+				balance, ok := sdkmath.NewIntFromString(balanceResp.Balance)
+				suite.Require().True(ok)
+				balance = balance.Quo(types2.ConversionFactor())
+				suite.Require().NotEqual(balance.String(), "0")
+
+				// replace with vesting account
+				ctx := suite.network.GetContext()
+				baseAccount := suite.network.App.AccountKeeper.GetAccount(ctx, accAddr).(*authtypes.BaseAccount)
+				baseDenom := suite.network.GetBaseDenom()
+				currTime := suite.network.GetContext().BlockTime().Unix()
+				acc, err := vestingtypes.NewContinuousVestingAccount(baseAccount, sdk.NewCoins(sdk.NewCoin(baseDenom, balance)), suite.network.GetContext().BlockTime().Unix(), currTime+100)
+				suite.Require().NoError(err)
+				suite.network.App.AccountKeeper.SetAccount(ctx, acc)
+
+				spendable := suite.network.App.BankKeeper.SpendableCoin(ctx, accAddr, baseDenom).Amount
+				suite.Require().Equal(spendable.String(), "0")
+
+				evmBalanceRes, err := suite.handler.GetBalanceFromEVM(accAddr)
+				suite.Require().NoError(err)
+				evmBalance := evmBalanceRes.Balance
+				suite.Require().Equal(evmBalance, "0")
+
+				totalBalance := suite.network.App.BankKeeper.GetBalance(ctx, accAddr, baseDenom)
+				suite.Require().Equal(totalBalance.Amount, balance)
+
+				res, err := suite.network.App.EVMKeeper.Account(suite.network.GetContext(), &types.QueryAccountRequest{Address: addr.String()})
+				suite.Require().NoError(err)
+				bal, err := uint256.FromDecimal(res.Balance)
+				suite.Require().NoError(err)
+				return bal
+			},
+			&uint256.Int{0},
+		},
+		{
+			"Balance method, vesting account (0 spendable, large locked balance)",
+			func() *uint256.Int {
+				addr := tx.GenerateAddress()
+				accAddr := sdk.AccAddress(addr.Bytes())
+				err := suite.network.App.BankKeeper.MintCoins(suite.network.GetContext(), "mint", sdk.NewCoins(sdk.NewCoin(suite.network.GetBaseDenom(), sdkmath.NewInt(100))))
+				suite.Require().NoError(err)
+				err = suite.network.App.BankKeeper.SendCoinsFromModuleToAccount(suite.network.GetContext(), "mint", addr.Bytes(), sdk.NewCoins(sdk.NewCoin(suite.network.GetBaseDenom(), sdkmath.NewInt(100))))
+				suite.Require().NoError(err)
+
+				// Make tx cost greater than balance
+				balanceResp, err := suite.handler.GetBalanceFromEVM(accAddr)
+				suite.Require().NoError(err)
+
+				balance, ok := sdkmath.NewIntFromString(balanceResp.Balance)
+				suite.Require().True(ok)
+				balance = balance.Quo(types2.ConversionFactor())
+				suite.Require().NotEqual(balance.String(), "0")
+
+				// replace with vesting account
+				ctx := suite.network.GetContext()
+				baseAccount := suite.network.App.AccountKeeper.GetAccount(ctx, accAddr).(*authtypes.BaseAccount)
+				baseDenom := suite.network.GetBaseDenom()
+				currTime := suite.network.GetContext().BlockTime().Unix()
+				acc, err := vestingtypes.NewContinuousVestingAccount(baseAccount, sdk.NewCoins(sdk.NewCoin(baseDenom, balance)), suite.network.GetContext().BlockTime().Unix(), currTime+100)
+				suite.Require().NoError(err)
+				suite.network.App.AccountKeeper.SetAccount(ctx, acc)
+
+				spendable := suite.network.App.BankKeeper.SpendableCoin(ctx, accAddr, baseDenom).Amount
+				suite.Require().Equal(spendable.String(), "0")
+
+				evmBalanceRes, err := suite.handler.GetBalanceFromEVM(accAddr)
+				suite.Require().NoError(err)
+				evmBalance := evmBalanceRes.Balance
+				suite.Require().Equal(evmBalance, "0")
+
+				totalBalance := suite.network.App.BankKeeper.GetBalance(ctx, accAddr, baseDenom)
+				suite.Require().Equal(totalBalance.Amount, balance)
+
+				res, err := suite.network.App.EVMKeeper.Balance(suite.network.GetContext(), &types.QueryBalanceRequest{Address: addr.String()})
+				suite.Require().NoError(err)
+				bal, err := uint256.FromDecimal(res.Balance)
+				suite.Require().NoError(err)
+				return bal
+			},
+			&uint256.Int{0},
+		},
+		{
+			"Account method, regular account",
+			func() *uint256.Int {
+				addr := tx.GenerateAddress()
+				err := suite.network.App.BankKeeper.MintCoins(suite.network.GetContext(), "mint", sdk.NewCoins(sdk.NewCoin(suite.network.GetBaseDenom(), sdkmath.NewInt(100))))
+				suite.Require().NoError(err)
+				err = suite.network.App.BankKeeper.SendCoinsFromModuleToAccount(suite.network.GetContext(), "mint", addr.Bytes(), sdk.NewCoins(sdk.NewCoin(suite.network.GetBaseDenom(), sdkmath.NewInt(100))))
+				suite.Require().NoError(err)
+				res, err := suite.network.App.EVMKeeper.Account(suite.network.GetContext(), &types.QueryAccountRequest{Address: addr.String()})
+				suite.Require().NoError(err)
+				bal, err := uint256.FromDecimal(res.Balance)
+				suite.Require().NoError(err)
+				return bal
+			},
+			&uint256.Int{100},
+		},
+		{
+			"Balance method, regular account",
+			func() *uint256.Int {
+				addr := tx.GenerateAddress()
+				err := suite.network.App.BankKeeper.MintCoins(suite.network.GetContext(), "mint", sdk.NewCoins(sdk.NewCoin(suite.network.GetBaseDenom(), sdkmath.NewInt(100))))
+				suite.Require().NoError(err)
+				err = suite.network.App.BankKeeper.SendCoinsFromModuleToAccount(suite.network.GetContext(), "mint", addr.Bytes(), sdk.NewCoins(sdk.NewCoin(suite.network.GetBaseDenom(), sdkmath.NewInt(100))))
+				suite.Require().NoError(err)
+				res, err := suite.network.App.EVMKeeper.Balance(suite.network.GetContext(), &types.QueryBalanceRequest{Address: addr.String()})
+				suite.Require().NoError(err)
+				bal, err := uint256.FromDecimal(res.Balance)
+				suite.Require().NoError(err)
+				return bal
+			},
+			&uint256.Int{100},
+		},
+	}
+	for _, tc := range testCases {
+		suite.Run(fmt.Sprintf("Case %s", tc.name), func() {
+			suite.SetupTest()
+			suite.Require().Equal(tc.returnedBal(), tc.expBalance)
 		})
 	}
 }

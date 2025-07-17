@@ -35,10 +35,13 @@ var _ types.QueryServer = Keeper{}
 
 const (
 	defaultTraceTimeout = 5 * time.Second
+	// maxTracePredecessors is the maximum amount of transaction predecessors to be included in a trace Tx request.
+	// This limit is chosen as a sensible default to prevent unbounded predecessor iteration.
+	maxTracePredecessors = 10_000
 )
 
 // Account implements the Query/Account gRPC method. The method returns the
-// balance of the account in 18 decimals representation.
+// *spendable* balance of the account in 18 decimals representation.
 func (k Keeper) Account(c context.Context, req *types.QueryAccountRequest) (*types.QueryAccountResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "empty request")
@@ -131,7 +134,7 @@ func (k Keeper) ValidatorAccount(c context.Context, req *types.QueryValidatorAcc
 }
 
 // Balance implements the Query/Balance gRPC method. The method returns the 18
-// decimal representation of the account balance.
+// decimal representation of the account's *spendable* balance.
 func (k Keeper) Balance(c context.Context, req *types.QueryBalanceRequest) (*types.QueryBalanceResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "empty request")
@@ -146,7 +149,7 @@ func (k Keeper) Balance(c context.Context, req *types.QueryBalanceRequest) (*typ
 
 	ctx := sdk.UnwrapSDKContext(c)
 
-	balanceInt := k.GetBalance(ctx, common.HexToAddress(req.Address))
+	balanceInt := k.SpendableCoin(ctx, common.HexToAddress(req.Address))
 
 	return &types.QueryBalanceResponse{
 		Balance: balanceInt.String(),
@@ -248,7 +251,7 @@ func (k Keeper) EthCall(c context.Context, req *types.EthCallRequest) (*types.Ms
 	txConfig := statedb.NewEmptyTxConfig(common.BytesToHash(ctx.HeaderHash()))
 
 	// pass false to not commit StateDB
-	res, err := k.ApplyMessageWithConfig(ctx, msg, nil, false, cfg, txConfig)
+	res, err := k.ApplyMessageWithConfig(ctx, msg, nil, false, cfg, txConfig, false)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -330,7 +333,7 @@ func (k Keeper) EstimateGasInternal(c context.Context, req *types.EthCallRequest
 	if msg.GasFeeCap.BitLen() != 0 {
 		baseDenom := types.GetEVMCoinDenom()
 
-		balance := k.bankWrapper.GetBalance(ctx, sdk.AccAddress(args.From.Bytes()), baseDenom)
+		balance := k.bankWrapper.SpendableCoin(ctx, sdk.AccAddress(args.From.Bytes()), baseDenom)
 		available := balance.Amount
 		transfer := "0"
 		if args.Value != nil {
@@ -396,11 +399,10 @@ func (k Keeper) EstimateGasInternal(c context.Context, req *types.EthCallRequest
 				return true, nil, err
 			}
 			// resetting the gasMeter after increasing the sequence to have an accurate gas estimation on EVM extensions transactions
-			gasMeter := cosmosevmtypes.NewInfiniteGasMeterWithLimit(msg.GasLimit)
-			tmpCtx = evmante.BuildEvmExecutionCtx(tmpCtx).WithGasMeter(gasMeter)
+			tmpCtx = buildTraceCtx(tmpCtx, msg.GasLimit)
 		}
 		// pass false to not commit StateDB
-		rsp, err = k.ApplyMessageWithConfig(tmpCtx, msg, nil, false, cfg, txConfig)
+		rsp, err = k.ApplyMessageWithConfig(tmpCtx, msg, nil, false, cfg, txConfig, false)
 		if err != nil {
 			if errors.Is(err, core.ErrIntrinsicGas) {
 				return true, nil, nil // Special case, raise gas limit
@@ -442,7 +444,7 @@ func (k Keeper) EstimateGasInternal(c context.Context, req *types.EthCallRequest
 
 // TraceTx configures a new tracer according to the provided configuration, and
 // executes the given message in the provided environment. The return value will
-// be tracer dependent.
+// be tracer-dependent.
 func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*types.QueryTraceTxResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "empty request")
@@ -450,6 +452,10 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 
 	if req.TraceConfig != nil && req.TraceConfig.Limit < 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "output limit cannot be negative, got %d", req.TraceConfig.Limit)
+	}
+
+	if len(req.Predecessors) > maxTracePredecessors {
+		return nil, status.Errorf(codes.InvalidArgument, "too many predecessors, got %d: limit %d", len(req.Predecessors), maxTracePredecessors)
 	}
 
 	// get the context of block beginning
@@ -481,7 +487,6 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 	}
 
 	signer := ethtypes.MakeSigner(types.GetEthChainConfig(), big.NewInt(ctx.BlockHeight()), uint64(ctx.BlockTime().Unix())) //#nosec G115 -- int overflow is not a concern here
-
 	txConfig := statedb.NewEmptyTxConfig(common.BytesToHash(ctx.HeaderHash()))
 
 	// gas used at this point corresponds to GetProposerAddress & CalculateBaseFee
@@ -496,10 +501,9 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 		}
 		txConfig.TxHash = ethTx.Hash()
 		txConfig.TxIndex = uint(i) //nolint:gosec // G115 // won't exceed uint64
-		// reset gas meter for each transaction
-		ctx = evmante.BuildEvmExecutionCtx(ctx).
-			WithGasMeter(cosmosevmtypes.NewInfiniteGasMeterWithLimit(msg.GasLimit))
-		rsp, err := k.ApplyMessageWithConfig(ctx, *msg, nil, true, cfg, txConfig)
+
+		ctx = buildTraceCtx(ctx, msg.GasLimit)
+		rsp, err := k.ApplyMessageWithConfig(ctx, *msg, nil, true, cfg, txConfig, false)
 		if err != nil {
 			continue
 		}
@@ -512,13 +516,7 @@ func (k Keeper) TraceTx(c context.Context, req *types.QueryTraceTxRequest) (*typ
 		txConfig.TxIndex++
 	}
 
-	var tracerConfig json.RawMessage
-	if req.TraceConfig != nil && req.TraceConfig.TracerJsonConfig != "" {
-		// ignore error. default to no traceConfig
-		_ = json.Unmarshal([]byte(req.TraceConfig.TracerJsonConfig), &tracerConfig)
-	}
-
-	result, _, err := k.traceTx(ctx, cfg, txConfig, signer, tx, req.TraceConfig, false, tracerConfig)
+	result, _, err := k.traceTx(ctx, cfg, txConfig, signer, tx, req.TraceConfig, false)
 	if err != nil {
 		// error will be returned with detail status from traceTx
 		return nil, err
@@ -585,7 +583,7 @@ func (k Keeper) TraceBlock(c context.Context, req *types.QueryTraceBlockRequest)
 		ethTx := tx.AsTransaction()
 		txConfig.TxHash = ethTx.Hash()
 		txConfig.TxIndex = uint(i) //nolint:gosec // G115 // won't exceed uint64
-		traceResult, logIndex, err := k.traceTx(ctx, cfg, txConfig, signer, ethTx, req.TraceConfig, true, nil)
+		traceResult, logIndex, err := k.traceTx(ctx, cfg, txConfig, signer, ethTx, req.TraceConfig, true)
 		if err != nil {
 			result.Error = err.Error()
 		} else {
@@ -614,14 +612,14 @@ func (k *Keeper) traceTx(
 	tx *ethtypes.Transaction,
 	traceConfig *types.TraceConfig,
 	commitMessage bool,
-	tracerJSONConfig json.RawMessage,
-) (*interface{}, uint, error) {
+) (*any, uint, error) {
 	// Assemble the structured logger or the JavaScript tracer
 	var (
-		tracer    *tracers.Tracer
-		overrides *ethparams.ChainConfig
-		err       error
-		timeout   = defaultTraceTimeout
+		tracer           *tracers.Tracer
+		overrides        *ethparams.ChainConfig
+		jsonTracerConfig json.RawMessage
+		err              error
+		timeout          = defaultTraceTimeout
 	)
 	msg, err := core.TransactionToMessage(tx, signer, cfg.BaseFee)
 	if err != nil {
@@ -630,6 +628,11 @@ func (k *Keeper) traceTx(
 
 	if traceConfig == nil {
 		traceConfig = &types.TraceConfig{}
+	}
+
+	if traceConfig != nil && traceConfig.TracerJsonConfig != "" {
+		// ignore error. default to no traceConfig
+		_ = json.Unmarshal([]byte(traceConfig.TracerJsonConfig), &jsonTracerConfig)
 	}
 
 	if traceConfig.Overrides != nil {
@@ -659,7 +662,7 @@ func (k *Keeper) traceTx(
 	}
 
 	if traceConfig.Tracer != "" {
-		if tracer, err = tracers.DefaultDirectory.New(traceConfig.Tracer, tCtx, tracerJSONConfig,
+		if tracer, err = tracers.DefaultDirectory.New(traceConfig.Tracer, tCtx, jsonTracerConfig,
 			types.GetEthChainConfig()); err != nil {
 			return nil, 0, status.Error(codes.Internal, err.Error())
 		}
@@ -684,9 +687,8 @@ func (k *Keeper) traceTx(
 	}()
 
 	// Build EVM execution context
-	ctx = evmante.BuildEvmExecutionCtx(ctx).
-		WithGasMeter(cosmosevmtypes.NewInfiniteGasMeterWithLimit(msg.GasLimit))
-	res, err := k.ApplyMessageWithConfig(ctx, *msg, tracer.Hooks, commitMessage, cfg, txConfig)
+	ctx = buildTraceCtx(ctx, msg.GasLimit)
+	res, err := k.ApplyMessageWithConfig(ctx, *msg, tracer.Hooks, commitMessage, cfg, txConfig, false)
 	if err != nil {
 		return nil, 0, status.Error(codes.Internal, err.Error())
 	}
@@ -729,4 +731,12 @@ func (k Keeper) Config(_ context.Context, _ *types.QueryConfigRequest) (*types.Q
 	config.Decimals = uint64(types.GetEVMCoinDecimals())
 
 	return &types.QueryConfigResponse{Config: config}, nil
+}
+
+// buildTraceCtx builds a context for simulating or tracing transactions by:
+// 1. assigning a new infinite gas meter with the provided gasLimit
+// 2. calling BuildEvmExecutionCtx to set up gas configs consistent with Ethereum transaction execution.
+func buildTraceCtx(ctx sdk.Context, gasLimit uint64) sdk.Context {
+	return evmante.BuildEvmExecutionCtx(ctx).
+		WithGasMeter(cosmosevmtypes.NewInfiniteGasMeterWithLimit(gasLimit))
 }
