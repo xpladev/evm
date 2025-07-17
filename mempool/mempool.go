@@ -32,7 +32,8 @@ type (
 	}
 	EVMMempoolIterator struct {
 		evmIterator    *miner.TransactionsByPriceAndNonce
-		cosmosIterator *mempool.Iterator
+		cosmosIterator mempool.Iterator
+		bondDenom      string
 	}
 )
 
@@ -136,7 +137,8 @@ func (m EVMMempool) Select(goCtx context.Context, i [][]byte) mempool.Iterator {
 
 	combinedIterator := EVMMempoolIterator{
 		evmIterator:    orderedEVMPendingTxes,
-		cosmosIterator: &cosmosPendingTxes,
+		cosmosIterator: cosmosPendingTxes,
+		bondDenom:      m.vmKeeper.GetParams(ctx).EvmDenom,
 	}
 
 	return combinedIterator
@@ -159,12 +161,72 @@ func (m EVMMempool) SelectBy(ctx context.Context, i [][]byte, f func(sdk.Tx) boo
 	panic("implement me")
 }
 
-func (m EVMMempoolIterator) Next() mempool.Iterator {
-	//TODO implement me
-	panic("implement me")
+func (i EVMMempoolIterator) Next() mempool.Iterator {
+	_, evmFee := i.evmIterator.Peek()
+	nextCosmosTx, ok := i.cosmosIterator.Tx().(sdk.FeeTx)
+	if !ok {
+		panic("expected fee Tx") // not supporting ambiguous priorities, since evm is based on fees
+	}
+	cosmosFees := nextCosmosTx.GetFee()
+
+	// We prioritize the bond denom. Everything else gets pushed to lowest priority.
+	// Comparing fees for two different tokens is subjective and would require custom
+	var cosmosTxEVMDenomFee *sdk.Coin
+	for _, coin := range cosmosFees {
+		if coin.Denom == i.bondDenom {
+			cosmosTxEVMDenomFee = &coin
+		}
+	}
+	if cosmosTxEVMDenomFee == nil {
+		i.evmIterator.Pop()
+	} else {
+		cosmosTxAmount, overflow := uint256.FromBig(cosmosTxEVMDenomFee.Amount.BigInt())
+		if overflow {
+			panic("conversion error: overflow")
+		}
+		if cosmosTxAmount.Gt(evmFee) {
+			i.cosmosIterator.Next()
+		} else {
+			i.evmIterator.Pop()
+		}
+	}
+
+	return i
 }
 
-func (m EVMMempoolIterator) Tx() sdk.Tx {
-	//TODO implement me
-	panic("implement me")
+func (i EVMMempoolIterator) Tx() sdk.Tx {
+	nextEVMTx, evmFee := i.evmIterator.Peek()
+	msgEthereumTx := &evmtypes.MsgEthereumTx{}
+	if err := msgEthereumTx.FromEthereumTx(nextEVMTx.Tx); err != nil {
+		panic("invalid tx")
+	}
+	nextCosmosTx, ok := i.cosmosIterator.Tx().(sdk.FeeTx)
+	if !ok {
+		panic("expected fee Tx") // not supporting ambiguous priorities, since evm is based on fees
+	}
+	cosmosFees := nextCosmosTx.GetFee()
+
+	// We prioritize the bond denom. Everything else gets pushed to lowest priority.
+	// Comparing fees for two different tokens is subjective and would require custom
+	var cosmosTxEVMDenomFee *sdk.Coin
+	for _, coin := range cosmosFees {
+		if coin.Denom == i.bondDenom {
+			cosmosTxEVMDenomFee = &coin
+		}
+	}
+	if cosmosTxEVMDenomFee == nil {
+		return msgEthereumTx
+	} else {
+		cosmosTxAmount, overflow := uint256.FromBig(cosmosTxEVMDenomFee.Amount.BigInt())
+		if overflow {
+			panic("conversion error: overflow")
+		}
+		if cosmosTxAmount.Gt(evmFee) {
+			return nextCosmosTx
+		} else {
+			return msgEthereumTx
+		}
+	}
+
+	return nil
 }
