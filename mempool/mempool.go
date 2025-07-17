@@ -14,7 +14,7 @@ import (
 	"github.com/holiman/uint256"
 )
 
-var _ mempool.ExtMempool = EVMMempool{}
+var _ mempool.ExtMempool = &EVMMempool{}
 var _ mempool.Iterator = &EVMMempoolIterator{}
 
 type (
@@ -50,7 +50,7 @@ func NewEVMMempool(vmKeeper vmkeeper.Keeper, txPool *txpool.TxPool, legacyPool *
 	}
 }
 
-func (m EVMMempool) Insert(ctx context.Context, tx sdk.Tx) error {
+func (m *EVMMempool) Insert(ctx context.Context, tx sdk.Tx) error {
 	// ASSUMPTION: these are all successful upon CheckTx
 	/**
 	if tx.type == evm {
@@ -80,7 +80,7 @@ func (m EVMMempool) Insert(ctx context.Context, tx sdk.Tx) error {
 	return nil
 }
 
-func (m EVMMempool) InsertInvalidSequence(txBytes []byte) error {
+func (m *EVMMempool) InsertInvalidSequence(txBytes []byte) error {
 	// ASSUMPTION: these are all failing on ErrInvalidSequence and not another error
 	/**
 	if tx.type == evm {
@@ -118,7 +118,7 @@ func (m EVMMempool) InsertInvalidSequence(txBytes []byte) error {
 	return nil
 }
 
-func (m EVMMempool) Select(goCtx context.Context, i [][]byte) mempool.Iterator {
+func (m *EVMMempool) Select(goCtx context.Context, i [][]byte) mempool.Iterator {
 	// todo: reuse logic in selectby
 	ctx := sdk.UnwrapSDKContext(goCtx)
 	baseFee := m.vmKeeper.GetBaseFee(ctx)
@@ -148,17 +148,17 @@ func (m EVMMempool) Select(goCtx context.Context, i [][]byte) mempool.Iterator {
 	return combinedIterator
 }
 
-func (m EVMMempool) CountTx() int {
+func (m *EVMMempool) CountTx() int {
 	pending, _ := m.txPool.Stats()
 	return m.cosmosPool.CountTx() + pending
 }
 
-func (m EVMMempool) Remove(tx sdk.Tx) error {
+func (m *EVMMempool) Remove(tx sdk.Tx) error {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (m EVMMempool) SelectBy(goCtx context.Context, i [][]byte, f func(sdk.Tx) bool) {
+func (m *EVMMempool) SelectBy(goCtx context.Context, i [][]byte, f func(sdk.Tx) bool) {
 	//todo: reuse logic in select
 	ctx := sdk.UnwrapSDKContext(goCtx)
 	baseFee := m.vmKeeper.GetBaseFee(ctx)
