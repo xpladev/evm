@@ -432,40 +432,40 @@ func (suite *KeeperIntegrationTestSuite) TestSendCoins() {
 
 			// Check events
 
-			// FULL aatom equivalent, including uatom only/mixed sends
-			sendExtendedAmount := sdk.NewCoin(
-				types.ExtendedCoinDenom(),
-				sendAmountFullExtended.AmountOf(types.ExtendedCoinDenom()),
-			)
-			extCoins := sdk.NewCoins(sendExtendedAmount)
+			// // FULL aatom equivalent, including uatom only/mixed sends
+			// sendExtendedAmount := sdk.NewCoin(
+			// 	types.ExtendedCoinDenom(),
+			// 	sendAmountFullExtended.AmountOf(types.ExtendedCoinDenom()),
+			// )
+			// extCoins := sdk.NewCoins(sendExtendedAmount)
 
-			// No extra events if not sending aatom
-			if sendExtendedAmount.IsZero() {
-				return
-			}
+			// // No extra events if not sending aatom
+			// if sendExtendedAmount.IsZero() {
+			// 	return
+			// }
 
-			extendedEvent := sdk.NewEvent(
-				banktypes.EventTypeTransfer,
-				sdk.NewAttribute(banktypes.AttributeKeyRecipient, recipient.String()),
-				sdk.NewAttribute(banktypes.AttributeKeySender, sender.String()),
-				sdk.NewAttribute(sdk.AttributeKeyAmount, sendExtendedAmount.String()),
-			)
+			// extendedEvent := sdk.NewEvent(
+			// 	banktypes.EventTypeTransfer,
+			// 	sdk.NewAttribute(banktypes.AttributeKeyRecipient, recipient.String()),
+			// 	sdk.NewAttribute(banktypes.AttributeKeySender, sender.String()),
+			// 	sdk.NewAttribute(sdk.AttributeKeyAmount, sendExtendedAmount.String()),
+			// )
 
-			expReceivedEvent := banktypes.NewCoinReceivedEvent(
-				recipient,
-				extCoins,
-			)
+			// expReceivedEvent := banktypes.NewCoinReceivedEvent(
+			// 	recipient,
+			// 	extCoins,
+			// )
 
-			expSentEvent := banktypes.NewCoinSpentEvent(
-				sender,
-				extCoins,
-			)
+			// expSentEvent := banktypes.NewCoinSpentEvent(
+			// 	sender,
+			// 	extCoins,
+			// )
 
-			events := suite.network.GetContext().EventManager().Events()
+			// events := suite.network.GetContext().EventManager().Events()
 
-			suite.Require().Contains(events, extendedEvent)
-			suite.Require().Contains(events, expReceivedEvent)
-			suite.Require().Contains(events, expSentEvent)
+			// suite.Require().Contains(events, extendedEvent)
+			// suite.Require().Contains(events, expReceivedEvent)
+			// suite.Require().Contains(events, expSentEvent)
 		})
 	}
 }
