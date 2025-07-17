@@ -1073,9 +1073,9 @@ func BlockedAddresses() map[string]bool {
 	}
 	sort.Strings(accs)
 
-	// for _, acc := range accs {
-	// 	blockedAddrs[authtypes.NewModuleAddress(acc).String()] = true
-	// }
+	for _, acc := range accs {
+		blockedAddrs[authtypes.NewModuleAddress(acc).String()] = true
+	}
 
 	blockedPrecompilesHex := evmtypes.AvailableStaticPrecompiles
 	for _, addr := range corevm.PrecompiledAddressesPrague {

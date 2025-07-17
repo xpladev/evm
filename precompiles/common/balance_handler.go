@@ -45,6 +45,11 @@ func (bh *BalanceHandler) AfterBalanceChange(ctx sdk.Context, stateDB *statedb.S
 				return fmt.Errorf("failed to parse spender address from event %q: %w", banktypes.EventTypeCoinSpent, err)
 			}
 
+			// Check account is module account
+			if sdk.AccAddress(spenderHexAddr.Bytes()).Equals(sdk.MustAccAddressFromBech32("cosmos12yfe2jaupmtjruwxsec7hg7er60fhaa4qh25lc")) {
+				continue
+			}
+
 			amount, err := ParseAmount(event)
 			if err != nil {
 				return fmt.Errorf("failed to parse amount from event %q: %w", banktypes.EventTypeCoinSpent, err)
@@ -56,6 +61,11 @@ func (bh *BalanceHandler) AfterBalanceChange(ctx sdk.Context, stateDB *statedb.S
 			receiverHexAddr, err := ParseHexAddress(event, banktypes.AttributeKeyReceiver)
 			if err != nil {
 				return fmt.Errorf("failed to parse receiver address from event %q: %w", banktypes.EventTypeCoinReceived, err)
+			}
+
+			// Check account is module account
+			if sdk.AccAddress(receiverHexAddr.Bytes()).Equals(sdk.MustAccAddressFromBech32("cosmos12yfe2jaupmtjruwxsec7hg7er60fhaa4qh25lc")) {
+				continue
 			}
 
 			amount, err := ParseAmount(event)
