@@ -446,6 +446,21 @@ var _ = DescribeTableSubtree("a user interact with the WEVMOS precompiled contra
 			When("the specified method does not exist", func() {
 				It("it should call the fallback which behave like deposit", func() {
 					ctx := is.network.GetContext()
+
+					// // check balance of sender
+					// senderBalance := is.network.App.BankKeeper.GetBalance(ctx, user.Addr.Bytes(), evmtypes.GetEVMCoinDenom())
+					// fmt.Println("CHOI - initial bank senderBalance:", senderBalance.Amount.String())
+
+					// senderBalance = is.network.App.PreciseBankKeeper.GetBalance(ctx, user.Addr.Bytes(), precisebanktypes.ExtendedCoinDenom())
+					// fmt.Println("CHOI - initial precbank senderBalance:", senderBalance.Amount.String())
+
+					// // check balance of precopile
+					// precompileBalance := is.network.App.PreciseBankKeeper.GetBalance(ctx, callsData.precompileAddr.Bytes(), precisebanktypes.ExtendedCoinDenom())
+					// fmt.Println("CHOI - initial precbank precompileBalance:", precompileBalance.Amount.String())
+
+					// precompileBalance = is.network.App.PreciseBankKeeper.GetBalance(ctx, callsData.precompileAddr.Bytes(), precisebanktypes.ExtendedCoinDenom())
+					// fmt.Println("CHOI - initial precbank precompileBalance:", precompileBalance.Amount.String())
+
 					initBalance := is.network.App.PreciseBankKeeper.GetBalance(ctx, user.Addr.Bytes(), precisebanktypes.ExtendedCoinDenom())
 					Expect(is.network.NextBlock()).ToNot(HaveOccurred(), "error on NextBlock")
 
@@ -457,6 +472,20 @@ var _ = DescribeTableSubtree("a user interact with the WEVMOS precompiled contra
 					_, _, err := is.factory.CallContractAndCheckLogs(user.Priv, txArgs, callArgs, depositCheck)
 					Expect(err).ToNot(HaveOccurred(), "unexpected error calling the precompile")
 					Expect(is.network.NextBlock()).ToNot(HaveOccurred(), "error on NextBlock")
+
+					// // check balance of precopile
+					// precompileBalance = is.network.App.PreciseBankKeeper.GetBalance(ctx, callsData.precompileAddr.Bytes(), precisebanktypes.ExtendedCoinDenom())
+					// fmt.Println("CHOI - initial precbank precompileBalance:", precompileBalance.Amount.String())
+
+					// precompileBalance = is.network.App.PreciseBankKeeper.GetBalance(ctx, callsData.precompileAddr.Bytes(), precisebanktypes.ExtendedCoinDenom())
+					// fmt.Println("CHOI - initial precbank precompileBalance:", precompileBalance.Amount.String())
+
+					// // check balance of sender
+					// senderBalance = is.network.App.BankKeeper.GetBalance(ctx, user.Addr.Bytes(), evmtypes.GetEVMCoinDenom())
+					// fmt.Println("CHOI - initial bank senderBalance:", senderBalance.Amount.String())
+
+					// senderBalance = is.network.App.PreciseBankKeeper.GetBalance(ctx, user.Addr.Bytes(), precisebanktypes.ExtendedCoinDenom())
+					// fmt.Println("CHOI - initial precbank senderBalance:", senderBalance.Amount.String())
 
 					finalBalance := is.network.App.PreciseBankKeeper.GetBalance(ctx, user.Addr.Bytes(), precisebanktypes.ExtendedCoinDenom())
 					precompileBalance := is.network.App.PreciseBankKeeper.GetBalance(ctx, callsData.precompileAddr.Bytes(), precisebanktypes.ExtendedCoinDenom())
@@ -486,9 +515,53 @@ var _ = DescribeTableSubtree("a user interact with the WEVMOS precompiled contra
 				txArgs, callArgs := callsData.getTxAndCallArgs(contractCall, "depositWithRevert", false, false)
 				txArgs.Amount = depositAmount
 
+				// // check balance of sender
+				// senderBalance := is.network.App.BankKeeper.GetBalance(ctx, txSender.AccAddr.Bytes(), evmtypes.GetEVMCoinDenom())
+				// fmt.Println("CHOI - initial bank BalanceSender:", senderBalance.Amount.String())
+
+				// // check balance of sender
+				// senderBalance = is.network.App.PreciseBankKeeper.GetBalance(ctx, txSender.AccAddr.Bytes(), precisebanktypes.ExtendedCoinDenom())
+				// fmt.Println("CHOI - initial precbank BalanceSender:", senderBalance.Amount.String())
+
+				// // check balance of revert contract
+				// revertContractBalance := is.network.App.BankKeeper.GetBalance(ctx, revertContractAddr.Bytes(), evmtypes.GetEVMCoinDenom())
+				// fmt.Println("CHOI - initial bank revertContract balance:", revertContractBalance.Amount.String())
+
+				// revertContractBalance = is.network.App.PreciseBankKeeper.GetBalance(ctx, revertContractAddr.Bytes(), precisebanktypes.ExtendedCoinDenom())
+				// fmt.Println("CHOI - initial precbank revertContract balance:", revertContractBalance.Amount.String())
+
+				// // check balance of precopile
+				// precompileBalance := is.network.App.BankKeeper.GetBalance(ctx, callsData.precompileAddr.Bytes(), evmtypes.GetEVMCoinDenom())
+				// fmt.Println("CHOI - initial bank precompileBalance:", precompileBalance.Amount.String())
+
+				// // check balance of precopile
+				// precompileBalance = is.network.App.PreciseBankKeeper.GetBalance(ctx, callsData.precompileAddr.Bytes(), precisebanktypes.ExtendedCoinDenom())
+				// fmt.Println("CHOI - initial precbank precompileBalance:", precompileBalance.Amount.String())
+
 				_, _, err := is.factory.CallContractAndCheckLogs(txSender.Priv, txArgs, callArgs, depositCheck)
 				Expect(err).ToNot(HaveOccurred(), "unexpected error calling the precompile")
 				Expect(is.network.NextBlock()).ToNot(HaveOccurred(), "error on NextBlock")
+
+				// // check balance of precopile
+				// precompileBalance = is.network.App.BankKeeper.GetBalance(ctx, callsData.precompileAddr.Bytes(), evmtypes.GetEVMCoinDenom())
+				// fmt.Println("CHOI - final bank precompileBalance:", precompileBalance.Amount.String())
+
+				// precompileBalance = is.network.App.PreciseBankKeeper.GetBalance(ctx, callsData.precompileAddr.Bytes(), precisebanktypes.ExtendedCoinDenom())
+				// fmt.Println("CHOI - final precbank precompileBalance:", precompileBalance.Amount.String())
+
+				// // check balance of revert contract
+				// revertContractBalance = is.network.App.BankKeeper.GetBalance(ctx, revertContractAddr.Bytes(), evmtypes.GetEVMCoinDenom())
+				// fmt.Println("CHOI - final bank revertContract balance:", revertContractBalance.Amount.String())
+
+				// revertContractBalance = is.network.App.PreciseBankKeeper.GetBalance(ctx, revertContractAddr.Bytes(), precisebanktypes.ExtendedCoinDenom())
+				// fmt.Println("CHOI - final precbank revertContract balance:", revertContractBalance.Amount.String())
+
+				// // check balance of sender
+				// senderBalance = is.network.App.BankKeeper.GetBalance(ctx, txSender.AccAddr.Bytes(), evmtypes.GetEVMCoinDenom())
+				// fmt.Println("CHOI - final bank BalanceSender:", senderBalance.Amount.String())
+
+				// senderBalance = is.network.App.PreciseBankKeeper.GetBalance(ctx, txSender.AccAddr.Bytes(), precisebanktypes.ExtendedCoinDenom())
+				// fmt.Println("CHOI - final precbank BalanceSender:", senderBalance.Amount.String())
 
 				finalBalance := is.network.App.PreciseBankKeeper.GetBalance(ctx, revertContractAddr.Bytes(), precisebanktypes.ExtendedCoinDenom())
 				Expect(finalBalance.Amount.String()).To(Equal(depositAmount.String()), "expected final balance equal to deposit")
