@@ -19,12 +19,12 @@ package txpool
 import (
 	"errors"
 	"fmt"
+	"github.com/ethereum/go-ethereum/core/vm"
 	"math/big"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto/kzg4844"
 	"github.com/ethereum/go-ethereum/event"
@@ -55,7 +55,7 @@ type BlockChain interface {
 	SubscribeChainHeadEvent(ch chan<- core.ChainHeadEvent) event.Subscription
 
 	// StateAt returns a state database for a given root hash (generally the head).
-	StateAt(root common.Hash) (statedb.Keeper, error)
+	StateAt(root common.Hash) (vm.StateDB, error)
 }
 
 // TxPool is an aggregator for various transaction specific pools, collectively
@@ -68,8 +68,8 @@ type TxPool struct {
 	chain    BlockChain
 	signer   types.Signer
 
-	stateLock sync.RWMutex   // The lock for protecting state instance
-	state     statedb.Keeper // Current state at the blockchain head
+	stateLock sync.RWMutex // The lock for protecting state instance
+	state     vm.StateDB   // Current state at the blockchain head
 
 	subs event.SubscriptionScope // Subscription scope to unsubscribe all on shutdown
 	quit chan chan error         // Quit channel to tear down the head updater
