@@ -65,11 +65,11 @@ func init() {
 type testBlockChain struct {
 	config        *params.ChainConfig
 	gasLimit      atomic.Uint64
-	statedb       *state.StateDB
+	statedb       vm.StateDB
 	chainHeadFeed *event.Feed
 }
 
-func newTestBlockChain(config *params.ChainConfig, gasLimit uint64, statedb *state.StateDB, chainHeadFeed *event.Feed) *testBlockChain {
+func newTestBlockChain(config *params.ChainConfig, gasLimit uint64, statedb vm.StateDB, chainHeadFeed *event.Feed) *testBlockChain {
 	bc := testBlockChain{config: config, statedb: statedb, chainHeadFeed: new(event.Feed)}
 	bc.gasLimit.Store(gasLimit)
 	return &bc
@@ -91,7 +91,7 @@ func (bc *testBlockChain) GetBlock(hash common.Hash, number uint64) *types.Block
 	return types.NewBlock(bc.CurrentBlock(), nil, nil, trie.NewStackTrie(nil))
 }
 
-func (bc *testBlockChain) StateAt(common.Hash) (*state.StateDB, error) {
+func (bc *testBlockChain) StateAt(common.Hash) (vm.StateDB, error) {
 	return bc.statedb, nil
 }
 
@@ -310,7 +310,7 @@ type testChain struct {
 // testChain.State() is used multiple times to reset the pending state.
 // when simulate is true it will create a state that indicates
 // that tx0 and tx1 are included in the chain.
-func (c *testChain) State() (*state.StateDB, error) {
+func (c *testChain) State() (vm.StateDB, error) {
 	// delay "state change" by one. The tx pool fetches the
 	// state multiple times and by delaying it a bit we simulate
 	// a state change between those fetches.
@@ -319,7 +319,7 @@ func (c *testChain) State() (*state.StateDB, error) {
 		c.statedb, _ = state.New(types.EmptyRootHash, state.NewDatabaseForTesting())
 		// simulate that the new head block included tx0 and tx1
 		c.statedb.SetNonce(c.address, 2, tracing.NonceChangeUnspecified)
-		c.statedb.SetBalance(c.address, new(uint256.Int).SetUint64(params.Ether), tracing.BalanceChangeUnspecified)
+		c.statedb.AddBalance(c.address, new(uint256.Int).SetUint64(params.Ether), tracing.BalanceChangeUnspecified)
 		*c.trigger = false
 	}
 	return stdb, nil

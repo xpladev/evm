@@ -17,25 +17,25 @@
 package legacypool
 
 import (
+	"github.com/ethereum/go-ethereum/core/vm"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/state"
 )
 
 // noncer is a tiny virtual state database to manage the executable nonces of
 // accounts in the pool, falling back to reading from a real state database if
 // an account is unknown.
 type noncer struct {
-	fallback *state.StateDB
+	fallback vm.StateDB
 	nonces   map[common.Address]uint64
 	lock     sync.Mutex
 }
 
 // newNoncer creates a new virtual state database to track the pool nonces.
-func newNoncer(statedb *state.StateDB) *noncer {
+func newNoncer(statedb vm.StateDB) *noncer {
 	return &noncer{
-		fallback: statedb.Copy(),
+		fallback: statedb, //todo: do we need to copy this? seems like it's just a getter. shouldn't be too bad to get it from ctx/kvstore every time
 		nonces:   make(map[common.Address]uint64),
 	}
 }

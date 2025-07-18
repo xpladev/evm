@@ -20,6 +20,7 @@ package legacypool
 import (
 	"errors"
 	"github.com/cosmos/evm/mempool/txpool"
+	"github.com/ethereum/go-ethereum/core/vm"
 	"maps"
 	"math"
 	"math/big"
@@ -33,7 +34,6 @@ import (
 	"github.com/ethereum/go-ethereum/common/prque"
 	"github.com/ethereum/go-ethereum/consensus/misc/eip1559"
 	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto/kzg4844"
 	"github.com/ethereum/go-ethereum/event"
@@ -132,7 +132,7 @@ type BlockChain interface {
 	GetBlock(hash common.Hash, number uint64) *types.Block
 
 	// StateAt returns a state database for a given root hash (generally the head).
-	StateAt(root common.Hash) (*state.StateDB, error)
+	StateAt(root common.Hash) (vm.StateDB, error)
 }
 
 // Config are the configuration parameters of the transaction pool.
@@ -235,7 +235,7 @@ type LegacyPool struct {
 	mu          sync.RWMutex
 
 	currentHead   atomic.Pointer[types.Header] // Current head of the blockchain
-	currentState  *state.StateDB               // Current state in the blockchain head
+	currentState  vm.StateDB                   // Current state in the blockchain head
 	pendingNonces *noncer                      // Pending state tracking virtual nonces
 	reserver      txpool.Reserver              // Address reserver to ensure exclusivity across subpools
 

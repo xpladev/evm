@@ -55,7 +55,7 @@ type BlockChain interface {
 	SubscribeChainHeadEvent(ch chan<- core.ChainHeadEvent) event.Subscription
 
 	// StateAt returns a state database for a given root hash (generally the head).
-	StateAt(root common.Hash) (*state.StateDB, error)
+	StateAt(root common.Hash) (statedb.Keeper, error)
 }
 
 // TxPool is an aggregator for various transaction specific pools, collectively
@@ -69,7 +69,7 @@ type TxPool struct {
 	signer   types.Signer
 
 	stateLock sync.RWMutex   // The lock for protecting state instance
-	state     *state.StateDB // Current state at the blockchain head
+	state     statedb.Keeper // Current state at the blockchain head
 
 	subs event.SubscriptionScope // Subscription scope to unsubscribe all on shutdown
 	quit chan chan error         // Quit channel to tear down the head updater
