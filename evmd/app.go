@@ -4,6 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	mempool2 "github.com/cosmos/cosmos-sdk/types/mempool"
+	"github.com/cosmos/evm/mempool"
+	"github.com/cosmos/evm/mempool/txpool"
+	"github.com/cosmos/evm/mempool/txpool/legacypool"
 	"io"
 	"os"
 
@@ -491,6 +495,18 @@ func NewExampleApp(
 		&app.Erc20Keeper,
 		tracer,
 	)
+
+	// set the EVM priority nonce mempool
+	blockchain := mempool.NewBlockchain()
+	legacyPool := legacypool.New(legacypool.DefaultConfig, blockchain)
+	txPool, err := txpool.New(uint64(0), blockchain, []txpool.SubPool{legacyPool})
+	if err != nil {
+		panic(err)
+	}
+	cosmosPool := mempool2.DefaultPriorityMempool()
+	evmMempool := mempool.NewEVMMempool(app.EVMKeeper, txPool, cosmosPool, encodingConfig.TxConfig.TxDecoder())
+
+	bApp.SetMempool(evmMempool)
 
 	app.Erc20Keeper = erc20keeper.NewKeeper(
 		keys[erc20types.StoreKey],

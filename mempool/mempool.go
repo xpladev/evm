@@ -20,7 +20,7 @@ var _ mempool.Iterator = &EVMMempoolIterator{}
 type (
 	EVMMempool struct {
 		/** Keepers **/
-		vmKeeper vmkeeper.Keeper
+		vmKeeper *vmkeeper.Keeper
 
 		/** Mempools **/
 		txPool       *txpool.TxPool
@@ -40,7 +40,7 @@ type (
 	}
 )
 
-func NewEVMMempool(vmKeeper vmkeeper.Keeper, txPool *txpool.TxPool, legacyPool *legacypool.LegacyPool, cosmosPool mempool.ExtMempool, txDecoder sdk.TxDecoder) *EVMMempool {
+func NewEVMMempool(vmKeeper *vmkeeper.Keeper, txPool *txpool.TxPool, cosmosPool mempool.ExtMempool, txDecoder sdk.TxDecoder) *EVMMempool {
 	if len(txPool.Subpools) != 1 {
 		panic("tx pool should contain only one subpool")
 	}
@@ -50,7 +50,7 @@ func NewEVMMempool(vmKeeper vmkeeper.Keeper, txPool *txpool.TxPool, legacyPool *
 	return &EVMMempool{
 		vmKeeper:     vmKeeper,
 		txPool:       txPool,
-		legacyTxPool: legacyPool,
+		legacyTxPool: txPool.Subpools[0].(*legacypool.LegacyPool),
 		cosmosPool:   cosmosPool,
 		txDecoder:    txDecoder,
 	}
