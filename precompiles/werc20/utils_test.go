@@ -11,8 +11,8 @@ import (
 	evmtypes "github.com/cosmos/evm/x/vm/types"
 )
 
-// callType constants to differentiate between
-// the different types of call to the precompile.
+// callType defines the different ways to call the precompile contract
+// for comprehensive testing scenarios.
 type callType int
 
 const (
@@ -20,14 +20,13 @@ const (
 	contractCall
 )
 
-// CallsData is a helper struct to hold the addresses and ABIs for the
-// different contract instances that are subject to testing here.
+// CallsData encapsulates all necessary data for making calls to the WERC20 precompile
+// and related contracts during integration testing.
 type CallsData struct {
-	// This field is used to perform transactions that are not relevant for
-	// testing purposes like query to the contract.
+	// sender is used for transactions that don't require specific test account behavior
 	sender keyring.Key
 
-	// precompileReverter is used to call into the werc20 interface and
+	// precompileReverter contract addresses and ABI for testing revert scenarios
 	precompileReverterAddr common.Address
 	precompileReverterABI  abi.ABI
 
@@ -35,12 +34,12 @@ type CallsData struct {
 	precompileABI  abi.ABI
 }
 
-// getTxCallArgs is a helper function to return the correct call arguments and
-// transaction data for a given call type.
+// getTxAndCallArgs constructs transaction and call arguments based on the call type.
+// It configures the appropriate target address and ABI for direct calls vs contract calls.
 func (cd CallsData) getTxAndCallArgs(
 	callType callType,
 	methodName string,
-	args ...interface{},
+	args ...any,
 ) (evmtypes.EvmTxArgs, factory.CallArgs) {
 	txArgs := evmtypes.EvmTxArgs{}
 	callArgs := factory.CallArgs{}
@@ -57,10 +56,10 @@ func (cd CallsData) getTxAndCallArgs(
 	callArgs.MethodName = methodName
 	callArgs.Args = args
 
-	// Setting gas tip cap to zero to have zero gas price.
+	// Set gas tip cap to zero for zero gas price in tests
 	txArgs.GasTipCap = new(big.Int).SetInt64(0)
-	// Gas limit is added only to skip the estimate gas call
-	// that makes debugging more complex.
+	// Use a high gas limit to skip estimation and simplify debugging
+	txArgs.GasLimit = 1_000_000_000_000
 	txArgs.GasLimit = 1_000_000_000_000
 
 	return txArgs, callArgs
