@@ -16,7 +16,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 )
 
 func (suite *KeeperIntegrationTestSuite) TestBurnCoins_MatchingErrors() {
@@ -198,30 +197,6 @@ func (suite *KeeperIntegrationTestSuite) TestBurnCoins() {
 				afterBalance.String(),
 				"unexpected balance after minting %s to %s",
 			)
-
-			intCoinAmt := tt.burnCoins.AmountOf(types.IntegerCoinDenom()).
-				Mul(types.ConversionFactor())
-
-			fraCoinAmt := tt.burnCoins.AmountOf(types.ExtendedCoinDenom())
-
-			totalExtCoinAmt := intCoinAmt.Add(fraCoinAmt)
-			spentCoins := sdk.NewCoins(sdk.NewCoin(
-				types.ExtendedCoinDenom(),
-				totalExtCoinAmt,
-			))
-
-			events := suite.network.GetContext().EventManager().Events()
-
-			expBurnEvent := banktypes.NewCoinBurnEvent(recipientAddr, spentCoins)
-			expSpendEvent := banktypes.NewCoinSpentEvent(recipientAddr, spentCoins)
-
-			if totalExtCoinAmt.IsZero() {
-				suite.Require().NotContains(events, expBurnEvent)
-				suite.Require().NotContains(events, expSpendEvent)
-			} else {
-				suite.Require().Contains(events, expBurnEvent)
-				suite.Require().Contains(events, expSpendEvent)
-			}
 		})
 	}
 }

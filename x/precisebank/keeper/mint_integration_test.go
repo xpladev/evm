@@ -320,36 +320,6 @@ func (suite *KeeperIntegrationTestSuite) TestMintCoins() {
 					afterBalance.String(),
 					"unexpected balance after minting %s to %s",
 				)
-
-				// Get event for minted coins
-				intCoinAmt := mt.mintAmount.AmountOf(types.IntegerCoinDenom()).
-					Mul(types.ConversionFactor())
-
-				fraCoinAmt := mt.mintAmount.AmountOf(types.ExtendedCoinDenom())
-
-				totalExtCoinAmt := intCoinAmt.Add(fraCoinAmt)
-				extCoins := sdk.NewCoins(sdk.NewCoin(types.ExtendedCoinDenom(), totalExtCoinAmt))
-
-				// Check for mint event
-				events := suite.network.GetContext().EventManager().Events()
-
-				expMintEvent := banktypes.NewCoinMintEvent(
-					recipientAddr,
-					extCoins,
-				)
-
-				expReceivedEvent := banktypes.NewCoinReceivedEvent(
-					recipientAddr,
-					extCoins,
-				)
-
-				if totalExtCoinAmt.IsZero() {
-					suite.Require().NotContains(events, expMintEvent)
-					suite.Require().NotContains(events, expReceivedEvent)
-				} else {
-					suite.Require().Contains(events, expMintEvent)
-					suite.Require().Contains(events, expReceivedEvent)
-				}
 			}
 		})
 	}

@@ -12,7 +12,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 )
 
 // MintCoins creates new coins from thin air and adds it to the module account.
@@ -71,11 +70,6 @@ func (k Keeper) MintCoins(goCtx context.Context, moduleName string, amt sdk.Coin
 	if fullEmissionCoins.IsZero() {
 		return nil
 	}
-
-	ctx.EventManager().EmitEvents(sdk.Events{
-		banktypes.NewCoinMintEvent(acc.GetAddress(), fullEmissionCoins),
-		banktypes.NewCoinReceivedEvent(acc.GetAddress(), fullEmissionCoins),
-	})
 
 	return nil
 }
@@ -181,7 +175,7 @@ func (k Keeper) mintExtendedCoin(
 	}
 
 	// Assign new fractional balance in x/precisebank
-	k.SetFractionalBalance(ctx, moduleAddr, newFractionalBalance)
+	k.UpdateFractionalBalance(ctx, moduleAddr, newFractionalBalance)
 
 	// ----------------------------------------
 	// Update remainder & reserves to back minted fractional coins

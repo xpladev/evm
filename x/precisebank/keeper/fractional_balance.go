@@ -105,3 +105,23 @@ func (k *Keeper) GetTotalSumFractionalBalances(ctx sdk.Context) sdkmath.Int {
 
 	return sum
 }
+
+// UpdateFractionalBalance sets the fractional balance for an address and emits an event.
+func (k *Keeper) UpdateFractionalBalance(
+	ctx sdk.Context,
+	address sdk.AccAddress,
+	amount sdkmath.Int,
+) {
+	fractionalBalance := k.GetFractionalBalance(ctx, address)
+	delta := amount.Sub(fractionalBalance)
+
+	k.SetFractionalBalance(ctx, address, amount)
+
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(
+			types.EventTypeFractionalBalanceUpdated,
+			sdk.NewAttribute(types.AttributeKeyAddress, address.String()),
+			sdk.NewAttribute(types.AttributeKeyDelta, delta.String()),
+		),
+	)
+}

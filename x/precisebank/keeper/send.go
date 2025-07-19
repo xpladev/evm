@@ -90,24 +90,6 @@ func (k Keeper) SendCoins(
 		}
 	}
 
-	// For 18-decimal chains, never emit precisebank events - let x/bank handle all events
-	// For non-18-decimal chains, only emit events if x/bank didn't (i.e., when no passthrough coins were sent)
-	shouldEmitPreciseBankEvents := extendedCoinAmount.IsPositive() &&
-		!types.IsExtendedDenomSameAsIntegerDenom() &&
-		!passthroughCoins.IsAllPositive()
-
-	if shouldEmitPreciseBankEvents {
-		// Get a full extended coin amount for event attributes
-		fullEmissionCoins := sdk.NewCoins(types.SumExtendedCoin(amt))
-
-		// Emit precisebank-specific events
-		ctx.EventManager().EmitEvents(sdk.Events{
-			types.NewPreciseTransferEvent(from.String(), to.String(), fullEmissionCoins),
-			types.NewPreciseCoinSpentEvent(from, fullEmissionCoins),
-			types.NewPreciseCoinReceivedEvent(to, fullEmissionCoins),
-		})
-	}
-
 	return nil
 }
 
@@ -242,8 +224,8 @@ func (k Keeper) sendExtendedCoins(
 	// already calculated and just need to be set.
 
 	// Persist new fractional balances to store.
-	k.SetFractionalBalance(ctx, from, senderNewFracBal)
-	k.SetFractionalBalance(ctx, to, recipientNewFracBal)
+	k.UpdateFractionalBalance(ctx, from, senderNewFracBal)
+	k.UpdateFractionalBalance(ctx, to, recipientNewFracBal)
 
 	return nil
 }
