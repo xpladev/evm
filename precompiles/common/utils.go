@@ -43,7 +43,7 @@ func ParseHexAddress(event sdk.Event, key string) (addr common.Address, bypass b
 		}
 	}
 
-	return common.BytesToAddress(accAddr), bypass, nil
+	return addr, bypass, nil
 }
 
 func ParseAmount(event sdk.Event) (*uint256.Int, error) {

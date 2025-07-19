@@ -102,7 +102,6 @@ func TestParseHexAddress(t *testing.T) {
 			addr, bypass, err := cmn.ParseHexAddress(event, tc.key)
 			if tc.expError {
 				require.Error(t, err)
-				return
 			} else {
 				if tc.expBypass {
 					require.True(t, bypass, "expected bypass to be true")
