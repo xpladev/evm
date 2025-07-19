@@ -2,7 +2,6 @@ package grpc
 
 import (
 	"github.com/cosmos/evm/testutil/integration/common/network"
-
 	precisebanktypes "github.com/cosmos/evm/x/precisebank/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
