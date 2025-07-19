@@ -2,10 +2,12 @@ package common
 
 import (
 	"fmt"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum/core/tracing"
 
-	"github.com/cosmos/evm/x/precisebank/types"
+	"github.com/cosmos/evm/utils"
+	precisebanktypes "github.com/cosmos/evm/x/precisebank/types"
 	"github.com/cosmos/evm/x/vm/statedb"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -40,13 +42,11 @@ func (bh *BalanceHandler) AfterBalanceChange(ctx sdk.Context, stateDB *statedb.S
 	for _, event := range events[bh.prevEventsLen:] {
 		switch event.Type {
 		case banktypes.EventTypeCoinSpent:
-			spenderHexAddr, err := ParseHexAddress(event, banktypes.AttributeKeySpender)
+			spenderHexAddr, bypass, err := ParseHexAddress(event, banktypes.AttributeKeySpender)
 			if err != nil {
 				return fmt.Errorf("failed to parse spender address from event %q: %w", banktypes.EventTypeCoinSpent, err)
 			}
-
-			// Check account is module account
-			if sdk.AccAddress(spenderHexAddr.Bytes()).Equals(sdk.MustAccAddressFromBech32("cosmos12yfe2jaupmtjruwxsec7hg7er60fhaa4qh25lc")) {
+			if bypass {
 				continue
 			}
 
@@ -58,13 +58,11 @@ func (bh *BalanceHandler) AfterBalanceChange(ctx sdk.Context, stateDB *statedb.S
 			stateDB.SubBalance(spenderHexAddr, amount, tracing.BalanceChangeUnspecified)
 
 		case banktypes.EventTypeCoinReceived:
-			receiverHexAddr, err := ParseHexAddress(event, banktypes.AttributeKeyReceiver)
+			receiverHexAddr, bypass, err := ParseHexAddress(event, banktypes.AttributeKeyReceiver)
 			if err != nil {
 				return fmt.Errorf("failed to parse receiver address from event %q: %w", banktypes.EventTypeCoinReceived, err)
 			}
-
-			// Check account is module account
-			if sdk.AccAddress(receiverHexAddr.Bytes()).Equals(sdk.MustAccAddressFromBech32("cosmos12yfe2jaupmtjruwxsec7hg7er60fhaa4qh25lc")) {
+			if bypass {
 				continue
 			}
 
@@ -75,8 +73,32 @@ func (bh *BalanceHandler) AfterBalanceChange(ctx sdk.Context, stateDB *statedb.S
 
 			stateDB.AddBalance(receiverHexAddr, amount, tracing.BalanceChangeUnspecified)
 
-		case types.EventTypePreciseCoinSpent, types.EventTypePreciseCoinReceived:
-			// Ignore precisebank events - they're handled separately and should not affect stateDB
+		case precisebanktypes.EventTypeFractionalBalanceUpdated:
+			addr, bypass, err := ParseHexAddress(event, precisebanktypes.AttributeKeyAddress)
+			if err != nil {
+				return fmt.Errorf("failed to parse address from event %q: %w", precisebanktypes.EventTypeFractionalBalanceUpdated, err)
+			}
+			if bypass {
+				continue
+			}
+
+			delta, err := ParseFractionalAmount(event)
+			if err != nil {
+				return fmt.Errorf("failed to parse amount from event %q: %w", precisebanktypes.EventTypeFractionalBalanceUpdated, err)
+			}
+
+			deltaAbs, err := utils.Uint256FromBigInt(new(big.Int).Abs(delta))
+			if err != nil {
+				return fmt.Errorf("failed to convert delta to Uint256: %w", err)
+			}
+
+			if delta.Sign() == 1 {
+				stateDB.AddBalance(addr, deltaAbs, tracing.BalanceChangeUnspecified)
+			} else if delta.Sign() == -1 {
+				stateDB.SubBalance(addr, deltaAbs, tracing.BalanceChangeUnspecified)
+			}
+
+		default:
 			continue
 		}
 	}

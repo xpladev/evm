@@ -11,6 +11,7 @@ import (
 	cmn "github.com/cosmos/evm/precompiles/common"
 	testutil "github.com/cosmos/evm/testutil"
 	testconstants "github.com/cosmos/evm/testutil/constants"
+	precisebanktypes "github.com/cosmos/evm/x/precisebank/types"
 	"github.com/cosmos/evm/x/vm/statedb"
 	evmtypes "github.com/cosmos/evm/x/vm/types"
 	"github.com/cosmos/evm/x/vm/types/mocks"
@@ -32,38 +33,63 @@ func setupBalanceHandlerTest(t *testing.T) {
 }
 
 func TestParseHexAddress(t *testing.T) {
-	var accAddr sdk.AccAddress
-
 	testCases := []struct {
-		name     string
-		maleate  func() sdk.Event
-		key      string
-		expAddr  common.Address
-		expError bool
+		name      string
+		maleate   func() (common.Address, sdk.Event)
+		key       string
+		expBypass bool
+		expError  bool
 	}{
 		{
 			name: "valid address",
-			maleate: func() sdk.Event {
-				return sdk.NewEvent("bank", sdk.NewAttribute(banktypes.AttributeKeySpender, accAddr.String()))
+			maleate: func() (common.Address, sdk.Event) {
+				_, addrs, err := testutil.GeneratePrivKeyAddressPairs(1)
+				require.NoError(t, err)
+				addr := common.BytesToAddress(addrs[0].Bytes())
+
+				return addr, sdk.NewEvent(
+					banktypes.EventTypeCoinSpent,
+					sdk.NewAttribute(banktypes.AttributeKeySpender, addrs[0].String()),
+				)
 			},
-			key:      banktypes.AttributeKeySpender,
-			expError: false,
+			key:       banktypes.AttributeKeySpender,
+			expBypass: false,
+			expError:  false,
 		},
 		{
 			name: "missing attribute",
-			maleate: func() sdk.Event {
-				return sdk.NewEvent("bank")
+			maleate: func() (common.Address, sdk.Event) {
+				return common.Address{}, sdk.NewEvent(banktypes.EventTypeCoinSpent)
 			},
-			key:      banktypes.AttributeKeySpender,
-			expError: true,
+			key:       banktypes.AttributeKeySpender,
+			expBypass: false,
+			expError:  true,
 		},
 		{
 			name: "invalid address",
-			maleate: func() sdk.Event {
-				return sdk.NewEvent("bank", sdk.NewAttribute(banktypes.AttributeKeySpender, "invalid"))
+			maleate: func() (common.Address, sdk.Event) {
+				return common.Address{}, sdk.NewEvent(
+					banktypes.EventTypeCoinSpent,
+					sdk.NewAttribute(banktypes.AttributeKeySpender, "invalid"),
+				)
 			},
-			key:      banktypes.AttributeKeySpender,
-			expError: true,
+			key:       banktypes.AttributeKeySpender,
+			expBypass: false,
+			expError:  true,
+		},
+		{
+			name: "bypass address",
+			maleate: func() (common.Address, sdk.Event) {
+				addr := common.BytesToAddress(sdk.MustAccAddressFromBech32(cmn.ModuleAccAddrPreciseBank).Bytes())
+
+				return addr, sdk.NewEvent(
+					precisebanktypes.EventTypeFractionalBalanceUpdated,
+					sdk.NewAttribute(banktypes.AttributeKeySpender, cmn.ModuleAccAddrPreciseBank),
+				)
+			},
+			key:       banktypes.AttributeKeySpender,
+			expBypass: true,
+			expError:  false,
 		},
 	}
 
@@ -71,20 +97,19 @@ func TestParseHexAddress(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			setupBalanceHandlerTest(t)
 
-			_, addrs, err := testutil.GeneratePrivKeyAddressPairs(1)
-			require.NoError(t, err)
-			accAddr = addrs[0]
+			ethAddr, event := tc.maleate()
 
-			event := tc.maleate()
-
-			addr, err := cmn.ParseHexAddress(event, tc.key)
+			addr, bypass, err := cmn.ParseHexAddress(event, tc.key)
 			if tc.expError {
 				require.Error(t, err)
 				return
+			} else {
+				if tc.expBypass {
+					require.True(t, bypass, "expected bypass to be true")
+				}
+				require.NoError(t, err)
+				require.Equal(t, addr, ethAddr)
 			}
-
-			require.NoError(t, err)
-			require.Equal(t, common.BytesToAddress(accAddr), addr)
 		})
 	}
 }
