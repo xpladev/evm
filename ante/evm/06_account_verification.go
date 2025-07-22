@@ -42,7 +42,7 @@ func VerifyAccountBalance(
 	}
 
 	if err := keeper.CheckSenderBalance(sdkmath.NewIntFromBigInt(account.Balance.ToBig()), txData); err != nil {
-		return errorsmod.Wrap(err, "failed to check sender balance for "+from.String())
+		return errorsmod.Wrap(err, "failed to check sender balance")
 	}
 
 	return nil
