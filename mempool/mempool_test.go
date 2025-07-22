@@ -520,7 +520,7 @@ func (suite *MempoolTestSuite) TestTransactionOrdering() {
 		{
 			name: "EVM transaction priority over cosmos with equal fee",
 			setupTxs: func() {
-				// Create EVM transaction  
+				// Create EVM transaction
 				evmTx, privKey, err := suite.createEVMTransaction(big.NewInt(3000000000)) // 3 gwei
 				require.NoError(suite.T(), err)
 				fromAddr := crypto.PubkeyToAddress(privKey.PublicKey)
@@ -535,7 +535,7 @@ func (suite *MempoolTestSuite) TestTransactionOrdering() {
 				require.NoError(suite.T(), err)
 				err = suite.mempool.Insert(suite.ctx, evmTx)
 				require.NoError(suite.T(), err)
-				
+
 			},
 			verifyFunc: func(t *testing.T, iterator cosmosMempool.Iterator) {
 				// First transaction should be EVM (tie-breaker behavior)
@@ -607,35 +607,63 @@ func (suite *MempoolTestSuite) TestTransactionOrdering() {
 		{
 			name: "wrong denomination handling",
 			setupTxs: func() {
-				// Create EVM transaction with low fee
-				lowFeeEVMTx, privKey, err := suite.createEVMTransaction(big.NewInt(2000000000)) // 2 gwei
+				// Create Cosmos transaction with very high fee but wrong denomination
+				// This should be deprioritized despite the high fee
+				highFeeWrongDenomTx := suite.createCosmosTransaction("uatom", 50000000000) // 50 gwei but wrong denom
+
+				// Create Cosmos transaction with lower fee but correct denomination
+				// This should be prioritized over wrong denom despite lower fee
+				lowFeeCorrectDenomTx := suite.createCosmosTransaction("wei", 3000000000) // 3 gwei correct denom
+
+				// Create EVM transaction with medium fee (always uses correct denom internally)
+				mediumFeeEVMTx, privKey, err := suite.createEVMTransaction(big.NewInt(5000000000)) // 5 gwei
 				require.NoError(suite.T(), err)
 				fromAddr := crypto.PubkeyToAddress(privKey.PublicKey)
 				suite.addAccountToStateDB(fromAddr, big.NewInt(100000000000000000))
 
-				// Create Cosmos transaction with high fee but wrong denom  
-				wrongDenomCosmosTx := suite.createCosmosTransaction("uatom", 10000000000) // 10 gwei but wrong denom
-				rightDenomCosmosTx := suite.createCosmosTransaction("wei", 1000000000)   // 1 gwei correct denom
-
-				// Insert transactions
-				err = suite.mempool.Insert(suite.ctx, wrongDenomCosmosTx)
+				// Insert in order: wrong denom (highest fee), correct denom (lowest fee), EVM (medium fee)
+				err = suite.mempool.Insert(suite.ctx, highFeeWrongDenomTx)
 				require.NoError(suite.T(), err)
-				err = suite.mempool.Insert(suite.ctx, lowFeeEVMTx)
+				err = suite.mempool.Insert(suite.ctx, lowFeeCorrectDenomTx)
 				require.NoError(suite.T(), err)
-				err = suite.mempool.Insert(suite.ctx, rightDenomCosmosTx)
+				err = suite.mempool.Insert(suite.ctx, mediumFeeEVMTx)
 				require.NoError(suite.T(), err)
-				
 			},
 			verifyFunc: func(t *testing.T, iterator cosmosMempool.Iterator) {
-				// The EVM transaction should come first
+				// First transaction should be EVM (highest fee in correct denom)
 				tx1 := iterator.Tx()
 				require.NotNil(t, tx1)
 				if ethMsg, ok := tx1.GetMsgs()[0].(*evmtypes.MsgEthereumTx); ok {
 					ethTx := ethMsg.AsTransaction()
-					require.Equal(t, big.NewInt(2000000000), ethTx.GasPrice())
+					require.Equal(t, big.NewInt(5000000000), ethTx.GasPrice())
 				} else {
 					t.Fatal("Expected first transaction to be EVM transaction")
 				}
+
+				// Move to next transaction
+				iterator = iterator.Next()
+				require.NotNil(t, iterator)
+
+				// Second transaction should be the correct denom Cosmos tx (3 gwei wei)
+				// This should come before the wrong denom tx despite much lower fee
+				tx2 := iterator.Tx()
+				require.NotNil(t, tx2)
+				if bankMsg, ok := tx2.GetMsgs()[0].(*banktypes.MsgSend); ok {
+					// Verify it's a bank message (Cosmos transaction)
+					require.NotNil(t, bankMsg)
+					// Verify it has the correct denomination fee
+					if feeTx, ok := tx2.(sdk.FeeTx); ok {
+						fees := feeTx.GetFee()
+						require.Len(t, fees, 1)
+						require.Equal(t, "wei", fees[0].Denom)
+						require.Equal(t, int64(3000000000), fees[0].Amount.Int64())
+					}
+				} else {
+					t.Fatal("Expected second transaction to be Cosmos transaction with correct denomination")
+				}
+
+				// The wrong denomination transaction (50 gwei uatom) should come last
+				// due to denomination mismatch despite having the highest raw fee amount
 			},
 		},
 	}
@@ -644,7 +672,7 @@ func (suite *MempoolTestSuite) TestTransactionOrdering() {
 		suite.T().Run(tc.name, func(t *testing.T) {
 			// Reset state for each test by creating new pools
 			suite.cosmosPool = cosmosMempool.DefaultPriorityMempool()
-			
+
 			// Create a fresh EVM pool
 			suite.mockChain = mocks.NewMockBlockChain(suite.mockVMKeeper.(*mocks.MockVMKeeper))
 			legacyPool := legacypool.New(legacypool.DefaultConfig, suite.mockChain)
@@ -654,7 +682,7 @@ func (suite *MempoolTestSuite) TestTransactionOrdering() {
 			txPool := &txpool.TxPool{
 				Subpools: []txpool.SubPool{legacyPool},
 			}
-			
+
 			suite.mempool = NewEVMMempool(suite.mockVMKeeper, txPool, suite.cosmosPool, suite.txDecoder)
 			tc.setupTxs()
 
@@ -706,7 +734,7 @@ func BenchmarkInsertCosmosTransaction(b *testing.B) {
 	cms2.MountStoreWithDB(storeKey2, storetypes.StoreTypeIAVL, db2)
 	_ = cms2.LoadLatestVersion()
 	benchCtx := sdk.NewContext(cms2, cmtproto.Header{}, false, log.NewNopLogger())
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = mpool.Insert(benchCtx, tx)
