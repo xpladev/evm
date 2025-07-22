@@ -214,12 +214,25 @@ func (m *EVMMempool) SelectBy(goCtx context.Context, i [][]byte, f func(sdk.Tx) 
 }
 
 func (i *EVMMempoolIterator) Next() mempool.Iterator {
-	nextEVMTx, evmFee := i.evmIterator.Peek()
-	nextCosmosTx := i.cosmosIterator.Tx()
+	// Check if iterators are nil
+	if i.evmIterator == nil && i.cosmosIterator == nil {
+		return nil
+	}
+	
+	var nextEVMTx *txpool.LazyTransaction
+	var evmFee *uint256.Int
+	if i.evmIterator != nil {
+		nextEVMTx, evmFee = i.evmIterator.Peek()
+	}
+	
+	var nextCosmosTx sdk.Tx
+	if i.cosmosIterator != nil {
+		nextCosmosTx = i.cosmosIterator.Tx()
+	}
 
 	// If no EVM transactions, advance cosmos iterator
 	if nextEVMTx == nil {
-		if nextCosmosTx != nil {
+		if nextCosmosTx != nil && i.cosmosIterator != nil {
 			i.cosmosIterator = i.cosmosIterator.Next()
 			return i
 		}
@@ -228,7 +241,11 @@ func (i *EVMMempoolIterator) Next() mempool.Iterator {
 
 	// If no cosmos transactions, advance EVM iterator
 	if nextCosmosTx == nil {
-		i.evmIterator.Pop()
+		if i.evmIterator != nil {
+			if i.evmIterator != nil {
+			i.evmIterator.Pop()
+		}
+		}
 		return i
 	}
 
@@ -236,7 +253,11 @@ func (i *EVMMempoolIterator) Next() mempool.Iterator {
 	cosmosTxFee, ok := nextCosmosTx.(sdk.FeeTx)
 	if !ok {
 		// If cosmos tx doesn't have fees, prioritize EVM
-		i.evmIterator.Pop()
+		if i.evmIterator != nil {
+			if i.evmIterator != nil {
+			i.evmIterator.Pop()
+		}
+		}
 		return i
 	}
 
@@ -253,18 +274,24 @@ func (i *EVMMempoolIterator) Next() mempool.Iterator {
 
 	if cosmosTxEVMDenomFee == nil {
 		// No matching denom, prioritize EVM
-		i.evmIterator.Pop()
+		if i.evmIterator != nil {
+			i.evmIterator.Pop()
+		}
 	} else {
 		cosmosTxAmount, overflow := uint256.FromBig(cosmosTxEVMDenomFee.Amount.BigInt())
 		if overflow {
 			// If overflow, prioritize EVM for safety
+			if i.evmIterator != nil {
 			i.evmIterator.Pop()
+		}
 		} else if cosmosTxAmount.Gt(evmFee) {
 			// Cosmos tx has higher fee
 			i.cosmosIterator = i.cosmosIterator.Next()
 		} else {
 			// EVM tx has higher or equal fee
+			if i.evmIterator != nil {
 			i.evmIterator.Pop()
+		}
 		}
 	}
 
@@ -272,8 +299,21 @@ func (i *EVMMempoolIterator) Next() mempool.Iterator {
 }
 
 func (i *EVMMempoolIterator) Tx() sdk.Tx {
-	nextEVMTx, evmFee := i.evmIterator.Peek()
-	nextCosmosTx := i.cosmosIterator.Tx()
+	// Check if iterators are nil
+	if i.evmIterator == nil && i.cosmosIterator == nil {
+		return nil
+	}
+	
+	var nextEVMTx *txpool.LazyTransaction
+	var evmFee *uint256.Int
+	if i.evmIterator != nil {
+		nextEVMTx, evmFee = i.evmIterator.Peek()
+	}
+	
+	var nextCosmosTx sdk.Tx
+	if i.cosmosIterator != nil {
+		nextCosmosTx = i.cosmosIterator.Tx()
+	}
 
 	// If no EVM transactions, return cosmos transaction
 	if nextEVMTx == nil {
