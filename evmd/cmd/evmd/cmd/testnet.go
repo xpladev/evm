@@ -68,7 +68,7 @@ var (
 var (
 	mnemonics = []string{
 		"copper push brief egg scan entry inform record adjust fossil boss egg comic alien upon aspect dry avoid interest fury window hint race symptom",
-		"copper push brief egg scan entry inform record adjust fossil boss egg comic alien upon aspect dry avoid interest fury window hint race symptom",
+		"maximum display century economy unlock van census kite error heart snow filter midnight usage egg venture cash kick motor survey drastic edge muffin visual",
 		"will wear settle write dance topic tape sea glory hotel oppose rebel client problem era video gossip glide during yard balance cancel file rose",
 		"doll midnight silk carpet brush boring pluck office gown inquiry duck chief aim exit gain never tennis crime fragile ship cloud surface exotic patch",
 	}
@@ -365,11 +365,7 @@ func initTestnetFiles(
 			return err
 		}
 
-		var mnemonic string
-		if i < len(mnemonics) {
-			mnemonic = mnemonics[i]
-		}
-		addr, secret, err := testutil.GenerateSaveCoinKey(kb, nodeDirName, mnemonic, true, algo)
+		addr, secret, err := testutil.GenerateSaveCoinKey(kb, nodeDirName, "", true, algo)
 		if err != nil {
 			_ = os.RemoveAll(args.outputDir)
 			return err
@@ -390,13 +386,18 @@ func initTestnetFiles(
 		accTokens := sdk.TokensFromConsensusPower(1000, sdk.DefaultPowerReduction)
 		accStakingTokens := sdk.TokensFromConsensusPower(500, sdk.DefaultPowerReduction)
 		coins := sdk.Coins{
-			sdk.NewCoin("testtoken", accTokens),
+			sdk.NewCoin("atest", accTokens),
 			sdk.NewCoin(sdk.DefaultBondDenom, accStakingTokens),
 		}
 
 		genBalances = append(genBalances, banktypes.Balance{Address: addr.String(), Coins: coins.Sort()})
 		genAccounts = append(genAccounts, authtypes.NewBaseAccount(addr, nil, 0, 0))
 
+		if i == 0 {
+			bals, accs := addExtraAccounts(kb, algo)
+			genBalances = append(genBalances, bals...)
+			genAccounts = append(genAccounts, accs...)
+		}
 		valTokens := sdk.TokensFromConsensusPower(100, sdk.DefaultPowerReduction)
 		createValMsg, err := stakingtypes.NewMsgCreateValidator(
 			sdk.ValAddress(addr).String(),
@@ -457,6 +458,29 @@ func initTestnetFiles(
 
 	cmd.PrintErrf("Successfully initialized %d node directories\n", args.numValidators)
 	return nil
+}
+
+func addExtraAccounts(kb keyring.Keyring, algo keyring.SignatureAlgo) ([]banktypes.Balance, []authtypes.GenesisAccount) {
+	accTokens := sdk.TokensFromConsensusPower(1000, sdk.DefaultPowerReduction)
+	accStakingTokens := sdk.TokensFromConsensusPower(500, sdk.DefaultPowerReduction)
+	coins := sdk.Coins{
+		sdk.NewCoin("atest", accTokens),
+		sdk.NewCoin(sdk.DefaultBondDenom, accStakingTokens),
+	}
+	coins = coins.Sort()
+
+	genBalances := make([]banktypes.Balance, 0, len(mnemonics))
+	genAccounts := make([]authtypes.GenesisAccount, 0, len(mnemonics))
+
+	for i, mnemonic := range mnemonics {
+		addr, _, err := testutil.GenerateSaveCoinKey(kb, fmt.Sprintf("account%d", i), mnemonic, true, algo)
+		if err != nil {
+			panic(err)
+		}
+		genAccounts = append(genAccounts, authtypes.NewBaseAccount(addr, nil, 0, 0))
+		genBalances = append(genBalances, banktypes.Balance{Address: addr.String(), Coins: coins})
+	}
+	return genBalances, genAccounts
 }
 
 func initGenFiles(
