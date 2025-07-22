@@ -146,8 +146,8 @@ func parseReceipt(output string) (*types.Receipt, error) {
 				receipt.GasUsed = gasUsed
 			}
 		case "cumulativeGasUsed":
-			if cumGas, err := strconv.ParseUint(value, 10, 64); err == nil {
-				receipt.CumulativeGasUsed = cumGas
+			if cumulativeGas, err := strconv.ParseUint(value, 10, 64); err == nil {
+				receipt.CumulativeGasUsed = cumulativeGas
 			}
 		case "status":
 			if strings.Contains(value, "1") || strings.Contains(value, "success") {
@@ -160,7 +160,7 @@ func parseReceipt(output string) (*types.Receipt, error) {
 				receipt.Type = uint8(txType)
 			}
 		case "logsBloom":
-			if bloomHex := strings.TrimPrefix(value, "0x"); bloomHex != "" && bloomHex != "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" {
+			if bloomHex := strings.TrimPrefix(value, "0x"); bloomHex != "" {
 				if bloomBytes, err := hex.DecodeString(bloomHex); err == nil && len(bloomBytes) == 256 {
 					copy(receipt.Bloom[:], bloomBytes)
 				}
