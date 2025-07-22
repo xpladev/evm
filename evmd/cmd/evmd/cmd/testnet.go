@@ -65,6 +65,15 @@ var (
 	unsafeStartValidatorFn UnsafeStartValidatorCmdCreator
 )
 
+var (
+	mnemonics = []string{
+		"copper push brief egg scan entry inform record adjust fossil boss egg comic alien upon aspect dry avoid interest fury window hint race symptom",
+		"copper push brief egg scan entry inform record adjust fossil boss egg comic alien upon aspect dry avoid interest fury window hint race symptom",
+		"will wear settle write dance topic tape sea glory hotel oppose rebel client problem era video gossip glide during yard balance cancel file rose",
+		"doll midnight silk carpet brush boring pluck office gown inquiry duck chief aim exit gain never tennis crime fragile ship cloud surface exotic patch",
+	}
+)
+
 type UnsafeStartValidatorCmdCreator func(ac appCreator) *cobra.Command
 
 type initArgs struct {
@@ -297,11 +306,17 @@ func initTestnetFiles(
 			nodeConfig.P2P.AddrBookStrict = false
 			nodeConfig.P2P.PexReactor = false
 			nodeConfig.P2P.AllowDuplicateIP = true
+			nodeConfig.Instrumentation.Prometheus = false
+			nodeConfig.RPC.PprofListenAddress = ""
 			evmCfg.Config.API.Address = fmt.Sprintf("tcp://0.0.0.0:%d", sdkAPIPort+portOffset)
 			evmCfg.Config.GRPC.Address = fmt.Sprintf("0.0.0.0:%d", sdkGRPCPort+portOffset)
 			evmCfg.JSONRPC.Address = fmt.Sprintf("127.0.0.1:%d", evmJSONRPC+evmPortOffset)
 			evmCfg.JSONRPC.MetricsAddress = fmt.Sprintf("127.0.0.1:%d", evmJSONRPCMetrics+evmPortOffset)
 			evmCfg.JSONRPC.WsAddress = fmt.Sprintf("127.0.0.1:%d", evmJSONRPCWS+evmPortOffset)
+			evmCfg.JSONRPC.Enable = true
+			evmCfg.JSONRPC.EnableIndexer = true
+			evmCfg.JSONRPC.API = []string{"eth", "txpool", "personal", "net", "debug", "web3"}
+			evmCfg.API.Enable = true
 		}
 		nodeDirName := fmt.Sprintf("%s%d", args.nodeDirPrefix, i)
 		nodeDir := filepath.Join(args.outputDir, nodeDirName, args.nodeDaemonHome)
@@ -309,7 +324,7 @@ func initTestnetFiles(
 
 		nodeConfig.SetRoot(nodeDir)
 		nodeConfig.Moniker = nodeDirName
-		nodeConfig.RPC.ListenAddress = fmt.Sprintf("tcp://0.0.0.0:%d", sdkRPCPort+portOffset)
+		nodeConfig.RPC.ListenAddress = fmt.Sprintf("tcp://:%d", sdkRPCPort+portOffset)
 
 		if err := os.MkdirAll(filepath.Join(nodeDir, "config"), nodeDirPerm); err != nil {
 			_ = os.RemoveAll(args.outputDir)
@@ -321,7 +336,7 @@ func initTestnetFiles(
 			ip  string
 		)
 		if args.singleMachine {
-			ip = "0.0.0.0"
+			ip = "127.0.0.1"
 		} else {
 			ip, err = getIP(i, args.startingIPAddress)
 			if err != nil {
@@ -350,7 +365,11 @@ func initTestnetFiles(
 			return err
 		}
 
-		addr, secret, err := testutil.GenerateSaveCoinKey(kb, nodeDirName, "", true, algo)
+		var mnemonic string
+		if i < len(mnemonics) {
+			mnemonic = mnemonics[i]
+		}
+		addr, secret, err := testutil.GenerateSaveCoinKey(kb, nodeDirName, mnemonic, true, algo)
 		if err != nil {
 			_ = os.RemoveAll(args.outputDir)
 			return err
@@ -417,6 +436,8 @@ func initTestnetFiles(
 		if err := writeFile(fmt.Sprintf("%v.json", nodeDirName), gentxsDir, txBz); err != nil {
 			return err
 		}
+
+		srvconfig.SetConfigTemplate(evmdconfig.EVMAppTemplate)
 
 		srvconfig.WriteConfigFile(filepath.Join(nodeDir, "config", "app.toml"), evmCfg)
 	}
