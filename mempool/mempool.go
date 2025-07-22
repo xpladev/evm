@@ -3,6 +3,7 @@ package mempool
 import (
 	"context"
 	"cosmossdk.io/math"
+	"errors"
 	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/mempool"
@@ -65,7 +66,9 @@ func NewEVMMempool(vmKeeper VMKeeperI, txDecoder sdk.TxDecoder, config *EVMMempo
 	bondDenom = config.BondDenom
 
 	if txPool == nil {
+		//todo: implement blockchain
 		blockchain := NewBlockchain()
+		//todo: custom configs for txpool
 		legacyPool := legacypool.New(legacypool.DefaultConfig, blockchain)
 		txPoolInit, err := txpool.New(uint64(0), blockchain, []txpool.SubPool{legacyPool})
 		if err != nil {
@@ -111,32 +114,42 @@ func NewEVMMempool(vmKeeper VMKeeperI, txDecoder sdk.TxDecoder, config *EVMMempo
 	}
 }
 
-func (m *EVMMempool) Insert(ctx context.Context, tx sdk.Tx) error {
-	// ASSUMPTION: these are all successful upon CheckTx
-	/**
-	if tx.type == evm {
-		insert into legacy pool
-	} else {
-		insert into cosmos pool
-	}
-	*/
+// getEVMMessage validates the transaction has exactly one message and returns the EVM message if it exists
+func (m *EVMMempool) getEVMMessage(tx sdk.Tx) (*evmtypes.MsgEthereumTx, error) {
 	msgs := tx.GetMsgs()
 	if len(msgs) == 0 {
-		return fmt.Errorf("transaction has no messages")
+		return nil, ErrNoMessages
+	}
+	if len(msgs) != 1 {
+		return nil, fmt.Errorf("%w, got %d", ErrExpectedOneMessage, len(msgs))
+	}
+	ethMsg, ok := msgs[0].(*evmtypes.MsgEthereumTx)
+	if !ok {
+		return nil, ErrNotEVMTransaction
+	}
+	return ethMsg, nil
+}
+
+func (m *EVMMempool) Insert(ctx context.Context, tx sdk.Tx) error {
+	// ASSUMPTION: these are all successful upon CheckTx
+	
+	// Try to get EVM message
+	ethMsg, err := m.getEVMMessage(tx)
+	if err == nil {
+		// Insert into EVM pool
+		ethTxs := []*ethtypes.Transaction{ethMsg.AsTransaction()}
+		errs := m.txPool.Add(ethTxs, true)
+		if len(errs) > 0 && errs[0] != nil {
+			return errs[0]
+		}
+		return nil
 	}
 
-	// Check if this is an EVM transaction
-	if len(msgs) == 1 {
-		if ethMsg, ok := msgs[0].(*evmtypes.MsgEthereumTx); ok {
-			// Insert into EVM pool
-			ethTxs := []*ethtypes.Transaction{ethMsg.AsTransaction()}
-			errs := m.txPool.Add(ethTxs, true)
-			if len(errs) > 0 && errs[0] != nil {
-				return errs[0]
-			}
-			return nil
-		}
+	// Handle validation errors
+	if errors.Is(err, ErrNoMessages) {
+		return err
 	}
+	// For ErrExpectedOneMessage or ErrNotEVMTransaction, treat as cosmos transaction
 
 	// Insert into cosmos pool for non-EVM transactions
 	return m.cosmosPool.Insert(ctx, tx)
@@ -161,7 +174,7 @@ func (m *EVMMempool) InsertInvalidSequence(txBytes []byte) error {
 	var ethTxs []*ethtypes.Transaction
 	msgs := tx.GetMsgs()
 	if len(msgs) != 1 {
-		return fmt.Errorf("expected 1 msg, got %d", len(msgs)) //todo: error type
+		return fmt.Errorf("%w, got %d", ErrExpectedOneMessage, len(msgs))
 	}
 	for _, msg := range tx.GetMsgs() {
 		ethMsg, ok := msg.(*evmtypes.MsgEthereumTx)
@@ -173,15 +186,15 @@ func (m *EVMMempool) InsertInvalidSequence(txBytes []byte) error {
 	errs := m.txPool.Add(ethTxs, false) // TODO: proper sync parameters
 	if errs != nil {
 		if len(errs) != 1 {
-			return fmt.Errorf("expected 1 err, got %d", len(errs))
+			return fmt.Errorf("%w, got %d", ErrExpectedOneError, len(errs))
 		}
 		return errs[0]
 	}
 	return nil
 }
 
-func (m *EVMMempool) Select(goCtx context.Context, i [][]byte) mempool.Iterator {
-	// todo: reuse logic in selectby
+// setupPendingTransactions extracts common logic for setting up pending transactions
+func (m *EVMMempool) setupPendingTransactions(goCtx context.Context, i [][]byte) (*miner.TransactionsByPriceAndNonce, mempool.Iterator, string) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 	baseFee := m.vmKeeper.GetBaseFee(ctx)
 	var baseFeeUint *uint256.Int
@@ -200,11 +213,18 @@ func (m *EVMMempool) Select(goCtx context.Context, i [][]byte) mempool.Iterator 
 	orderedEVMPendingTxes := miner.NewTransactionsByPriceAndNonce(nil, evmPendingTxes, baseFee)
 
 	cosmosPendingTxes := m.cosmosPool.Select(ctx, i)
+	bondDenom := m.vmKeeper.GetParams(ctx).EvmDenom
+
+	return orderedEVMPendingTxes, cosmosPendingTxes, bondDenom
+}
+
+func (m *EVMMempool) Select(goCtx context.Context, i [][]byte) mempool.Iterator {
+	evmIterator, cosmosIterator, bondDenom := m.setupPendingTransactions(goCtx, i)
 
 	combinedIterator := &EVMMempoolIterator{
-		evmIterator:    orderedEVMPendingTxes,
-		cosmosIterator: cosmosPendingTxes,
-		bondDenom:      m.vmKeeper.GetParams(ctx).EvmDenom,
+		evmIterator:    evmIterator,
+		cosmosIterator: cosmosIterator,
+		bondDenom:      bondDenom,
 	}
 
 	return combinedIterator
@@ -216,49 +236,31 @@ func (m *EVMMempool) CountTx() int {
 }
 
 func (m *EVMMempool) Remove(tx sdk.Tx) error {
-	msgs := tx.GetMsgs()
-	if len(msgs) == 0 {
-		return fmt.Errorf("transaction has no messages")
+	// Try to get EVM message
+	ethMsg, err := m.getEVMMessage(tx)
+	if err == nil {
+		// Remove from EVM pool
+		m.txPool.Subpools[0].RemoveTx(ethMsg.AsTransaction().Hash(), true, true)
+		return nil
 	}
 
-	// Check if this is an EVM transaction
-	if len(msgs) == 1 {
-		if ethMsg, ok := msgs[0].(*evmtypes.MsgEthereumTx); ok {
-			// Remove from EVM pool
-			m.txPool.Subpools[0].RemoveTx(ethMsg.AsTransaction().Hash(), true, true)
-			return nil
-		}
+	// Handle validation errors
+	if errors.Is(err, ErrNoMessages) {
+		return err
 	}
+	// For ErrExpectedOneMessage or ErrNotEVMTransaction, treat as cosmos transaction
 
 	// Remove from cosmos pool for non-EVM transactions
 	return m.cosmosPool.Remove(tx)
 }
 
 func (m *EVMMempool) SelectBy(goCtx context.Context, i [][]byte, f func(sdk.Tx) bool) {
-	//todo: reuse logic in select
-	ctx := sdk.UnwrapSDKContext(goCtx)
-	baseFee := m.vmKeeper.GetBaseFee(ctx)
-	var baseFeeUint *uint256.Int
-	if baseFee != nil {
-		baseFeeUint = uint256.MustFromBig(baseFee)
-	}
-
-	pendingFilter := txpool.PendingFilter{
-		MinTip:       nil,
-		BaseFee:      baseFeeUint,
-		BlobFee:      nil,
-		OnlyPlainTxs: true,
-		OnlyBlobTxs:  false,
-	}
-	evmPendingTxes := m.txPool.Pending(pendingFilter)
-	orderedEVMPendingTxes := miner.NewTransactionsByPriceAndNonce(nil, evmPendingTxes, baseFee)
-
-	cosmosPendingTxes := m.cosmosPool.Select(ctx, i)
+	evmIterator, cosmosIterator, bondDenom := m.setupPendingTransactions(goCtx, i)
 
 	var combinedIterator mempool.Iterator = &EVMMempoolIterator{
-		evmIterator:    orderedEVMPendingTxes,
-		cosmosIterator: cosmosPendingTxes,
-		bondDenom:      m.vmKeeper.GetParams(ctx).EvmDenom,
+		evmIterator:    evmIterator,
+		cosmosIterator: cosmosIterator,
+		bondDenom:      bondDenom,
 	}
 
 	// todo: ensure that this is not an infinite loop
@@ -269,12 +271,8 @@ func (m *EVMMempool) SelectBy(goCtx context.Context, i [][]byte, f func(sdk.Tx) 
 	}
 }
 
-func (i *EVMMempoolIterator) Next() mempool.Iterator {
-	// Check if iterators are nil
-	if i.evmIterator == nil && i.cosmosIterator == nil {
-		return nil
-	}
-
+// shouldUseEVM returns true if EVM transaction should be used, false for Cosmos
+func (i *EVMMempoolIterator) shouldUseEVM() bool {
 	var nextEVMTx *txpool.LazyTransaction
 	var evmFee *uint256.Int
 	if i.evmIterator != nil {
@@ -286,40 +284,21 @@ func (i *EVMMempoolIterator) Next() mempool.Iterator {
 		nextCosmosTx = i.cosmosIterator.Tx()
 	}
 
-	// If no EVM transactions, advance cosmos iterator
+	// If only one type available
 	if nextEVMTx == nil {
-		if nextCosmosTx != nil && i.cosmosIterator != nil {
-			i.cosmosIterator = i.cosmosIterator.Next()
-			return i
-		}
-		return nil // Both iterators exhausted
+		return false // Use Cosmos
 	}
-
-	// If no cosmos transactions, advance EVM iterator
 	if nextCosmosTx == nil {
-		if i.evmIterator != nil {
-			if i.evmIterator != nil {
-				i.evmIterator.Pop()
-			}
-		}
-		return i
+		return true // Use EVM
 	}
 
 	// Both have transactions - compare fees
 	cosmosTxFee, ok := nextCosmosTx.(sdk.FeeTx)
 	if !ok {
-		// If cosmos tx doesn't have fees, prioritize EVM
-		if i.evmIterator != nil {
-			if i.evmIterator != nil {
-				i.evmIterator.Pop()
-			}
-		}
-		return i
+		return true // Use EVM if Cosmos tx has no fee
 	}
 
 	cosmosFees := cosmosTxFee.GetFee()
-
-	// We prioritize the bond denom. Everything else gets pushed to lowest priority.
 	var cosmosTxEVMDenomFee *sdk.Coin
 	for _, coin := range cosmosFees {
 		if coin.Denom == i.bondDenom {
@@ -329,41 +308,63 @@ func (i *EVMMempoolIterator) Next() mempool.Iterator {
 	}
 
 	if cosmosTxEVMDenomFee == nil {
-		// No matching denom, prioritize EVM
+		return true // Use EVM if Cosmos tx has wrong denomination
+	}
+
+	cosmosTxAmount, overflow := uint256.FromBig(cosmosTxEVMDenomFee.Amount.BigInt())
+	if overflow || !cosmosTxAmount.Gt(evmFee) {
+		return true // Use EVM if Cosmos fee is not higher
+	}
+
+	return false // Use Cosmos if it has higher fee
+}
+
+func (i *EVMMempoolIterator) Next() mempool.Iterator {
+	// Check if both iterators are exhausted
+	var hasEVM, hasCosmos bool
+	if i.evmIterator != nil {
+		nextEVMTx, _ := i.evmIterator.Peek()
+		hasEVM = nextEVMTx != nil
+	}
+	if i.cosmosIterator != nil {
+		nextCosmosTx := i.cosmosIterator.Tx()
+		hasCosmos = nextCosmosTx != nil
+	}
+	
+	if !hasEVM && !hasCosmos {
+		return nil
+	}
+
+	// Advance the iterator that was used
+	if i.shouldUseEVM() {
 		if i.evmIterator != nil {
 			i.evmIterator.Pop()
 		}
 	} else {
-		cosmosTxAmount, overflow := uint256.FromBig(cosmosTxEVMDenomFee.Amount.BigInt())
-		if overflow {
-			// If overflow, prioritize EVM for safety
-			if i.evmIterator != nil {
-				i.evmIterator.Pop()
-			}
-		} else if cosmosTxAmount.Gt(evmFee) {
-			// Cosmos tx has higher fee
+		if i.cosmosIterator != nil {
 			i.cosmosIterator = i.cosmosIterator.Next()
-		} else {
-			// EVM tx has higher or equal fee
-			if i.evmIterator != nil {
-				i.evmIterator.Pop()
-			}
 		}
 	}
 
 	return i
 }
 
-func (i *EVMMempoolIterator) Tx() sdk.Tx {
-	// Check if iterators are nil
-	if i.evmIterator == nil && i.cosmosIterator == nil {
+// convertEVMToSDKTx converts an EVM transaction to SDK transaction
+func (i *EVMMempoolIterator) convertEVMToSDKTx(nextEVMTx *txpool.LazyTransaction) sdk.Tx {
+	if nextEVMTx == nil {
 		return nil
 	}
+	msgEthereumTx := &evmtypes.MsgEthereumTx{}
+	if err := msgEthereumTx.FromEthereumTx(nextEVMTx.Tx); err != nil {
+		return nil // Return nil for invalid tx instead of panicking
+	}
+	return msgEthereumTx
+}
 
+func (i *EVMMempoolIterator) Tx() sdk.Tx {
 	var nextEVMTx *txpool.LazyTransaction
-	var evmFee *uint256.Int
 	if i.evmIterator != nil {
-		nextEVMTx, evmFee = i.evmIterator.Peek()
+		nextEVMTx, _ = i.evmIterator.Peek()
 	}
 
 	var nextCosmosTx sdk.Tx
@@ -371,69 +372,15 @@ func (i *EVMMempoolIterator) Tx() sdk.Tx {
 		nextCosmosTx = i.cosmosIterator.Tx()
 	}
 
-	// If no EVM transactions, return cosmos transaction
-	if nextEVMTx == nil {
-		return nextCosmosTx
-	}
-
-	// If no cosmos transactions, return EVM transaction
-	if nextCosmosTx == nil {
-		msgEthereumTx := &evmtypes.MsgEthereumTx{}
-		if err := msgEthereumTx.FromEthereumTx(nextEVMTx.Tx); err != nil {
-			return nil // Return nil for invalid tx instead of panicking
-		}
-		return msgEthereumTx
-	}
-
-	// Both have transactions - compare fees
-	cosmosTxFee, ok := nextCosmosTx.(sdk.FeeTx)
-	if !ok {
-		// If cosmos tx doesn't have fees, return EVM
-		msgEthereumTx := &evmtypes.MsgEthereumTx{}
-		if err := msgEthereumTx.FromEthereumTx(nextEVMTx.Tx); err != nil {
-			return nil
-		}
-		return msgEthereumTx
-	}
-
-	cosmosFees := cosmosTxFee.GetFee()
-
-	// We prioritize the bond denom. Everything else gets pushed to lowest priority.
-	var cosmosTxEVMDenomFee *sdk.Coin
-	for _, coin := range cosmosFees {
-		if coin.Denom == i.bondDenom {
-			cosmosTxEVMDenomFee = &coin
-			break
-		}
-	}
-
-	if cosmosTxEVMDenomFee == nil {
-		// No matching denom, return EVM transaction
-		msgEthereumTx := &evmtypes.MsgEthereumTx{}
-		if err := msgEthereumTx.FromEthereumTx(nextEVMTx.Tx); err != nil {
-			return nil
-		}
-		return msgEthereumTx
-	}
-
-	cosmosTxAmount, overflow := uint256.FromBig(cosmosTxEVMDenomFee.Amount.BigInt())
-	if overflow {
-		// If overflow, return EVM transaction for safety
-		msgEthereumTx := &evmtypes.MsgEthereumTx{}
-		if err := msgEthereumTx.FromEthereumTx(nextEVMTx.Tx); err != nil {
-			return nil
-		}
-		return msgEthereumTx
-	}
-
-	if cosmosTxAmount.Gt(evmFee) {
-		return nextCosmosTx
-	}
-
-	// EVM tx has higher or equal fee
-	msgEthereumTx := &evmtypes.MsgEthereumTx{}
-	if err := msgEthereumTx.FromEthereumTx(nextEVMTx.Tx); err != nil {
+	// If no transactions available
+	if nextEVMTx == nil && nextCosmosTx == nil {
 		return nil
 	}
-	return msgEthereumTx
+
+	// Return the appropriate transaction
+	if i.shouldUseEVM() {
+		return i.convertEVMToSDKTx(nextEVMTx)
+	} else {
+		return nextCosmosTx
+	}
 }

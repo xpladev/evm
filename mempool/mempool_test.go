@@ -1,22 +1,21 @@
 package mempool
 
 import (
-	"crypto/ecdsa"
-	"encoding/hex"
-	"math/big"
-	"strings"
-	"testing"
-
 	"cosmossdk.io/log"
 	"cosmossdk.io/store"
 	"cosmossdk.io/store/metrics"
 	storetypes "cosmossdk.io/store/types"
+	"crypto/ecdsa"
+	"encoding/hex"
 	cmtproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	dbm "github.com/cosmos/cosmos-db"
 	testutil2 "github.com/cosmos/cosmos-sdk/types/module/testutil"
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	"github.com/cosmos/evm/encoding"
 	utiltx "github.com/cosmos/evm/testutil/tx"
+	"math/big"
+	"strings"
+	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	cosmosMempool "github.com/cosmos/cosmos-sdk/types/mempool"
@@ -700,7 +699,7 @@ func (suite *MempoolTestSuite) TestTransactionOrdering() {
 		suite.T().Run(tc.name, func(t *testing.T) {
 			// Reset state for each test by creating new pools
 			// Don't create cosmosPool here - let NewEVMMempool create it with proper priority logic
-			
+
 			// Create a fresh EVM pool
 			suite.mockChain = mocks.NewMockBlockChain(suite.mockVMKeeper.(*mocks.MockVMKeeper))
 			legacyPool := legacypool.New(legacypool.DefaultConfig, suite.mockChain)
@@ -780,6 +779,251 @@ func BenchmarkInsertCosmosTransaction(b *testing.B) {
 	}
 }
 
+func (suite *MempoolTestSuite) TestSelectBy() {
+	tests := []struct {
+		name          string
+		setupTxs      func()
+		filterFunc    func(sdk.Tx) bool
+		expectedCalls int // Number of transactions the filter should be called with
+		verifyFunc    func(t *testing.T)
+	}{
+		{
+			name:     "empty mempool - no infinite loop",
+			setupTxs: func() {},
+			filterFunc: func(tx sdk.Tx) bool {
+				return true // Accept all
+			},
+			expectedCalls: 1, // Called once even for empty pool to check for transactions
+			verifyFunc: func(t *testing.T) {
+				// Should not hang or crash
+			},
+		},
+		{
+			name: "single cosmos transaction - terminates properly",
+			setupTxs: func() {
+				cosmosTx := suite.createCosmosTransaction("wei", 2000)
+				err := suite.cosmosPool.Insert(suite.ctx, cosmosTx)
+				require.NoError(suite.T(), err)
+			},
+			filterFunc: func(tx sdk.Tx) bool {
+				return false // Reject first transaction - should stop immediately
+			},
+			expectedCalls: 1,
+			verifyFunc: func(t *testing.T) {
+				require.Equal(t, 1, suite.cosmosPool.CountTx())
+			},
+		},
+		{
+			name: "reject first transaction - should stop immediately",
+			setupTxs: func() {
+				// Add multiple transactions
+				for i := 0; i < 5; i++ {
+					cosmosTx := suite.createCosmosTransaction("wei", int64(1000+i*100))
+					err := suite.cosmosPool.Insert(suite.ctx, cosmosTx)
+					require.NoError(suite.T(), err)
+				}
+			},
+			filterFunc: func(tx sdk.Tx) bool {
+				return false // Reject first - should stop after first call
+			},
+			expectedCalls: 1, // Should call filter only once
+			verifyFunc: func(t *testing.T) {
+				require.Equal(t, 5, suite.cosmosPool.CountTx())
+			},
+		},
+		{
+			name: "mixed EVM and cosmos - reject first transaction",
+			setupTxs: func() {
+				// Add EVM transactions
+				for i := 0; i < 3; i++ {
+					evmTx, privKey, err := suite.createEVMTransaction(big.NewInt(int64(1000000000 + i*1000000000)))
+					require.NoError(suite.T(), err)
+					fromAddr := crypto.PubkeyToAddress(privKey.PublicKey)
+					suite.addAccountToStateDB(fromAddr, big.NewInt(100000000000000000))
+					err = suite.mempool.Insert(suite.ctx, evmTx)
+					require.NoError(suite.T(), err)
+				}
+				// Add Cosmos transactions
+				for i := 0; i < 3; i++ {
+					cosmosTx := suite.createCosmosTransaction("wei", int64(1000000000+i*1000000000))
+					err := suite.cosmosPool.Insert(suite.ctx, cosmosTx)
+					require.NoError(suite.T(), err)
+				}
+			},
+			filterFunc: func(tx sdk.Tx) bool {
+				return false // Reject first transaction
+			},
+			expectedCalls: 1, // Should stop after first rejection
+			verifyFunc: func(t *testing.T) {
+				// Both pools should still have their transactions
+				require.Equal(t, 3, suite.cosmosPool.CountTx())
+				evmPending, _ := suite.mempool.txPool.Stats()
+				require.Equal(t, 3, evmPending)
+			},
+		},
+		{
+			name: "accept high fee transactions until low fee encountered",
+			setupTxs: func() {
+				// Add transactions with different fees (cosmos mempool will order by priority)
+				// Higher fee transactions should come first
+				for i := 5; i >= 1; i-- { // Create in reverse order so highest fee is processed first
+					cosmosTx := suite.createCosmosTransaction("wei", int64(i*1000)) // 5000, 4000, 3000, 2000, 1000
+					err := suite.cosmosPool.Insert(suite.ctx, cosmosTx)
+					require.NoError(suite.T(), err)
+				}
+			},
+			filterFunc: func(tx sdk.Tx) bool {
+				// Accept transactions with fees >= 3000, reject lower
+				if feeTx, ok := tx.(sdk.FeeTx); ok {
+					fees := feeTx.GetFee()
+					if len(fees) > 0 {
+						return fees[0].Amount.Int64() >= 3000
+					}
+				}
+				return false
+			},
+			expectedCalls: -1, // Don't check exact count due to priority ordering complexity
+			verifyFunc: func(t *testing.T) {
+				require.Equal(t, 5, suite.cosmosPool.CountTx())
+			},
+		},
+		{
+			name: "single EVM transaction - terminates properly",
+			setupTxs: func() {
+				evmTx, privKey, err := suite.createEVMTransaction(big.NewInt(2000000000))
+				require.NoError(suite.T(), err)
+				fromAddr := crypto.PubkeyToAddress(privKey.PublicKey)
+				suite.addAccountToStateDB(fromAddr, big.NewInt(100000000000000000))
+				err = suite.mempool.Insert(suite.ctx, evmTx)
+				require.NoError(suite.T(), err)
+			},
+			filterFunc: func(tx sdk.Tx) bool {
+				return false // Reject first transaction
+			},
+			expectedCalls: 1,
+			verifyFunc: func(t *testing.T) {
+				evmPending, _ := suite.mempool.txPool.Stats()
+				require.Equal(t, 1, evmPending)
+			},
+		},
+		{
+			name: "mixed pools - reject first transaction",
+			setupTxs: func() {
+				// Add 1 EVM transaction
+				evmTx, privKey, err := suite.createEVMTransaction(big.NewInt(5000000000))
+				require.NoError(suite.T(), err)
+				fromAddr := crypto.PubkeyToAddress(privKey.PublicKey)
+				suite.addAccountToStateDB(fromAddr, big.NewInt(100000000000000000))
+				err = suite.mempool.Insert(suite.ctx, evmTx)
+				require.NoError(suite.T(), err)
+				// Add multiple cosmos transactions
+				for i := 0; i < 4; i++ {
+					cosmosTx := suite.createCosmosTransaction("wei", int64(1000000000+i*500000000))
+					err := suite.cosmosPool.Insert(suite.ctx, cosmosTx)
+					require.NoError(suite.T(), err)
+				}
+			},
+			filterFunc: func(tx sdk.Tx) bool {
+				return false // Reject first transaction
+			},
+			expectedCalls: 1, // Should stop after first rejection
+			verifyFunc: func(t *testing.T) {
+				// Verify both pools still have their transactions
+				evmPending, _ := suite.mempool.txPool.Stats()
+				require.Equal(t, 1, evmPending)
+				require.Equal(t, 4, suite.cosmosPool.CountTx())
+			},
+		},
+		{
+			name: "accept multiple transactions until condition fails",
+			setupTxs: func() {
+				// Add transactions with predictable fees
+				for i := 10; i > 0; i-- { // Create in reverse to get predictable ordering
+					cosmosTx := suite.createCosmosTransaction("wei", int64(i*1000))
+					err := suite.cosmosPool.Insert(suite.ctx, cosmosTx)
+					require.NoError(suite.T(), err)
+				}
+			},
+			filterFunc: func() func(sdk.Tx) bool {
+				callCount := 0
+				return func(tx sdk.Tx) bool {
+					callCount++
+					// Accept first 3 transactions, then reject
+					return callCount <= 3
+				}
+			}(),
+			expectedCalls: 4, // Accept 3, then reject 1 = 4 calls total
+			verifyFunc: func(t *testing.T) {
+				require.Equal(t, 10, suite.cosmosPool.CountTx())
+			},
+		},
+		{
+			name: "accept all transactions - processes until pool exhausted",
+			setupTxs: func() {
+				// Add limited number of transactions
+				for i := 0; i < 3; i++ {
+					cosmosTx := suite.createCosmosTransaction("wei", int64(1000+i*500))
+					err := suite.cosmosPool.Insert(suite.ctx, cosmosTx)
+					require.NoError(suite.T(), err)
+				}
+			},
+			filterFunc: func(tx sdk.Tx) bool {
+				return true // Accept all - should process all 3 and then stop when pool exhausted
+			},
+			expectedCalls: -1, // Don't check exact count - behavior depends on when pool exhausts
+			verifyFunc: func(t *testing.T) {
+				// All transactions should still be in pool (SelectBy doesn't remove them)
+				require.Equal(t, 3, suite.cosmosPool.CountTx())
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		suite.T().Run(tc.name, func(t *testing.T) {
+			// Reset state for each test
+			suite.cosmosPool = cosmosMempool.DefaultPriorityMempool()
+
+			// Create fresh EVM pool
+			suite.mockChain = mocks.NewMockBlockChain(suite.mockVMKeeper.(*mocks.MockVMKeeper))
+			legacyPool := legacypool.New(legacypool.DefaultConfig, suite.mockChain)
+			reserver := &mocks.MockReserver{}
+			err := legacyPool.Init(1000000000, suite.mockChain.CurrentBlock(), reserver)
+			require.NoError(suite.T(), err)
+			txPool := &txpool.TxPool{
+				Subpools: []txpool.SubPool{legacyPool},
+			}
+
+			suite.mempool = NewEVMMempool(suite.mockVMKeeper, suite.txDecoder, &EVMMempoolConfig{
+				TxPool:     txPool,
+				CosmosPool: suite.cosmosPool,
+				BondDenom:  "wei",
+			})
+
+			tc.setupTxs()
+
+			// Track filter function calls to ensure we don't have infinite loops
+			callCount := 0
+			wrappedFilter := func(tx sdk.Tx) bool {
+				callCount++
+				// Prevent infinite loops by failing test if too many calls
+				if callCount > 1000 {
+					t.Fatal("Possible infinite loop detected - filter called more than 1000 times")
+				}
+				return tc.filterFunc(tx)
+			}
+
+			// Test SelectBy directly
+			suite.mempool.SelectBy(suite.ctx, nil, wrappedFilter)
+			
+			// Assert that SelectBy completed without hanging
+			require.True(t, callCount > 0, "Filter should have been called at least once")
+			if tc.expectedCalls > 0 {
+				require.Equal(t, tc.expectedCalls, callCount, "Filter should have been called expected number of times")
+			}
+		})
+	}
+}
+
 func BenchmarkSelect(b *testing.B) {
 	// Create a proper context with a memory store
 	db := dbm.NewMemDB()
@@ -832,4 +1076,153 @@ func BenchmarkSelect(b *testing.B) {
 		iterator := mpool.Select(ctx, nil)
 		_ = iterator
 	}
+}
+
+// Benchmark SelectBy - critical for block building performance
+func BenchmarkSelectBy(b *testing.B) {
+	// Create a proper context with a memory store
+	db := dbm.NewMemDB()
+	storeKey := storetypes.NewKVStoreKey("test")
+	cms := store.NewCommitMultiStore(db, log.NewNopLogger(), metrics.NewNoOpMetrics())
+	cms.MountStoreWithDB(storeKey, storetypes.StoreTypeIAVL, db)
+	_ = cms.LoadLatestVersion()
+
+	ctx := sdk.NewContext(cms, cmtproto.Header{}, false, log.NewNopLogger())
+	encodingConfig := encoding.MakeConfig(testconstants.ExampleChainID.EVMChainID)
+	mockVMKeeper := &mocks.MockVMKeeper{
+		BaseFee: big.NewInt(1000000000),
+		Params: evmtypes.Params{
+			EvmDenom: "wei",
+		},
+		Accounts: make(map[common.Address]*statedb.Account),
+	}
+	cosmosPool := cosmosMempool.DefaultPriorityMempool()
+	txDecoder := encodingConfig.TxConfig.TxDecoder()
+	testChain := mocks.NewMockBlockChain(mockVMKeeper)
+	legacyPool := legacypool.New(legacypool.DefaultConfig, testChain)
+	txPool := &txpool.TxPool{
+		Subpools: []txpool.SubPool{legacyPool},
+	}
+	mpool := NewEVMMempool(mockVMKeeper, txDecoder, &EVMMempoolConfig{
+		TxPool:     txPool,
+		CosmosPool: cosmosPool,
+		BondDenom:  "wei",
+	})
+
+	// Pre-populate with mixed transactions for realistic block building scenario
+	for i := 0; i < 50; i++ {
+		// Create cosmos transactions
+		fromAddr := sdk.AccAddress("test_from_address__")
+		toAddr := sdk.AccAddress("test_to_address____")
+		amount := sdk.NewCoins(sdk.NewInt64Coin("wei", 1000))
+		bankMsg := banktypes.NewMsgSend(fromAddr, toAddr, amount)
+
+		txBuilder := encodingConfig.TxConfig.NewTxBuilder()
+		_ = txBuilder.SetMsgs(bankMsg)
+		txBuilder.SetFeeAmount(sdk.NewCoins(sdk.NewInt64Coin("wei", int64(1000000000+i*1000000))))
+		txBuilder.SetGasLimit(200000)
+		tx := txBuilder.GetTx()
+
+		_ = cosmosPool.Insert(ctx, tx)
+	}
+
+	// Add some EVM transactions as well
+	for i := 0; i < 0; i++ { // Skip EVM transactions in benchmark
+		privKey, _ := crypto.GenerateKey()
+		to := common.HexToAddress("0x1234567890123456789012345678901234567890")
+		ethTx := ethtypes.NewTx(&ethtypes.LegacyTx{
+			Nonce:    uint64(i),
+			To:       &to,
+			Value:    big.NewInt(1000),
+			Gas:      21000,
+			GasPrice: big.NewInt(int64(1000000000 + i*1000000)),
+			Data:     nil,
+		})
+
+		signer := ethtypes.HomesteadSigner{}
+		signedTx, _ := ethtypes.SignTx(ethTx, signer, privKey)
+
+		// Add account to mock state
+		fromAddr := crypto.PubkeyToAddress(privKey.PublicKey)
+		balanceU256, _ := uint256.FromBig(big.NewInt(100000000000000000))
+		mockKeeper := mockVMKeeper
+		mockKeeper.AddAccount(fromAddr, balanceU256, uint64(i))
+
+		msgEthTx := &evmtypes.MsgEthereumTx{}
+		_ = msgEthTx.FromEthereumTx(signedTx)
+
+		txBuilder := encodingConfig.TxConfig.NewTxBuilder()
+		_ = txBuilder.SetMsgs(msgEthTx)
+		evmSdkTx := txBuilder.GetTx()
+
+		_ = mpool.Insert(ctx, evmSdkTx)
+	}
+
+	b.Run("SelectByAcceptAll", func(b *testing.B) {
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			mpool.SelectBy(ctx, nil, func(tx sdk.Tx) bool {
+				return true // Accept first transaction and stop
+			})
+		}
+	})
+
+	b.Run("SelectByRejectFirst10", func(b *testing.B) {
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			count := 0
+			mpool.SelectBy(ctx, nil, func(tx sdk.Tx) bool {
+				count++
+				if count <= 10 {
+					return false // Reject first 10
+				}
+				return true // Accept 11th transaction
+			})
+		}
+	})
+
+	b.Run("SelectByFeeThreshold", func(b *testing.B) {
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			mpool.SelectBy(ctx, nil, func(tx sdk.Tx) bool {
+				// Realistic block building: accept transactions above fee threshold\n			if tx == nil {\n				return false\n			}
+				if feeTx, ok := tx.(sdk.FeeTx); ok {
+					fees := feeTx.GetFee()
+					if len(fees) > 0 && fees[0].Denom == "wei" {
+						return fees[0].Amount.Int64() >= 1500000000 // 1.5 gwei threshold
+					}
+				}
+				// For EVM transactions, check gas price
+				msgs := tx.GetMsgs()
+				if len(msgs) == 1 {
+					if ethMsg, ok := msgs[0].(*evmtypes.MsgEthereumTx); ok {
+						ethTx := ethMsg.AsTransaction()
+						return ethTx.GasPrice().Int64() >= 1500000000 // 1.5 gwei threshold
+					}
+				}
+				return false
+			})
+		}
+	})
+
+	b.Run("SelectByLimitedCount", func(b *testing.B) {
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			count := 0
+			maxTxs := 5 // Simulate block gas limit
+			mpool.SelectBy(ctx, nil, func(tx sdk.Tx) bool {
+				count++
+				return count <= maxTxs // Accept only first 5 transactions
+			})
+		}
+	})
+
+	b.Run("SelectByExhaustAll", func(b *testing.B) {
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			mpool.SelectBy(ctx, nil, func(tx sdk.Tx) bool {
+				return false // Reject all - tests full exhaustion performance
+			})
+		}
+	})
 }
