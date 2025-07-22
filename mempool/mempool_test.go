@@ -86,7 +86,11 @@ func (suite *MempoolTestSuite) SetupTest() {
 		Subpools: []txpool.SubPool{legacyPool},
 	}
 
-	suite.mempool = NewEVMMempool(suite.mockVMKeeper, txPool, suite.cosmosPool, suite.txDecoder)
+	suite.mempool = NewEVMMempool(suite.mockVMKeeper, suite.txDecoder, &EVMMempoolConfig{
+		TxPool:     txPool,
+		CosmosPool: suite.cosmosPool,
+		BondDenom:  "wei",
+	})
 }
 
 // Test helper functions
@@ -201,10 +205,18 @@ func (suite *MempoolTestSuite) TestNewEVMMempool() {
 			txPool, _ := tc.setup()
 			if tc.wantPanic {
 				require.Panics(t, func() {
-					NewEVMMempool(suite.mockVMKeeper, txPool, suite.cosmosPool, suite.txDecoder)
+					NewEVMMempool(suite.mockVMKeeper, suite.txDecoder, &EVMMempoolConfig{
+						TxPool:     txPool,
+						CosmosPool: suite.cosmosPool,
+						BondDenom:  "wei",
+					})
 				})
 			} else {
-				mempoolInstance := NewEVMMempool(suite.mockVMKeeper, txPool, suite.cosmosPool, suite.txDecoder)
+				mempoolInstance := NewEVMMempool(suite.mockVMKeeper, suite.txDecoder, &EVMMempoolConfig{
+					TxPool:     txPool,
+					CosmosPool: suite.cosmosPool,
+					BondDenom:  "wei",
+				})
 				require.NotNil(t, mempoolInstance)
 				require.Equal(t, suite.mockVMKeeper, mempoolInstance.vmKeeper)
 				require.Equal(t, suite.cosmosPool, mempoolInstance.cosmosPool)
@@ -268,7 +280,11 @@ func (suite *MempoolTestSuite) TestInsert() {
 		suite.T().Run(tc.name, func(t *testing.T) {
 			// Reset state for each test by creating a new cosmos pool
 			suite.cosmosPool = cosmosMempool.DefaultPriorityMempool()
-			suite.mempool = NewEVMMempool(suite.mockVMKeeper, suite.mempool.txPool, suite.cosmosPool, suite.txDecoder)
+			suite.mempool = NewEVMMempool(suite.mockVMKeeper, suite.txDecoder, &EVMMempoolConfig{
+				TxPool:     suite.mempool.txPool,
+				CosmosPool: suite.cosmosPool,
+				BondDenom:  "wei",
+			})
 
 			tc.setupAccount()
 			tx := tc.setupTx()
@@ -330,7 +346,11 @@ func (suite *MempoolTestSuite) TestRemove() {
 		suite.T().Run(tc.name, func(t *testing.T) {
 			// Reset state for each test by creating a new cosmos pool
 			suite.cosmosPool = cosmosMempool.DefaultPriorityMempool()
-			suite.mempool = NewEVMMempool(suite.mockVMKeeper, suite.mempool.txPool, suite.cosmosPool, suite.txDecoder)
+			suite.mempool = NewEVMMempool(suite.mockVMKeeper, suite.txDecoder, &EVMMempoolConfig{
+				TxPool:     suite.mempool.txPool,
+				CosmosPool: suite.cosmosPool,
+				BondDenom:  "wei",
+			})
 
 			tc.setupAccount()
 			tx := tc.setupTx()
@@ -402,7 +422,11 @@ func (suite *MempoolTestSuite) TestSelect() {
 		suite.T().Run(tc.name, func(t *testing.T) {
 			// Reset state for each test by creating a new cosmos pool
 			suite.cosmosPool = cosmosMempool.DefaultPriorityMempool()
-			suite.mempool = NewEVMMempool(suite.mockVMKeeper, suite.mempool.txPool, suite.cosmosPool, suite.txDecoder)
+			suite.mempool = NewEVMMempool(suite.mockVMKeeper, suite.txDecoder, &EVMMempoolConfig{
+				TxPool:     suite.mempool.txPool,
+				CosmosPool: suite.cosmosPool,
+				BondDenom:  "wei",
+			})
 			tc.setupTxs()
 
 			iterator := suite.mempool.Select(suite.ctx, nil)
@@ -469,7 +493,11 @@ func (suite *MempoolTestSuite) TestIterator() {
 		suite.T().Run(tc.name, func(t *testing.T) {
 			// Reset state for each test by creating a new cosmos pool
 			suite.cosmosPool = cosmosMempool.DefaultPriorityMempool()
-			suite.mempool = NewEVMMempool(suite.mockVMKeeper, suite.mempool.txPool, suite.cosmosPool, suite.txDecoder)
+			suite.mempool = NewEVMMempool(suite.mockVMKeeper, suite.txDecoder, &EVMMempoolConfig{
+				TxPool:     suite.mempool.txPool,
+				CosmosPool: suite.cosmosPool,
+				BondDenom:  "wei",
+			})
 			tc.setupTxs()
 
 			iterator := suite.mempool.Select(suite.ctx, nil)
@@ -671,8 +699,8 @@ func (suite *MempoolTestSuite) TestTransactionOrdering() {
 	for _, tc := range tests {
 		suite.T().Run(tc.name, func(t *testing.T) {
 			// Reset state for each test by creating new pools
-			suite.cosmosPool = cosmosMempool.DefaultPriorityMempool()
-
+			// Don't create cosmosPool here - let NewEVMMempool create it with proper priority logic
+			
 			// Create a fresh EVM pool
 			suite.mockChain = mocks.NewMockBlockChain(suite.mockVMKeeper.(*mocks.MockVMKeeper))
 			legacyPool := legacypool.New(legacypool.DefaultConfig, suite.mockChain)
@@ -683,7 +711,14 @@ func (suite *MempoolTestSuite) TestTransactionOrdering() {
 				Subpools: []txpool.SubPool{legacyPool},
 			}
 
-			suite.mempool = NewEVMMempool(suite.mockVMKeeper, txPool, suite.cosmosPool, suite.txDecoder)
+			// Let the constructor create the cosmosPool with correct priority logic
+			suite.mempool = NewEVMMempool(suite.mockVMKeeper, suite.txDecoder, &EVMMempoolConfig{
+				TxPool:     txPool,
+				CosmosPool: nil, // Let it create its own with correct priority logic
+				BondDenom:  "wei",
+			})
+			// Update the suite's cosmosPool to point to the one created by NewEVMMempool
+			suite.cosmosPool = suite.mempool.cosmosPool
 			tc.setupTxs()
 
 			iterator := suite.mempool.Select(suite.ctx, nil)
@@ -713,7 +748,11 @@ func BenchmarkInsertCosmosTransaction(b *testing.B) {
 	txPool := &txpool.TxPool{
 		Subpools: []txpool.SubPool{legacyPool},
 	}
-	mpool := NewEVMMempool(mockVMKeeper, txPool, cosmosPool, txDecoder)
+	mpool := NewEVMMempool(mockVMKeeper, txDecoder, &EVMMempoolConfig{
+		TxPool:     txPool,
+		CosmosPool: cosmosPool,
+		BondDenom:  "wei",
+	})
 
 	// Create a real bank message transaction
 	fromAddr := sdk.AccAddress("test_from_address__")
@@ -765,7 +804,11 @@ func BenchmarkSelect(b *testing.B) {
 	txPool := &txpool.TxPool{
 		Subpools: []txpool.SubPool{legacyPool},
 	}
-	mpool := NewEVMMempool(mockVMKeeper, txPool, cosmosPool, txDecoder)
+	mpool := NewEVMMempool(mockVMKeeper, txDecoder, &EVMMempoolConfig{
+		TxPool:     txPool,
+		CosmosPool: cosmosPool,
+		BondDenom:  "wei",
+	})
 
 	// Pre-populate with some transactions
 	for i := 0; i < 100; i++ {

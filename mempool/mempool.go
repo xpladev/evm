@@ -2,9 +2,11 @@ package mempool
 
 import (
 	"context"
+	"cosmossdk.io/math"
 	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/mempool"
+	mempool2 "github.com/cosmos/cosmos-sdk/types/mempool"
 	"github.com/cosmos/evm/mempool/miner"
 	"github.com/cosmos/evm/mempool/txpool"
 	"github.com/cosmos/evm/mempool/txpool/legacypool"
@@ -39,7 +41,61 @@ type (
 	}
 )
 
-func NewEVMMempool(vmKeeper VMKeeperI, txPool *txpool.TxPool, cosmosPool mempool.ExtMempool, txDecoder sdk.TxDecoder) *EVMMempool {
+type EVMMempoolConfig struct {
+	TxPool     *txpool.TxPool
+	CosmosPool mempool.ExtMempool
+	BondDenom  string
+}
+
+func NewEVMMempool(vmKeeper VMKeeperI, txDecoder sdk.TxDecoder, config *EVMMempoolConfig) *EVMMempool {
+	var txPool *txpool.TxPool
+	var cosmosPool mempool.ExtMempool
+	bondDenom := "wei"
+
+	if config == nil {
+		panic("config must not be nil")
+	}
+
+	if config.BondDenom == "" {
+		panic("BondDenom must not be empty")
+	}
+
+	txPool = config.TxPool
+	cosmosPool = config.CosmosPool
+	bondDenom = config.BondDenom
+
+	if txPool == nil {
+		blockchain := NewBlockchain()
+		legacyPool := legacypool.New(legacypool.DefaultConfig, blockchain)
+		txPoolInit, err := txpool.New(uint64(0), blockchain, []txpool.SubPool{legacyPool})
+		if err != nil {
+			panic(err)
+		}
+		txPool = txPoolInit
+	}
+
+	if cosmosPool == nil {
+		priorityConfig := mempool2.PriorityNonceMempoolConfig[math.Int]{}
+		priorityConfig.TxPriority = mempool2.TxPriority[math.Int]{
+			GetTxPriority: func(goCtx context.Context, tx sdk.Tx) math.Int {
+				cosmosTxFee, ok := tx.(sdk.FeeTx)
+				if !ok {
+					return math.ZeroInt()
+				}
+				found, coin := cosmosTxFee.GetFee().Find(bondDenom)
+				if !found {
+					return math.ZeroInt()
+				}
+				return coin.Amount
+			},
+			Compare: func(a, b math.Int) int {
+				return a.BigInt().Cmp(b.BigInt())
+			},
+			MinValue: math.ZeroInt(),
+		}
+		cosmosPool = mempool2.NewPriorityMempool(priorityConfig)
+	}
+
 	if len(txPool.Subpools) != 1 {
 		panic("tx pool should contain only one subpool")
 	}
@@ -218,13 +274,13 @@ func (i *EVMMempoolIterator) Next() mempool.Iterator {
 	if i.evmIterator == nil && i.cosmosIterator == nil {
 		return nil
 	}
-	
+
 	var nextEVMTx *txpool.LazyTransaction
 	var evmFee *uint256.Int
 	if i.evmIterator != nil {
 		nextEVMTx, evmFee = i.evmIterator.Peek()
 	}
-	
+
 	var nextCosmosTx sdk.Tx
 	if i.cosmosIterator != nil {
 		nextCosmosTx = i.cosmosIterator.Tx()
@@ -243,8 +299,8 @@ func (i *EVMMempoolIterator) Next() mempool.Iterator {
 	if nextCosmosTx == nil {
 		if i.evmIterator != nil {
 			if i.evmIterator != nil {
-			i.evmIterator.Pop()
-		}
+				i.evmIterator.Pop()
+			}
 		}
 		return i
 	}
@@ -255,8 +311,8 @@ func (i *EVMMempoolIterator) Next() mempool.Iterator {
 		// If cosmos tx doesn't have fees, prioritize EVM
 		if i.evmIterator != nil {
 			if i.evmIterator != nil {
-			i.evmIterator.Pop()
-		}
+				i.evmIterator.Pop()
+			}
 		}
 		return i
 	}
@@ -282,16 +338,16 @@ func (i *EVMMempoolIterator) Next() mempool.Iterator {
 		if overflow {
 			// If overflow, prioritize EVM for safety
 			if i.evmIterator != nil {
-			i.evmIterator.Pop()
-		}
+				i.evmIterator.Pop()
+			}
 		} else if cosmosTxAmount.Gt(evmFee) {
 			// Cosmos tx has higher fee
 			i.cosmosIterator = i.cosmosIterator.Next()
 		} else {
 			// EVM tx has higher or equal fee
 			if i.evmIterator != nil {
-			i.evmIterator.Pop()
-		}
+				i.evmIterator.Pop()
+			}
 		}
 	}
 
@@ -303,13 +359,13 @@ func (i *EVMMempoolIterator) Tx() sdk.Tx {
 	if i.evmIterator == nil && i.cosmosIterator == nil {
 		return nil
 	}
-	
+
 	var nextEVMTx *txpool.LazyTransaction
 	var evmFee *uint256.Int
 	if i.evmIterator != nil {
 		nextEVMTx, evmFee = i.evmIterator.Peek()
 	}
-	
+
 	var nextCosmosTx sdk.Tx
 	if i.cosmosIterator != nil {
 		nextCosmosTx = i.cosmosIterator.Tx()

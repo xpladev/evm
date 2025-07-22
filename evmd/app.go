@@ -4,10 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	mempool2 "github.com/cosmos/cosmos-sdk/types/mempool"
 	"github.com/cosmos/evm/mempool"
-	"github.com/cosmos/evm/mempool/txpool"
-	"github.com/cosmos/evm/mempool/txpool/legacypool"
 	"io"
 	"os"
 
@@ -440,7 +437,7 @@ func NewExampleApp(
 
 	app.GovKeeper = *govKeeper.SetHooks(
 		govtypes.NewMultiGovHooks(
-		// register the governance hooks
+			// register the governance hooks
 		),
 	)
 
@@ -497,14 +494,9 @@ func NewExampleApp(
 	)
 
 	// set the EVM priority nonce mempool
-	blockchain := mempool.NewBlockchain()
-	legacyPool := legacypool.New(legacypool.DefaultConfig, blockchain)
-	txPool, err := txpool.New(uint64(0), blockchain, []txpool.SubPool{legacyPool})
-	if err != nil {
-		panic(err)
-	}
-	cosmosPool := mempool2.DefaultPriorityMempool()
-	evmMempool := mempool.NewEVMMempool(app.EVMKeeper, txPool, cosmosPool, encodingConfig.TxConfig.TxDecoder())
+	evmMempool := mempool.NewEVMMempool(app.EVMKeeper, encodingConfig.TxConfig.TxDecoder(), &mempool.EVMMempoolConfig{
+		BondDenom: evmtypes.GetEVMCoinDenom(),
+	})
 
 	bApp.SetMempool(evmMempool)
 
