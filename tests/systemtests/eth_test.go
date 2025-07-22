@@ -137,7 +137,7 @@ func parseReceipt(output string) (*types.Receipt, error) {
 			if txIndex, err := strconv.ParseUint(value, 10, 64); err == nil {
 				receipt.TransactionIndex = uint(txIndex)
 			}
-		case "contractAddress": // Only set for contract creation
+		case "contractAddress":
 			if value != "" {
 				receipt.ContractAddress = common.HexToAddress(value)
 			}
