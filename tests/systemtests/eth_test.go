@@ -29,6 +29,13 @@ func StartChain(t *testing.T, sut *systemtests.SystemUnderTest) {
 	sut.StartChain(t, "--json-rpc.api=eth,txpool,personal,net,debug,web3", "--chain-id", "local-4221", "--api.enable=true")
 }
 
+// cosmos and eth tx with same nonce.
+// tx pool with nonce gapped txs - submit cosmos tx for the gapped txs and first in queue. overlapped txs inbetween pools.
+
+// todo: 2 very fast txs make sure its replaced across everything..
+// what happens if 2nd tx is not relayed to the proposer fast enough?
+// set 2 vals, one with lots of stake, other v little
+
 func TestPriorityReplacement(t *testing.T) {
 	t.Skip("not yet supported")
 	sut := systemtests.Sut
@@ -119,6 +126,7 @@ func TestPriorityReplacement(t *testing.T) {
 	require.Equal(t, lowPrioReceipt.Status, uint64(0))
 }
 
+// todo: check that the other nodes dont have this tx. check ethtxpool.
 func TestNonceGappedTxsPass(t *testing.T) {
 	t.Skip("nonce gaps are not yet supported")
 	sut := systemtests.Sut
