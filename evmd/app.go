@@ -437,7 +437,7 @@ func NewExampleApp(
 
 	app.GovKeeper = *govKeeper.SetHooks(
 		govtypes.NewMultiGovHooks(
-			// register the governance hooks
+		// register the governance hooks
 		),
 	)
 
@@ -494,7 +494,7 @@ func NewExampleApp(
 	)
 
 	// set the EVM priority nonce mempool
-	evmMempool := mempool.NewEVMMempool(app.EVMKeeper, encodingConfig.TxConfig.TxDecoder(), &mempool.EVMMempoolConfig{
+	evmMempool := mempool.NewEVMMempool(app.CreateQueryContext, app.EVMKeeper, encodingConfig.TxConfig.TxDecoder(), &mempool.EVMMempoolConfig{
 		BondDenom: evmtypes.GetEVMCoinDenom(),
 	})
 

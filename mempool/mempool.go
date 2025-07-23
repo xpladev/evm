@@ -11,6 +11,7 @@ import (
 	"github.com/cosmos/evm/mempool/miner"
 	"github.com/cosmos/evm/mempool/txpool"
 	"github.com/cosmos/evm/mempool/txpool/legacypool"
+	vmkeeper "github.com/cosmos/evm/x/vm/keeper"
 	evmtypes "github.com/cosmos/evm/x/vm/types"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/holiman/uint256"
@@ -22,7 +23,7 @@ var _ mempool.Iterator = &EVMMempoolIterator{}
 type (
 	EVMMempool struct {
 		/** Keepers **/
-		vmKeeper VMKeeperI
+		vmKeeper vmkeeper.Keeper
 
 		/** Mempools **/
 		txPool       *txpool.TxPool
@@ -48,7 +49,7 @@ type EVMMempoolConfig struct {
 	BondDenom  string
 }
 
-func NewEVMMempool(vmKeeper VMKeeperI, txDecoder sdk.TxDecoder, config *EVMMempoolConfig) *EVMMempool {
+func NewEVMMempool(ctx func(height int64, prove bool) (sdk.Context, error), vmKeeper vmkeeper.Keeper, txDecoder sdk.TxDecoder, config *EVMMempoolConfig) *EVMMempool {
 	var txPool *txpool.TxPool
 	var cosmosPool mempool.ExtMempool
 	bondDenom := "wei"
@@ -67,7 +68,7 @@ func NewEVMMempool(vmKeeper VMKeeperI, txDecoder sdk.TxDecoder, config *EVMMempo
 
 	if txPool == nil {
 		//todo: implement blockchain
-		blockchain := NewBlockchain()
+		blockchain := NewBlockchain(ctx, vmKeeper)
 		//todo: custom configs for txpool
 		legacyPool := legacypool.New(legacypool.DefaultConfig, blockchain)
 		txPoolInit, err := txpool.New(uint64(0), blockchain, []txpool.SubPool{legacyPool})
@@ -132,7 +133,7 @@ func (m *EVMMempool) getEVMMessage(tx sdk.Tx) (*evmtypes.MsgEthereumTx, error) {
 
 func (m *EVMMempool) Insert(ctx context.Context, tx sdk.Tx) error {
 	// ASSUMPTION: these are all successful upon CheckTx
-	
+
 	// Try to get EVM message
 	ethMsg, err := m.getEVMMessage(tx)
 	if err == nil {
@@ -330,7 +331,7 @@ func (i *EVMMempoolIterator) Next() mempool.Iterator {
 		nextCosmosTx := i.cosmosIterator.Tx()
 		hasCosmos = nextCosmosTx != nil
 	}
-	
+
 	if !hasEVM && !hasCosmos {
 		return nil
 	}
