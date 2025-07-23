@@ -192,6 +192,7 @@ type EVMD struct {
 	EVMKeeper         *evmkeeper.Keeper
 	Erc20Keeper       erc20keeper.Keeper
 	PreciseBankKeeper precisebankkeeper.Keeper
+	EVMMempool        *mempool.EVMMempool
 
 	// the module manager
 	ModuleManager      *module.Manager
@@ -494,9 +495,8 @@ func NewExampleApp(
 	)
 
 	// set the EVM priority nonce mempool
-	evmMempool := mempool.NewEVMMempool(app.CreateQueryContext, app.EVMKeeper, encodingConfig.TxConfig.TxDecoder(), &mempool.EVMMempoolConfig{
-		BondDenom: evmtypes.GetEVMCoinDenom(),
-	})
+	evmMempool := mempool.NewEVMMempool(app.CreateQueryContext, *app.EVMKeeper, encodingConfig.TxConfig.TxDecoder(), nil)
+	app.EVMMempool = evmMempool
 
 	bApp.SetMempool(evmMempool)
 
@@ -855,7 +855,16 @@ func (app *EVMD) BeginBlocker(ctx sdk.Context) (sdk.BeginBlock, error) {
 
 // EndBlocker application updates every end block
 func (app *EVMD) EndBlocker(ctx sdk.Context) (sdk.EndBlock, error) {
-	return app.ModuleManager.EndBlock(ctx)
+	endBlock, err := app.ModuleManager.EndBlock(ctx)
+	if err != nil {
+		return endBlock, err
+	}
+
+	if app.EVMMempool != nil {
+		app.EVMMempool.GetBlockchain().NotifyNewBlock()
+	}
+
+	return endBlock, err
 }
 
 func (app *EVMD) FinalizeBlock(req *abci.RequestFinalizeBlock) (res *abci.ResponseFinalizeBlock, err error) {

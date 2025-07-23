@@ -21,14 +21,16 @@ var _ txpool.BlockChain = Blockchain{}
 var _ legacypool.BlockChain = Blockchain{}
 
 type Blockchain struct {
-	ctx      func(height int64, prove bool) (sdk.Context, error)
-	vmKeeper vmkeeper.Keeper
+	ctx           func(height int64, prove bool) (sdk.Context, error)
+	vmKeeper      vmkeeper.Keeper
+	chainHeadFeed *event.Feed
 }
 
 func NewBlockchain(ctx func(height int64, prove bool) (sdk.Context, error), vmKeeper vmkeeper.Keeper) *Blockchain {
 	return &Blockchain{
-		ctx:      ctx,
-		vmKeeper: vmKeeper,
+		ctx:           ctx,
+		vmKeeper:      vmKeeper,
+		chainHeadFeed: new(event.Feed),
 	}
 }
 
@@ -42,22 +44,41 @@ func (b Blockchain) CurrentBlock() *types.Header {
 		return nil
 	}
 
-	return &types.Header{
-		Number:   big.NewInt(ctx.BlockHeight()),
-		Time:     uint64(ctx.BlockTime().Unix()),
-		GasLimit: ctx.BlockGasMeter().Limit(),
-		Root:     common.BytesToHash(ctx.HeaderHash()),
+	header := &types.Header{
+		Number:     big.NewInt(ctx.BlockHeight()),
+		Time:       uint64(ctx.BlockTime().Unix()),
+		GasLimit:   ctx.BlockGasMeter().Limit(),
+		GasUsed:    ctx.BlockGasMeter().GasConsumed(),
+		ParentHash: common.BytesToHash(ctx.BlockHeader().LastBlockId.Hash),
+		Root:       common.BytesToHash(ctx.HeaderHash()),
+		Difficulty: big.NewInt(0), // 0 difficulty on PoS
 	}
+
+	chainConfig := evmtypes.GetEthChainConfig()
+	if chainConfig.IsLondon(header.Number) {
+		baseFee := b.vmKeeper.GetBaseFee(ctx)
+		if baseFee != nil {
+			header.BaseFee = baseFee
+		}
+	}
+
+	return header
 }
 
 func (b Blockchain) GetBlock(_ common.Hash, _ uint64) *types.Block {
 	// For instant finality chains, reorgs never happen, so this method should never be called.
 	// If it is called, it indicates a bug in the mempool logic or an incorrect assumption.
-	panic("GetBlock should never be called on instant finality chains - this indicates a reorg is being attempted")
+	panic("GetBlock should never be called on a Cosmos chain due to instant finality - this indicates a reorg is being attempted")
 }
 
-func (b Blockchain) SubscribeChainHeadEvent(_ chan<- core.ChainHeadEvent) event.Subscription {
-	panic("todo")
+func (b Blockchain) SubscribeChainHeadEvent(ch chan<- core.ChainHeadEvent) event.Subscription {
+	return b.chainHeadFeed.Subscribe(ch)
+}
+
+// NotifyNewBlock sends a chain head event when a new block is finalized
+func (b *Blockchain) NotifyNewBlock() {
+	// Send the chain head event
+	b.chainHeadFeed.Send(core.ChainHeadEvent{Header: b.CurrentBlock()})
 }
 
 func (b Blockchain) StateAt(_ common.Hash) (vm.StateDB, error) {

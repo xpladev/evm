@@ -31,7 +31,8 @@ type (
 		cosmosPool   mempool.ExtMempool
 
 		/** Utils **/
-		txDecoder sdk.TxDecoder
+		txDecoder  sdk.TxDecoder
+		blockchain *Blockchain
 	}
 	EVMMempoolIterator struct {
 		/** Mempool Iterators **/
@@ -46,7 +47,6 @@ type (
 type EVMMempoolConfig struct {
 	TxPool     *txpool.TxPool
 	CosmosPool mempool.ExtMempool
-	BondDenom  string
 }
 
 func NewEVMMempool(ctx func(height int64, prove bool) (sdk.Context, error), vmKeeper vmkeeper.Keeper, txDecoder sdk.TxDecoder, config *EVMMempoolConfig) *EVMMempool {
@@ -54,21 +54,15 @@ func NewEVMMempool(ctx func(height int64, prove bool) (sdk.Context, error), vmKe
 	var cosmosPool mempool.ExtMempool
 	bondDenom := "wei"
 
-	if config == nil {
-		panic("config must not be nil")
+	if config != nil {
+		txPool = config.TxPool
+		cosmosPool = config.CosmosPool
 	}
 
-	if config.BondDenom == "" {
-		panic("BondDenom must not be empty")
-	}
-
-	txPool = config.TxPool
-	cosmosPool = config.CosmosPool
-	bondDenom = config.BondDenom
-
+	var blockchain *Blockchain
 	if txPool == nil {
 		//todo: implement blockchain
-		blockchain := NewBlockchain(ctx, vmKeeper)
+		blockchain = NewBlockchain(ctx, vmKeeper)
 		//todo: custom configs for txpool
 		legacyPool := legacypool.New(legacypool.DefaultConfig, blockchain)
 		txPoolInit, err := txpool.New(uint64(0), blockchain, []txpool.SubPool{legacyPool})
@@ -112,7 +106,13 @@ func NewEVMMempool(ctx func(height int64, prove bool) (sdk.Context, error), vmKe
 		legacyTxPool: txPool.Subpools[0].(*legacypool.LegacyPool),
 		cosmosPool:   cosmosPool,
 		txDecoder:    txDecoder,
+		blockchain:   blockchain,
 	}
+}
+
+// GetBlockchain returns the blockchain interface for chain head event notification
+func (m *EVMMempool) GetBlockchain() *Blockchain {
+	return m.blockchain
 }
 
 // getEVMMessage validates the transaction has exactly one message and returns the EVM message if it exists
