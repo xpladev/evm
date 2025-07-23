@@ -3,7 +3,7 @@ module github.com/evmos/tests/systemtests
 go 1.24.4
 
 require (
-	cosmossdk.io/systemtests v1.2.2-0.20250721232623-ddd562f508e3
+	cosmossdk.io/systemtests v1.3.0
 	github.com/ethereum/go-ethereum v1.15.5
 	github.com/stretchr/testify v1.10.0
 )
