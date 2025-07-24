@@ -42,6 +42,7 @@ func LoadABI() (abi.ABI, error) {
 // PrecompiledContract interface.
 func NewPrecompile(
 	slashingKeeper slashingkeeper.Keeper,
+	bankKeeper cmn.BankKeeper,
 ) (*Precompile, error) {
 	abi, err := LoadABI()
 	if err != nil {
@@ -56,6 +57,9 @@ func NewPrecompile(
 		},
 		slashingKeeper: slashingKeeper,
 	}
+
+	// Set the balance handler for the precompile.
+	p.SetBalanceHandler(bankKeeper)
 
 	// SetAddress defines the address of the slashing precompiled contract.
 	p.SetAddress(common.HexToAddress(evmtypes.SlashingPrecompileAddress))

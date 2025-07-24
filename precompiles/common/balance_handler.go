@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/tracing"
 
 	"github.com/cosmos/evm/utils"
@@ -11,17 +12,22 @@ import (
 	"github.com/cosmos/evm/x/vm/statedb"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 )
 
+var moduleAccAddrPreciseBank = authtypes.NewModuleAddress(precisebanktypes.ModuleName)
+
 // BalanceHandler is a struct that handles balance changes in the Cosmos SDK context.
 type BalanceHandler struct {
+	bankKeeper    BankKeeper
 	prevEventsLen int
 }
 
 // NewBalanceHandler creates a new BalanceHandler instance.
-func NewBalanceHandler() *BalanceHandler {
+func NewBalanceHandler(bankKeeper BankKeeper) *BalanceHandler {
 	return &BalanceHandler{
+		bankKeeper:    bankKeeper,
 		prevEventsLen: 0,
 	}
 }
@@ -36,17 +42,33 @@ func (bh *BalanceHandler) BeforeBalanceChange(ctx sdk.Context) {
 // AfterBalanceChange processes the recorded events and updates the stateDB accordingly.
 // It handles the bank events for coin spent and coin received, updating the balances
 // of the spender and receiver addresses respectively.
+//
+// NOTES: Balance change events involving BlockedAddresses are bypassed.
+// Native balances are handled separately to prevent cases where a bank coin transfer
+// initiated by a precompile is unintentionally overwritten by balance changes from within a contract.
+
+// Typically, accounts registered as BlockedAddresses in app.go—such as module accounts—are not expected to receive coins.
+// However, in modules like precisebank, it is common to borrow and repay integer balances
+// from the module account to support fractional balance handling.
+//
+// As a result, even if a module account is marked as a BlockedAddress, a keeper-level SendCoins operation
+// can emit an x/bank event in which the module account appears as a spender or receiver.
+// If such events are parsed and used to invoke StateDB.AddBalance or StateDB.SubBalance, authorization errors can occur.
+//
+// To prevent this, balance changes from events involving blocked addresses are not applied to the StateDB.
+// Instead, the state changes resulting from the precompile call are applied directly via the MultiStore.
 func (bh *BalanceHandler) AfterBalanceChange(ctx sdk.Context, stateDB *statedb.StateDB) error {
 	events := ctx.EventManager().Events()
 
 	for _, event := range events[bh.prevEventsLen:] {
 		switch event.Type {
 		case banktypes.EventTypeCoinSpent:
-			spenderHexAddr, bypass, err := ParseHexAddress(event, banktypes.AttributeKeySpender)
+			spenderAddr, err := ParseAddress(event, banktypes.AttributeKeySpender)
 			if err != nil {
 				return fmt.Errorf("failed to parse spender address from event %q: %w", banktypes.EventTypeCoinSpent, err)
 			}
-			if bypass {
+			if bh.bankKeeper.BlockedAddr(spenderAddr) {
+				// Bypass blocked addresses
 				continue
 			}
 
@@ -55,14 +77,15 @@ func (bh *BalanceHandler) AfterBalanceChange(ctx sdk.Context, stateDB *statedb.S
 				return fmt.Errorf("failed to parse amount from event %q: %w", banktypes.EventTypeCoinSpent, err)
 			}
 
-			stateDB.SubBalance(spenderHexAddr, amount, tracing.BalanceChangeUnspecified)
+			stateDB.SubBalance(common.BytesToAddress(spenderAddr.Bytes()), amount, tracing.BalanceChangeUnspecified)
 
 		case banktypes.EventTypeCoinReceived:
-			receiverHexAddr, bypass, err := ParseHexAddress(event, banktypes.AttributeKeyReceiver)
+			receiverAddr, err := ParseAddress(event, banktypes.AttributeKeyReceiver)
 			if err != nil {
 				return fmt.Errorf("failed to parse receiver address from event %q: %w", banktypes.EventTypeCoinReceived, err)
 			}
-			if bypass {
+			if bh.bankKeeper.BlockedAddr(receiverAddr) {
+				// Bypass blocked addresses
 				continue
 			}
 
@@ -71,14 +94,15 @@ func (bh *BalanceHandler) AfterBalanceChange(ctx sdk.Context, stateDB *statedb.S
 				return fmt.Errorf("failed to parse amount from event %q: %w", banktypes.EventTypeCoinReceived, err)
 			}
 
-			stateDB.AddBalance(receiverHexAddr, amount, tracing.BalanceChangeUnspecified)
+			stateDB.AddBalance(common.BytesToAddress(receiverAddr.Bytes()), amount, tracing.BalanceChangeUnspecified)
 
 		case precisebanktypes.EventTypeFractionalBalanceUpdated:
-			addr, bypass, err := ParseHexAddress(event, precisebanktypes.AttributeKeyAddress)
+			addr, err := ParseAddress(event, precisebanktypes.AttributeKeyAddress)
 			if err != nil {
 				return fmt.Errorf("failed to parse address from event %q: %w", precisebanktypes.EventTypeFractionalBalanceUpdated, err)
 			}
-			if bypass {
+			if bh.bankKeeper.BlockedAddr(addr) {
+				// Bypass blocked addresses
 				continue
 			}
 
@@ -93,9 +117,9 @@ func (bh *BalanceHandler) AfterBalanceChange(ctx sdk.Context, stateDB *statedb.S
 			}
 
 			if delta.Sign() == 1 {
-				stateDB.AddBalance(addr, deltaAbs, tracing.BalanceChangeUnspecified)
+				stateDB.AddBalance(common.BytesToAddress(addr.Bytes()), deltaAbs, tracing.BalanceChangeUnspecified)
 			} else if delta.Sign() == -1 {
-				stateDB.SubBalance(addr, deltaAbs, tracing.BalanceChangeUnspecified)
+				stateDB.SubBalance(common.BytesToAddress(addr.Bytes()), deltaAbs, tracing.BalanceChangeUnspecified)
 			}
 
 		default:

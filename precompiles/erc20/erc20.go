@@ -72,6 +72,10 @@ func NewPrecompile(
 		erc20Keeper:    erc20Keeper,
 		transferKeeper: transferKeeper,
 	}
+
+	// Set the balance handler for the precompile.
+	p.SetBalanceHandler(bankKeeper)
+
 	// Address defines the address of the ERC-20 precompile contract.
 	p.SetAddress(p.tokenPair.GetERC20Contract())
 	return p, nil

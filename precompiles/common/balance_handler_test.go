@@ -6,9 +6,11 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/tracing"
 	"github.com/holiman/uint256"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	cmn "github.com/cosmos/evm/precompiles/common"
+	cmnmocks "github.com/cosmos/evm/precompiles/common/mocks"
 	testutil "github.com/cosmos/evm/testutil"
 	testconstants "github.com/cosmos/evm/testutil/constants"
 	precisebanktypes "github.com/cosmos/evm/x/precisebank/types"
@@ -20,6 +22,7 @@ import (
 
 	sdktestutil "github.com/cosmos/cosmos-sdk/testutil"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 )
 
@@ -32,64 +35,46 @@ func setupBalanceHandlerTest(t *testing.T) {
 	require.NoError(t, configurator.WithEVMCoinInfo(testconstants.ExampleChainCoinInfo[testconstants.ExampleChainID]).Configure())
 }
 
-func TestParseHexAddress(t *testing.T) {
+func TestParseAddress(t *testing.T) {
 	testCases := []struct {
 		name      string
-		maleate   func() (common.Address, sdk.Event)
+		maleate   func() (sdk.AccAddress, sdk.Event)
 		key       string
 		expBypass bool
 		expError  bool
 	}{
 		{
 			name: "valid address",
-			maleate: func() (common.Address, sdk.Event) {
+			maleate: func() (sdk.AccAddress, sdk.Event) {
 				_, addrs, err := testutil.GeneratePrivKeyAddressPairs(1)
 				require.NoError(t, err)
-				addr := common.BytesToAddress(addrs[0].Bytes())
 
-				return addr, sdk.NewEvent(
+				return addrs[0], sdk.NewEvent(
 					banktypes.EventTypeCoinSpent,
 					sdk.NewAttribute(banktypes.AttributeKeySpender, addrs[0].String()),
 				)
 			},
-			key:       banktypes.AttributeKeySpender,
-			expBypass: false,
-			expError:  false,
+			key:      banktypes.AttributeKeySpender,
+			expError: false,
 		},
 		{
 			name: "missing attribute",
-			maleate: func() (common.Address, sdk.Event) {
-				return common.Address{}, sdk.NewEvent(banktypes.EventTypeCoinSpent)
+			maleate: func() (sdk.AccAddress, sdk.Event) {
+				return sdk.AccAddress{}, sdk.NewEvent(banktypes.EventTypeCoinSpent)
 			},
-			key:       banktypes.AttributeKeySpender,
-			expBypass: false,
-			expError:  true,
+			key:      banktypes.AttributeKeySpender,
+			expError: true,
 		},
 		{
 			name: "invalid address",
-			maleate: func() (common.Address, sdk.Event) {
-				return common.Address{}, sdk.NewEvent(
+			maleate: func() (sdk.AccAddress, sdk.Event) {
+				return sdk.AccAddress{}, sdk.NewEvent(
 					banktypes.EventTypeCoinSpent,
 					sdk.NewAttribute(banktypes.AttributeKeySpender, "invalid"),
 				)
 			},
-			key:       banktypes.AttributeKeySpender,
-			expBypass: false,
-			expError:  true,
-		},
-		{
-			name: "bypass address",
-			maleate: func() (common.Address, sdk.Event) {
-				addr := common.BytesToAddress(sdk.MustAccAddressFromBech32(cmn.ModuleAccAddrPreciseBank).Bytes())
-
-				return addr, sdk.NewEvent(
-					precisebanktypes.EventTypeFractionalBalanceUpdated,
-					sdk.NewAttribute(banktypes.AttributeKeySpender, cmn.ModuleAccAddrPreciseBank),
-				)
-			},
-			key:       banktypes.AttributeKeySpender,
-			expBypass: true,
-			expError:  false,
+			key:      banktypes.AttributeKeySpender,
+			expError: true,
 		},
 	}
 
@@ -99,13 +84,10 @@ func TestParseHexAddress(t *testing.T) {
 
 			ethAddr, event := tc.maleate()
 
-			addr, bypass, err := cmn.ParseHexAddress(event, tc.key)
+			addr, err := cmn.ParseAddress(event, tc.key)
 			if tc.expError {
 				require.Error(t, err)
 			} else {
-				if tc.expBypass {
-					require.True(t, bypass, "expected bypass to be true")
-				}
 				require.NoError(t, err)
 				require.Equal(t, addr, ethAddr)
 			}
@@ -179,7 +161,15 @@ func TestAfterBalanceChange(t *testing.T) {
 	// initial balance for spender
 	stateDB.AddBalance(spender, uint256.NewInt(5), tracing.BalanceChangeUnspecified)
 
-	bh := cmn.NewBalanceHandler()
+	bankKeeper := cmnmocks.NewBankKeeper(t)
+	precisebankModuleAccAddr := authtypes.NewModuleAddress(precisebanktypes.ModuleName)
+	bankKeeper.Mock.On("BlockedAddr", mock.AnythingOfType("types.AccAddress")).Return(func(addr sdk.AccAddress) bool {
+		// NOTE: In principle, all blockedAddresses configured in app.go should be checked.
+		// However, for the sake of simplicity in this test, we assume a scenario where
+		// only the precisebank module account is treated as a blockedAddress.
+		return addr.Equals(precisebankModuleAccAddr)
+	})
+	bh := cmn.NewBalanceHandler(bankKeeper)
 	bh.BeforeBalanceChange(ctx)
 
 	coins := sdk.NewCoins(sdk.NewInt64Coin(evmtypes.GetEVMCoinDenom(), 3))
@@ -207,7 +197,15 @@ func TestAfterBalanceChangeErrors(t *testing.T) {
 	require.NoError(t, err)
 	addr := addrs[0]
 
-	bh := cmn.NewBalanceHandler()
+	bankKeeper := cmnmocks.NewBankKeeper(t)
+	precisebankModuleAccAddr := authtypes.NewModuleAddress(precisebanktypes.ModuleName)
+	bankKeeper.Mock.On("BlockedAddr", mock.AnythingOfType("types.AccAddress")).Return(func(addr sdk.AccAddress) bool {
+		// NOTE: In principle, all blockedAddresses configured in app.go should be checked.
+		// However, for the sake of simplicity in this test, we assume a scenario where
+		// only the precisebank module account is treated as a blockedAddress.
+		return addr.Equals(precisebankModuleAccAddr)
+	})
+	bh := cmn.NewBalanceHandler(bankKeeper)
 	bh.BeforeBalanceChange(ctx)
 
 	// invalid address in event

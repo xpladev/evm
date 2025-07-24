@@ -42,6 +42,7 @@ func LoadABI() (abi.ABI, error) {
 // PrecompiledContract interface.
 func NewPrecompile(
 	evidenceKeeper evidencekeeper.Keeper,
+	bankKeeper cmn.BankKeeper,
 ) (*Precompile, error) {
 	abi, err := LoadABI()
 	if err != nil {
@@ -56,6 +57,9 @@ func NewPrecompile(
 		},
 		evidenceKeeper: evidenceKeeper,
 	}
+
+	// Set the balance handler for the precompile.
+	p.SetBalanceHandler(bankKeeper)
 
 	// SetAddress defines the address of the evidence precompiled contract.
 	p.SetAddress(common.HexToAddress(evmtypes.EvidencePrecompileAddress))

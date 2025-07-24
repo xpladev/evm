@@ -108,7 +108,7 @@ func (s *PrecompileTestSuite) SetupTest() {
 	s.precompile, err = distribution.NewPrecompile(
 		s.network.App.DistrKeeper,
 		*s.network.App.StakingKeeper,
-		s.network.App.EVMKeeper,
+		s.network.App.BankKeeper,
 	)
 	if err != nil {
 		panic(err)

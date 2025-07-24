@@ -44,6 +44,7 @@ func LoadABI() (abi.ABI, error) {
 // PrecompiledContract interface.
 func NewPrecompile(
 	govKeeper govkeeper.Keeper,
+	bankKeeper cmn.BankKeeper,
 	codec codec.Codec,
 ) (*Precompile, error) {
 	abi, err := LoadABI()
@@ -60,6 +61,9 @@ func NewPrecompile(
 		govKeeper: govKeeper,
 		codec:     codec,
 	}
+
+	// Set the balance handler for the precompile.
+	p.SetBalanceHandler(bankKeeper)
 
 	// SetAddress defines the address of the gov precompiled contract.
 	p.SetAddress(common.HexToAddress(evmtypes.GovPrecompileAddress))

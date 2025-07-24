@@ -131,6 +131,7 @@ func (s *PrecompileTestSuite) SetupTest() {
 
 	if s.precompile, err = gov.NewPrecompile(
 		s.network.App.GovKeeper,
+		s.network.App.BankKeeper,
 		s.network.App.AppCodec(),
 	); err != nil {
 		panic(err)
