@@ -12,11 +12,8 @@ import (
 	"github.com/cosmos/evm/x/vm/statedb"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 )
-
-var moduleAccAddrPreciseBank = authtypes.NewModuleAddress(precisebanktypes.ModuleName)
 
 // BalanceHandler is a struct that handles balance changes in the Cosmos SDK context.
 type BalanceHandler struct {
