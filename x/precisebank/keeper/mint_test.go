@@ -364,6 +364,8 @@ func TestMintCoins_ExpectedCalls(t *testing.T) {
 			// Check final fractional balance
 			fBal = td.keeper.GetFractionalBalance(td.ctx, moduleAddr)
 			require.Equal(t, tt.wantPreciseBalance, fBal)
+
+			// TODO: Check Events
 		})
 	}
 }
