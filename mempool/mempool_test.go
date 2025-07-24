@@ -38,11 +38,12 @@ type MempoolTestSuite struct {
 	suite.Suite
 	ctx            sdk.Context
 	mempool        *EVMMempool
-	mockVMKeeper   VMKeeperI
+	mockVMKeeper   *mocks.MockVMKeeper
 	cosmosPool     cosmosMempool.ExtMempool
 	txDecoder      sdk.TxDecoder
 	mockChain      *mocks.MockBlockChain
 	encodingConfig testutil2.TestEncodingConfig
+	ctxFunc        func(height int64, prove bool) (sdk.Context, error)
 }
 
 func (suite *MempoolTestSuite) SetupTest() {
@@ -73,7 +74,7 @@ func (suite *MempoolTestSuite) SetupTest() {
 	suite.txDecoder = suite.encodingConfig.TxConfig.TxDecoder()
 
 	// Create a minimal txpool with legacypool
-	suite.mockChain = mocks.NewMockBlockChain(suite.mockVMKeeper.(*mocks.MockVMKeeper))
+	suite.mockChain = mocks.NewMockBlockChain(suite.mockVMKeeper)
 	legacyPool := legacypool.New(legacypool.DefaultConfig, suite.mockChain)
 
 	// Initialize the legacy pool with a proper header
@@ -85,17 +86,19 @@ func (suite *MempoolTestSuite) SetupTest() {
 		Subpools: []txpool.SubPool{legacyPool},
 	}
 
-	suite.mempool = NewEVMMempool(suite.mockVMKeeper, suite.txDecoder, &EVMMempoolConfig{
+	suite.ctxFunc = func(height int64, prove bool) (sdk.Context, error) {
+		return suite.ctx, nil
+	}
+	suite.mempool = NewEVMMempool(suite.ctxFunc, suite.mockVMKeeper, suite.txDecoder, &EVMMempoolConfig{
 		TxPool:     txPool,
 		CosmosPool: suite.cosmosPool,
-		BondDenom:  "wei",
 	})
 }
 
 // Test helper functions
 func (suite *MempoolTestSuite) addAccountToStateDB(addr common.Address, balance *big.Int) {
 	balanceU256, _ := uint256.FromBig(balance)
-	mockKeeper := suite.mockVMKeeper.(*mocks.MockVMKeeper)
+	mockKeeper := suite.mockVMKeeper
 	mockKeeper.AddAccount(addr, balanceU256, 0)
 }
 
@@ -181,7 +184,7 @@ func (suite *MempoolTestSuite) TestNewEVMMempool() {
 		{
 			name: "valid single subpool",
 			setup: func() (*txpool.TxPool, bool) {
-				testChain := mocks.NewMockBlockChain(suite.mockVMKeeper.(*mocks.MockVMKeeper))
+				testChain := mocks.NewMockBlockChain(suite.mockVMKeeper)
 				legacyPool := legacypool.New(legacypool.DefaultConfig, testChain)
 				return &txpool.TxPool{Subpools: []txpool.SubPool{legacyPool}}, false
 			},
@@ -190,7 +193,7 @@ func (suite *MempoolTestSuite) TestNewEVMMempool() {
 		{
 			name: "multiple subpools should panic",
 			setup: func() (*txpool.TxPool, bool) {
-				testChain := mocks.NewMockBlockChain(suite.mockVMKeeper.(*mocks.MockVMKeeper))
+				testChain := mocks.NewMockBlockChain(suite.mockVMKeeper)
 				legacyPool1 := legacypool.New(legacypool.DefaultConfig, testChain)
 				legacyPool2 := legacypool.New(legacypool.DefaultConfig, testChain)
 				return &txpool.TxPool{Subpools: []txpool.SubPool{legacyPool1, legacyPool2}}, true
@@ -204,17 +207,21 @@ func (suite *MempoolTestSuite) TestNewEVMMempool() {
 			txPool, _ := tc.setup()
 			if tc.wantPanic {
 				require.Panics(t, func() {
-					NewEVMMempool(suite.mockVMKeeper, suite.txDecoder, &EVMMempoolConfig{
+					ctxFunc := func(height int64, prove bool) (sdk.Context, error) {
+						return suite.ctx, nil
+					}
+					NewEVMMempool(ctxFunc, suite.mockVMKeeper, suite.txDecoder, &EVMMempoolConfig{
 						TxPool:     txPool,
 						CosmosPool: suite.cosmosPool,
-						BondDenom:  "wei",
 					})
 				})
 			} else {
-				mempoolInstance := NewEVMMempool(suite.mockVMKeeper, suite.txDecoder, &EVMMempoolConfig{
+				ctxFunc := func(height int64, prove bool) (sdk.Context, error) {
+					return suite.ctx, nil
+				}
+				mempoolInstance := NewEVMMempool(ctxFunc, suite.mockVMKeeper, suite.txDecoder, &EVMMempoolConfig{
 					TxPool:     txPool,
 					CosmosPool: suite.cosmosPool,
-					BondDenom:  "wei",
 				})
 				require.NotNil(t, mempoolInstance)
 				require.Equal(t, suite.mockVMKeeper, mempoolInstance.vmKeeper)
@@ -279,10 +286,9 @@ func (suite *MempoolTestSuite) TestInsert() {
 		suite.T().Run(tc.name, func(t *testing.T) {
 			// Reset state for each test by creating a new cosmos pool
 			suite.cosmosPool = cosmosMempool.DefaultPriorityMempool()
-			suite.mempool = NewEVMMempool(suite.mockVMKeeper, suite.txDecoder, &EVMMempoolConfig{
+			suite.mempool = NewEVMMempool(suite.ctxFunc, suite.mockVMKeeper, suite.txDecoder, &EVMMempoolConfig{
 				TxPool:     suite.mempool.txPool,
 				CosmosPool: suite.cosmosPool,
-				BondDenom:  "wei",
 			})
 
 			tc.setupAccount()
@@ -345,10 +351,9 @@ func (suite *MempoolTestSuite) TestRemove() {
 		suite.T().Run(tc.name, func(t *testing.T) {
 			// Reset state for each test by creating a new cosmos pool
 			suite.cosmosPool = cosmosMempool.DefaultPriorityMempool()
-			suite.mempool = NewEVMMempool(suite.mockVMKeeper, suite.txDecoder, &EVMMempoolConfig{
+			suite.mempool = NewEVMMempool(suite.ctxFunc, suite.mockVMKeeper, suite.txDecoder, &EVMMempoolConfig{
 				TxPool:     suite.mempool.txPool,
 				CosmosPool: suite.cosmosPool,
-				BondDenom:  "wei",
 			})
 
 			tc.setupAccount()
@@ -421,10 +426,9 @@ func (suite *MempoolTestSuite) TestSelect() {
 		suite.T().Run(tc.name, func(t *testing.T) {
 			// Reset state for each test by creating a new cosmos pool
 			suite.cosmosPool = cosmosMempool.DefaultPriorityMempool()
-			suite.mempool = NewEVMMempool(suite.mockVMKeeper, suite.txDecoder, &EVMMempoolConfig{
+			suite.mempool = NewEVMMempool(suite.ctxFunc, suite.mockVMKeeper, suite.txDecoder, &EVMMempoolConfig{
 				TxPool:     suite.mempool.txPool,
 				CosmosPool: suite.cosmosPool,
-				BondDenom:  "wei",
 			})
 			tc.setupTxs()
 
@@ -492,10 +496,9 @@ func (suite *MempoolTestSuite) TestIterator() {
 		suite.T().Run(tc.name, func(t *testing.T) {
 			// Reset state for each test by creating a new cosmos pool
 			suite.cosmosPool = cosmosMempool.DefaultPriorityMempool()
-			suite.mempool = NewEVMMempool(suite.mockVMKeeper, suite.txDecoder, &EVMMempoolConfig{
+			suite.mempool = NewEVMMempool(suite.ctxFunc, suite.mockVMKeeper, suite.txDecoder, &EVMMempoolConfig{
 				TxPool:     suite.mempool.txPool,
 				CosmosPool: suite.cosmosPool,
-				BondDenom:  "wei",
 			})
 			tc.setupTxs()
 
@@ -701,7 +704,7 @@ func (suite *MempoolTestSuite) TestTransactionOrdering() {
 			// Don't create cosmosPool here - let NewEVMMempool create it with proper priority logic
 
 			// Create a fresh EVM pool
-			suite.mockChain = mocks.NewMockBlockChain(suite.mockVMKeeper.(*mocks.MockVMKeeper))
+			suite.mockChain = mocks.NewMockBlockChain(suite.mockVMKeeper)
 			legacyPool := legacypool.New(legacypool.DefaultConfig, suite.mockChain)
 			reserver := &mocks.MockReserver{}
 			err := legacyPool.Init(1000000000, suite.mockChain.CurrentBlock(), reserver)
@@ -711,10 +714,9 @@ func (suite *MempoolTestSuite) TestTransactionOrdering() {
 			}
 
 			// Let the constructor create the cosmosPool with correct priority logic
-			suite.mempool = NewEVMMempool(suite.mockVMKeeper, suite.txDecoder, &EVMMempoolConfig{
+			suite.mempool = NewEVMMempool(suite.ctxFunc, suite.mockVMKeeper, suite.txDecoder, &EVMMempoolConfig{
 				TxPool:     txPool,
 				CosmosPool: nil, // Let it create its own with correct priority logic
-				BondDenom:  "wei",
 			})
 			// Update the suite's cosmosPool to point to the one created by NewEVMMempool
 			suite.cosmosPool = suite.mempool.cosmosPool
@@ -747,10 +749,17 @@ func BenchmarkInsertCosmosTransaction(b *testing.B) {
 	txPool := &txpool.TxPool{
 		Subpools: []txpool.SubPool{legacyPool},
 	}
-	mpool := NewEVMMempool(mockVMKeeper, txDecoder, &EVMMempoolConfig{
+	db := dbm.NewMemDB()
+	storeKey := storetypes.NewKVStoreKey("test")
+	cms := store.NewCommitMultiStore(db, log.NewNopLogger(), metrics.NewNoOpMetrics())
+	cms.MountStoreWithDB(storeKey, storetypes.StoreTypeIAVL, db)
+	_ = cms.LoadLatestVersion()
+	ctxFunc := func(height int64, prove bool) (sdk.Context, error) {
+		return sdk.NewContext(cms, cmtproto.Header{}, false, log.NewNopLogger()), nil
+	}
+	mpool := NewEVMMempool(ctxFunc, mockVMKeeper, txDecoder, &EVMMempoolConfig{
 		TxPool:     txPool,
 		CosmosPool: cosmosPool,
-		BondDenom:  "wei",
 	})
 
 	// Create a real bank message transaction
@@ -984,7 +993,7 @@ func (suite *MempoolTestSuite) TestSelectBy() {
 			suite.cosmosPool = cosmosMempool.DefaultPriorityMempool()
 
 			// Create fresh EVM pool
-			suite.mockChain = mocks.NewMockBlockChain(suite.mockVMKeeper.(*mocks.MockVMKeeper))
+			suite.mockChain = mocks.NewMockBlockChain(suite.mockVMKeeper)
 			legacyPool := legacypool.New(legacypool.DefaultConfig, suite.mockChain)
 			reserver := &mocks.MockReserver{}
 			err := legacyPool.Init(1000000000, suite.mockChain.CurrentBlock(), reserver)
@@ -993,10 +1002,9 @@ func (suite *MempoolTestSuite) TestSelectBy() {
 				Subpools: []txpool.SubPool{legacyPool},
 			}
 
-			suite.mempool = NewEVMMempool(suite.mockVMKeeper, suite.txDecoder, &EVMMempoolConfig{
+			suite.mempool = NewEVMMempool(suite.ctxFunc, suite.mockVMKeeper, suite.txDecoder, &EVMMempoolConfig{
 				TxPool:     txPool,
 				CosmosPool: suite.cosmosPool,
-				BondDenom:  "wei",
 			})
 
 			tc.setupTxs()
@@ -1014,7 +1022,7 @@ func (suite *MempoolTestSuite) TestSelectBy() {
 
 			// Test SelectBy directly
 			suite.mempool.SelectBy(suite.ctx, nil, wrappedFilter)
-			
+
 			// Assert that SelectBy completed without hanging
 			require.True(t, callCount > 0, "Filter should have been called at least once")
 			if tc.expectedCalls > 0 {
@@ -1048,10 +1056,12 @@ func BenchmarkSelect(b *testing.B) {
 	txPool := &txpool.TxPool{
 		Subpools: []txpool.SubPool{legacyPool},
 	}
-	mpool := NewEVMMempool(mockVMKeeper, txDecoder, &EVMMempoolConfig{
+	ctxFunc := func(height int64, prove bool) (sdk.Context, error) {
+		return ctx, nil
+	}
+	mpool := NewEVMMempool(ctxFunc, mockVMKeeper, txDecoder, &EVMMempoolConfig{
 		TxPool:     txPool,
 		CosmosPool: cosmosPool,
-		BondDenom:  "wei",
 	})
 
 	// Pre-populate with some transactions
@@ -1103,10 +1113,12 @@ func BenchmarkSelectBy(b *testing.B) {
 	txPool := &txpool.TxPool{
 		Subpools: []txpool.SubPool{legacyPool},
 	}
-	mpool := NewEVMMempool(mockVMKeeper, txDecoder, &EVMMempoolConfig{
+	ctxFunc := func(height int64, prove bool) (sdk.Context, error) {
+		return ctx, nil
+	}
+	mpool := NewEVMMempool(ctxFunc, mockVMKeeper, txDecoder, &EVMMempoolConfig{
 		TxPool:     txPool,
 		CosmosPool: cosmosPool,
-		BondDenom:  "wei",
 	})
 
 	// Pre-populate with mixed transactions for realistic block building scenario

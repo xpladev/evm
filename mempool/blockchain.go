@@ -5,7 +5,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/evm/mempool/txpool"
 	"github.com/cosmos/evm/mempool/txpool/legacypool"
-	vmkeeper "github.com/cosmos/evm/x/vm/keeper"
 	"github.com/cosmos/evm/x/vm/statedb"
 	evmtypes "github.com/cosmos/evm/x/vm/types"
 	"github.com/ethereum/go-ethereum/common"
@@ -22,11 +21,11 @@ var _ legacypool.BlockChain = Blockchain{}
 
 type Blockchain struct {
 	ctx           func(height int64, prove bool) (sdk.Context, error)
-	vmKeeper      vmkeeper.Keeper
+	vmKeeper      VMKeeperI
 	chainHeadFeed *event.Feed
 }
 
-func NewBlockchain(ctx func(height int64, prove bool) (sdk.Context, error), vmKeeper vmkeeper.Keeper) *Blockchain {
+func NewBlockchain(ctx func(height int64, prove bool) (sdk.Context, error), vmKeeper VMKeeperI) *Blockchain {
 	return &Blockchain{
 		ctx:           ctx,
 		vmKeeper:      vmKeeper,
@@ -86,7 +85,7 @@ func (b Blockchain) StateAt(_ common.Hash) (vm.StateDB, error) {
 	if err != nil {
 		return nil, err
 	}
-	return statedb.New(ctx, &b.vmKeeper, statedb.NewEmptyTxConfig(common.Hash(ctx.HeaderHash()))), nil
+	return statedb.New(ctx, b.vmKeeper, statedb.NewEmptyTxConfig(common.Hash(ctx.HeaderHash()))), nil
 }
 
 func (b Blockchain) GetLatestCtx() (sdk.Context, error) {

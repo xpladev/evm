@@ -11,7 +11,6 @@ import (
 	"github.com/cosmos/evm/mempool/miner"
 	"github.com/cosmos/evm/mempool/txpool"
 	"github.com/cosmos/evm/mempool/txpool/legacypool"
-	vmkeeper "github.com/cosmos/evm/x/vm/keeper"
 	evmtypes "github.com/cosmos/evm/x/vm/types"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/holiman/uint256"
@@ -23,7 +22,7 @@ var _ mempool.Iterator = &EVMMempoolIterator{}
 type (
 	EVMMempool struct {
 		/** Keepers **/
-		vmKeeper vmkeeper.Keeper
+		vmKeeper VMKeeperI
 
 		/** Mempools **/
 		txPool       *txpool.TxPool
@@ -49,7 +48,7 @@ type EVMMempoolConfig struct {
 	CosmosPool mempool.ExtMempool
 }
 
-func NewEVMMempool(ctx func(height int64, prove bool) (sdk.Context, error), vmKeeper vmkeeper.Keeper, txDecoder sdk.TxDecoder, config *EVMMempoolConfig) *EVMMempool {
+func NewEVMMempool(ctx func(height int64, prove bool) (sdk.Context, error), vmKeeper VMKeeperI, txDecoder sdk.TxDecoder, config *EVMMempoolConfig) *EVMMempool {
 	var txPool *txpool.TxPool
 	var cosmosPool mempool.ExtMempool
 	bondDenom := "wei"

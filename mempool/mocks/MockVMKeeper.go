@@ -47,7 +47,7 @@ func (m *MockVMKeeper) GetCodeHash(_ sdk.Context, addr common.Address) common.Ha
 	return common.Hash{}
 }
 
-func (m *MockVMKeeper) ForEachStorage(_ sdk.Context, addr common.Address, cb func(key, value common.Hash) bool) {
+func (m *MockVMKeeper) ForEachStorage(_ sdk.Context, addr common.Address, cb func(key common.Hash, value common.Hash) bool) {
 	// No storage for mock
 }
 
