@@ -30,6 +30,7 @@ import (
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 )
 
 // -------------------------------------------------------------------------------------------------
@@ -77,6 +78,30 @@ var _ = DescribeTableSubtree("a user interact with the WEVMOS precompiled contra
 		txSender, user keyring.Key
 
 		revertContractAddr common.Address
+
+		precisebankModuleAccAddr sdk.AccAddress
+
+		// Shared balance snapshots for common test scenarios
+		// userBeforeSnapshot       *BalanceSnapshot
+
+		senderBeforeSnapshot            *BalanceSnapshot
+		receiverBeforeSnapshot          *BalanceSnapshot
+		precompileBeforeSnapshot        *BalanceSnapshot
+		contractBeforeSnapshot          *BalanceSnapshot
+		precisebankModuleBeforeSnapshot *BalanceSnapshot
+
+		// Expected balance changes (set by individual tests)
+		senderIntegerDelta         *big.Int
+		senderFractionalDelta      *big.Int
+		receiverIntegerDelta       *big.Int
+		receiverFractionalDelta    *big.Int
+		precompileIntegerDelta     *big.Int
+		precompileFractionalDelta  *big.Int
+		contractIntegerDelta       *big.Int
+		contractFractionalDelta    *big.Int
+		precisebankIntegerDelta    *big.Int
+		precisebankFractionalDelta *big.Int
+		precisebankRemainder       *big.Int
 	)
 
 	// Configure deposit amounts with integer and fractional components to test
@@ -99,6 +124,67 @@ var _ = DescribeTableSubtree("a user interact with the WEVMOS precompiled contra
 
 	withdrawAmount := depositAmount
 	transferAmount := big.NewInt(10) // Start with 10 integer units
+
+	// Helper functions for balance snapshot management
+	resetExpectedDeltas := func() {
+		senderIntegerDelta = big.NewInt(0)
+		senderFractionalDelta = big.NewInt(0)
+
+		receiverIntegerDelta = big.NewInt(0)
+		receiverFractionalDelta = big.NewInt(0)
+
+		precompileIntegerDelta = big.NewInt(0)
+		precompileFractionalDelta = big.NewInt(0)
+
+		contractIntegerDelta = big.NewInt(0)
+		contractFractionalDelta = big.NewInt(0)
+
+		precisebankIntegerDelta = big.NewInt(0)
+		precisebankFractionalDelta = big.NewInt(0)
+		precisebankRemainder = big.NewInt(0)
+	}
+
+	takeSnapshots := func() {
+		var err error
+
+		senderBeforeSnapshot, err = is.getBalanceSnapshot(txSender.AccAddr)
+		Expect(err).ToNot(HaveOccurred(), "failed to get sender balance snapshot")
+
+		receiverBeforeSnapshot, err = is.getBalanceSnapshot(user.AccAddr)
+		Expect(err).ToNot(HaveOccurred(), "failed to get receiver balance snapshot")
+
+		precompileBeforeSnapshot, err = is.getBalanceSnapshot(callsData.precompileAddr.Bytes())
+		Expect(err).ToNot(HaveOccurred(), "failed to get precompile balance snapshot")
+
+		contractBeforeSnapshot, err = is.getBalanceSnapshot(revertContractAddr.Bytes())
+		Expect(err).ToNot(HaveOccurred(), "failed to get contract balance snapshot")
+
+		precisebankModuleAccAddr = authtypes.NewModuleAddress(precisebanktypes.ModuleName)
+		precisebankModuleBeforeSnapshot, err = is.getBalanceSnapshot(precisebankModuleAccAddr)
+		Expect(err).ToNot(HaveOccurred(), "failed to get precisebank module balance snapshot")
+	}
+
+	verifyBalanceChanges := func() {
+		is.expectBalanceChange(txSender.AccAddr, senderBeforeSnapshot,
+			senderIntegerDelta, senderFractionalDelta, "sender")
+
+		is.expectBalanceChange(user.AccAddr, receiverBeforeSnapshot,
+			receiverIntegerDelta, receiverFractionalDelta, "receiver")
+
+		is.expectBalanceChange(callsData.precompileAddr.Bytes(), precompileBeforeSnapshot,
+			precompileIntegerDelta, precompileFractionalDelta, "precompile")
+
+		is.expectBalanceChange(revertContractAddr.Bytes(), contractBeforeSnapshot,
+			contractIntegerDelta, contractFractionalDelta, "contract")
+
+		is.expectBalanceChange(precisebankModuleAccAddr, precisebankModuleBeforeSnapshot,
+			precisebankIntegerDelta, precisebankFractionalDelta, "precisebank module")
+
+		res, err := is.grpcHandler.Remainder()
+		Expect(err).ToNot(HaveOccurred(), "failed to get precisebank module remainder")
+		actualRemainder := res.Remainder.Amount.BigInt()
+		Expect(actualRemainder).To(Equal(precisebankRemainder))
+	}
 
 	BeforeEach(func() {
 		is = new(PrecompileIntegrationTestSuite)
@@ -210,32 +296,30 @@ var _ = DescribeTableSubtree("a user interact with the WEVMOS precompiled contra
 		withdrawCheck = passCheck.WithExpEvents(werc20.EventTypeWithdrawal)
 		depositCheck = passCheck.WithExpEvents(werc20.EventTypeDeposit)
 		transferCheck = passCheck.WithExpEvents(erc20.EventTypeTransfer)
+
+		// Reset balance tracking state for each test
+		resetExpectedDeltas()
 	})
+
+	// JustBeforeEach takes snapshots after individual test setup
+	JustBeforeEach(func() {
+		takeSnapshots()
+	})
+
+	// AfterEach verifies balance changes
+	AfterEach(func() {
+		verifyBalanceChanges()
+	})
+
 	Context("calling a specific wrapped coin method", func() {
 		Context("and funds are part of the transaction", func() {
 			When("the method is deposit", func() {
 				It("it should return funds to sender and emit the event", func() {
-					// Get initial balance snapshots using grpcHandler for accurate state
-					userBeforeSnapshot, err := is.getBalanceSnapshot(user.AccAddr)
-					Expect(err).ToNot(HaveOccurred(), "failed to get initial user balance")
-
-					precompileBeforeSnapshot, err := is.getBalanceSnapshot(callsData.precompileAddr.Bytes())
-					Expect(err).ToNot(HaveOccurred(), "failed to get initial precompile balance")
-
-					Expect(is.network.NextBlock()).ToNot(HaveOccurred(), "error on NextBlock")
-
 					txArgs, callArgs := callsData.getTxAndCallArgs(directCall, werc20.DepositMethod)
 					txArgs.Amount = depositAmount
 
-					_, _, err = is.factory.CallContractAndCheckLogs(user.Priv, txArgs, callArgs, depositCheck)
+					_, _, err := is.factory.CallContractAndCheckLogs(user.Priv, txArgs, callArgs, depositCheck)
 					Expect(err).ToNot(HaveOccurred(), "unexpected error calling the precompile")
-
-					// For direct deposit calls, the funds should return to the original sender (user)
-					// So user balance should remain the same (deposited amount is returned)
-					is.expectBalanceChange(user.AccAddr, userBeforeSnapshot, big.NewInt(0), big.NewInt(0), "user after direct deposit")
-
-					// Precompile should have zero balance (it's just a passthrough)
-					is.expectBalanceChange(callsData.precompileAddr.Bytes(), precompileBeforeSnapshot, big.NewInt(0), big.NewInt(0), "precompile after direct deposit")
 				})
 				It("it should consume at least the deposit requested gas", func() {
 					txArgs, callArgs := callsData.getTxAndCallArgs(directCall, werc20.DepositMethod)
@@ -251,28 +335,12 @@ var _ = DescribeTableSubtree("a user interact with the WEVMOS precompiled contra
 			//nolint:dupl
 			When("no calldata is provided", func() {
 				It("it should call the receive which behave like deposit", func() {
-					// Get initial balance snapshots using grpcHandler for accurate state
-					userBeforeSnapshot, err := is.getBalanceSnapshot(user.AccAddr)
-					Expect(err).ToNot(HaveOccurred(), "failed to get initial user balance")
-
-					precompileBeforeSnapshot, err := is.getBalanceSnapshot(callsData.precompileAddr.Bytes())
-					Expect(err).ToNot(HaveOccurred(), "failed to get initial precompile balance")
-
-					Expect(is.network.NextBlock()).ToNot(HaveOccurred(), "error on NextBlock")
-
 					txArgs, callArgs := callsData.getTxAndCallArgs(directCall, "")
 					txArgs.Amount = depositAmount
 
-					_, _, err = is.factory.CallContractAndCheckLogs(user.Priv, txArgs, callArgs, depositCheck)
+					_, _, err := is.factory.CallContractAndCheckLogs(user.Priv, txArgs, callArgs, depositCheck)
 					Expect(err).ToNot(HaveOccurred(), "unexpected error calling the precompile")
 					Expect(is.network.NextBlock()).ToNot(HaveOccurred(), "error on NextBlock")
-
-					// For receive calls (no calldata), should behave like deposit
-					// User balance should remain the same (deposited amount is returned)
-					is.expectBalanceChange(user.AccAddr, userBeforeSnapshot, big.NewInt(0), big.NewInt(0), "user after receive deposit")
-
-					// Precompile should have zero balance (it's just a passthrough)
-					is.expectBalanceChange(callsData.precompileAddr.Bytes(), precompileBeforeSnapshot, big.NewInt(0), big.NewInt(0), "precompile after receive deposit")
 				})
 				It("it should consume at least the deposit requested gas", func() {
 					txArgs, callArgs := callsData.getTxAndCallArgs(directCall, werc20.DepositMethod)
@@ -287,27 +355,14 @@ var _ = DescribeTableSubtree("a user interact with the WEVMOS precompiled contra
 			})
 			When("the specified method is too short", func() {
 				It("it should call the fallback which behave like deposit", func() {
-					// Get initial balance snapshots using grpcHandler for accurate state
-					userBeforeSnapshot, err := is.getBalanceSnapshot(user.AccAddr)
-					Expect(err).ToNot(HaveOccurred(), "failed to get initial user balance")
-
-					precompileBeforeSnapshot, err := is.getBalanceSnapshot(callsData.precompileAddr.Bytes())
-					Expect(err).ToNot(HaveOccurred(), "failed to get initial precompile balance")
-
-					Expect(is.network.NextBlock()).ToNot(HaveOccurred(), "error on NextBlock")
-
 					txArgs, callArgs := callsData.getTxAndCallArgs(directCall, "")
 					txArgs.Amount = depositAmount
 					// Short method is directly set in the input to skip ABI validation
 					txArgs.Input = []byte{1, 2, 3}
 
-					_, _, err = is.factory.CallContractAndCheckLogs(user.Priv, txArgs, callArgs, depositCheck)
+					_, _, err := is.factory.CallContractAndCheckLogs(user.Priv, txArgs, callArgs, depositCheck)
 					Expect(err).ToNot(HaveOccurred(), "unexpected error calling the precompile")
 					Expect(is.network.NextBlock()).ToNot(HaveOccurred(), "error on NextBlock")
-
-					// Original user and precompile balances should be unchanged
-					is.expectBalanceChange(user.AccAddr, userBeforeSnapshot, big.NewInt(0), big.NewInt(0), "user after short method fallback deposit")
-					is.expectBalanceChange(callsData.precompileAddr.Bytes(), precompileBeforeSnapshot, big.NewInt(0), big.NewInt(0), "precompile after short method fallback deposit")
 				})
 				It("it should consume at least the deposit requested gas", func() {
 					txArgs, callArgs := callsData.getTxAndCallArgs(directCall, "")
@@ -324,27 +379,14 @@ var _ = DescribeTableSubtree("a user interact with the WEVMOS precompiled contra
 			})
 			When("the specified method does not exist", func() {
 				It("it should call the fallback which behave like deposit", func() {
-					// Get initial balance snapshots using grpcHandler for accurate state
-					userBeforeSnapshot, err := is.getBalanceSnapshot(user.AccAddr)
-					Expect(err).ToNot(HaveOccurred(), "failed to get initial user balance")
-
-					precompileBeforeSnapshot, err := is.getBalanceSnapshot(callsData.precompileAddr.Bytes())
-					Expect(err).ToNot(HaveOccurred(), "failed to get initial precompile balance")
-
-					Expect(is.network.NextBlock()).ToNot(HaveOccurred(), "error on NextBlock")
-
 					txArgs, callArgs := callsData.getTxAndCallArgs(directCall, "")
 					txArgs.Amount = depositAmount
 					// Wrong method is directly set in the input to skip ABI validation
 					txArgs.Input = []byte("nonExistingMethod")
 
-					_, _, err = is.factory.CallContractAndCheckLogs(user.Priv, txArgs, callArgs, depositCheck)
+					_, _, err := is.factory.CallContractAndCheckLogs(user.Priv, txArgs, callArgs, depositCheck)
 					Expect(err).ToNot(HaveOccurred(), "unexpected error calling the precompile")
 					Expect(is.network.NextBlock()).ToNot(HaveOccurred(), "error on NextBlock")
-
-					// Original user and precompile balances should be unchanged
-					is.expectBalanceChange(user.AccAddr, userBeforeSnapshot, big.NewInt(0), big.NewInt(0), "user after non-existing method fallback deposit")
-					is.expectBalanceChange(callsData.precompileAddr.Bytes(), precompileBeforeSnapshot, big.NewInt(0), big.NewInt(0), "precompile after non-existing method fallback deposit")
 				})
 				It("it should consume at least the deposit requested gas", func() {
 					txArgs, callArgs := callsData.getTxAndCallArgs(directCall, "")
@@ -363,15 +405,6 @@ var _ = DescribeTableSubtree("a user interact with the WEVMOS precompiled contra
 		Context("and funds are NOT part of the transaction", func() {
 			When("the method is withdraw", func() {
 				It("it should fail if user doesn't have enough funds", func() {
-					// Get initial balance snapshots for both user and precompile
-					userBeforeSnapshot, err := is.getBalanceSnapshot(user.AccAddr)
-					Expect(err).ToNot(HaveOccurred(), "failed to get initial user balance")
-
-					precompileBeforeSnapshot, err := is.getBalanceSnapshot(callsData.precompileAddr.Bytes())
-					Expect(err).ToNot(HaveOccurred(), "failed to get initial precompile balance")
-
-					Expect(is.network.NextBlock()).ToNot(HaveOccurred(), "error on NextBlock")
-
 					// Create a new user with insufficient funds
 					newUserAcc, newUserPriv := utiltx.NewAccAddressAndKey()
 					newUserBalance := sdk.Coins{sdk.Coin{
@@ -391,33 +424,18 @@ var _ = DescribeTableSubtree("a user interact with the WEVMOS precompiled contra
 
 					txArgs, callArgs := callsData.getTxAndCallArgs(directCall, werc20.WithdrawMethod, withdrawAmount)
 
-					_, _, err = is.factory.CallContractAndCheckLogs(newUserPriv, txArgs, callArgs, withdrawCheck)
+					_, _, err := is.factory.CallContractAndCheckLogs(newUserPriv, txArgs, callArgs, withdrawCheck)
 					Expect(err).To(HaveOccurred(), "expected an error because not enough funds")
 					Expect(is.network.NextBlock()).ToNot(HaveOccurred(), "error on NextBlock")
-
-					// Original user and precompile balances should be unchanged
-					is.expectBalanceChange(user.AccAddr, userBeforeSnapshot, big.NewInt(0), big.NewInt(0), "user after failed withdraw attempt")
-					is.expectBalanceChange(callsData.precompileAddr.Bytes(), precompileBeforeSnapshot, big.NewInt(0), big.NewInt(0), "precompile after failed withdraw attempt")
 				})
 				It("it should be a no-op and emit the event", func() {
-					// Get initial balance snapshots using grpcHandler
-					userBeforeSnapshot, err := is.getBalanceSnapshot(user.AccAddr)
-					Expect(err).ToNot(HaveOccurred(), "failed to get initial user balance")
-
-					precompileBeforeSnapshot, err := is.getBalanceSnapshot(callsData.precompileAddr.Bytes())
-					Expect(err).ToNot(HaveOccurred(), "failed to get initial precompile balance")
-
 					Expect(is.network.NextBlock()).ToNot(HaveOccurred(), "error on NextBlock")
 
 					txArgs, callArgs := callsData.getTxAndCallArgs(directCall, werc20.WithdrawMethod, withdrawAmount)
 
-					_, _, err = is.factory.CallContractAndCheckLogs(user.Priv, txArgs, callArgs, withdrawCheck)
+					_, _, err := is.factory.CallContractAndCheckLogs(user.Priv, txArgs, callArgs, withdrawCheck)
 					Expect(err).ToNot(HaveOccurred(), "unexpected error calling the precompile")
 					Expect(is.network.NextBlock()).ToNot(HaveOccurred(), "error on NextBlock")
-
-					// Withdraw should be a no-op for WERC20, so balances should remain unchanged
-					is.expectBalanceChange(user.AccAddr, userBeforeSnapshot, big.NewInt(0), big.NewInt(0), "user after withdraw no-op")
-					is.expectBalanceChange(callsData.precompileAddr.Bytes(), precompileBeforeSnapshot, big.NewInt(0), big.NewInt(0), "precompile after withdraw no-op")
 				})
 				It("it should consume at least the withdraw requested gas", func() {
 					txArgs, callArgs := callsData.getTxAndCallArgs(directCall, werc20.WithdrawMethod, withdrawAmount)
@@ -432,25 +450,12 @@ var _ = DescribeTableSubtree("a user interact with the WEVMOS precompiled contra
 			//nolint:dupl
 			When("no calldata is provided", func() {
 				It("it should call the fallback which behave like deposit", func() {
-					// Get initial balance snapshots using grpcHandler for accurate state
-					userBeforeSnapshot, err := is.getBalanceSnapshot(user.AccAddr)
-					Expect(err).ToNot(HaveOccurred(), "failed to get initial user balance")
-
-					precompileBeforeSnapshot, err := is.getBalanceSnapshot(callsData.precompileAddr.Bytes())
-					Expect(err).ToNot(HaveOccurred(), "failed to get initial precompile balance")
-
-					Expect(is.network.NextBlock()).ToNot(HaveOccurred(), "error on NextBlock")
-
 					txArgs, callArgs := callsData.getTxAndCallArgs(directCall, "")
 					txArgs.Amount = depositAmount
 
-					_, _, err = is.factory.CallContractAndCheckLogs(user.Priv, txArgs, callArgs, depositCheck)
+					_, _, err := is.factory.CallContractAndCheckLogs(user.Priv, txArgs, callArgs, depositCheck)
 					Expect(err).ToNot(HaveOccurred(), "unexpected error calling the precompile")
 					Expect(is.network.NextBlock()).ToNot(HaveOccurred(), "error on NextBlock")
-
-					// Original user and precompile balances should be unchanged
-					is.expectBalanceChange(user.AccAddr, userBeforeSnapshot, big.NewInt(0), big.NewInt(0), "user after fallback deposit")
-					is.expectBalanceChange(callsData.precompileAddr.Bytes(), precompileBeforeSnapshot, big.NewInt(0), big.NewInt(0), "precompile after fallback deposit")
 				})
 				It("it should consume at least the deposit requested gas", func() {
 					txArgs, callArgs := callsData.getTxAndCallArgs(directCall, werc20.DepositMethod)
@@ -465,27 +470,14 @@ var _ = DescribeTableSubtree("a user interact with the WEVMOS precompiled contra
 			})
 			When("the specified method is too short", func() {
 				It("it should call the fallback which behave like deposit", func() {
-					// Get initial balance snapshots using grpcHandler for accurate state
-					userBeforeSnapshot, err := is.getBalanceSnapshot(user.AccAddr)
-					Expect(err).ToNot(HaveOccurred(), "failed to get initial user balance")
-
-					precompileBeforeSnapshot, err := is.getBalanceSnapshot(callsData.precompileAddr.Bytes())
-					Expect(err).ToNot(HaveOccurred(), "failed to get initial precompile balance")
-
-					Expect(is.network.NextBlock()).ToNot(HaveOccurred(), "error on NextBlock")
-
 					txArgs, callArgs := callsData.getTxAndCallArgs(directCall, "")
 					txArgs.Amount = depositAmount
 					// Short method is directly set in the input to skip ABI validation
 					txArgs.Input = []byte{1, 2, 3}
 
-					_, _, err = is.factory.CallContractAndCheckLogs(user.Priv, txArgs, callArgs, depositCheck)
+					_, _, err := is.factory.CallContractAndCheckLogs(user.Priv, txArgs, callArgs, depositCheck)
 					Expect(err).ToNot(HaveOccurred(), "unexpected error calling the precompile")
 					Expect(is.network.NextBlock()).ToNot(HaveOccurred(), "error on NextBlock")
-
-					// Original user and precompile balances should be unchanged
-					is.expectBalanceChange(user.AccAddr, userBeforeSnapshot, big.NewInt(0), big.NewInt(0), "user after short method fallback deposit")
-					is.expectBalanceChange(callsData.precompileAddr.Bytes(), precompileBeforeSnapshot, big.NewInt(0), big.NewInt(0), "precompile after short method fallback deposit")
 				})
 				It("it should consume at least the deposit requested gas", func() {
 					txArgs, callArgs := callsData.getTxAndCallArgs(directCall, "")
@@ -502,27 +494,14 @@ var _ = DescribeTableSubtree("a user interact with the WEVMOS precompiled contra
 			})
 			When("the specified method does not exist", func() {
 				It("it should call the fallback which behave like deposit", func() {
-					// Get initial balance snapshots using grpcHandler for accurate state
-					userBeforeSnapshot, err := is.getBalanceSnapshot(user.AccAddr)
-					Expect(err).ToNot(HaveOccurred(), "failed to get initial user balance")
-
-					precompileBeforeSnapshot, err := is.getBalanceSnapshot(callsData.precompileAddr.Bytes())
-					Expect(err).ToNot(HaveOccurred(), "failed to get initial precompile balance")
-
-					Expect(is.network.NextBlock()).ToNot(HaveOccurred(), "error on NextBlock")
-
 					txArgs, callArgs := callsData.getTxAndCallArgs(directCall, "")
 					txArgs.Amount = depositAmount
 					// Wrong method is directly set in the input to skip ABI validation
 					txArgs.Input = []byte("nonExistingMethod")
 
-					_, _, err = is.factory.CallContractAndCheckLogs(user.Priv, txArgs, callArgs, depositCheck)
+					_, _, err := is.factory.CallContractAndCheckLogs(user.Priv, txArgs, callArgs, depositCheck)
 					Expect(err).ToNot(HaveOccurred(), "unexpected error calling the precompile")
 					Expect(is.network.NextBlock()).ToNot(HaveOccurred(), "error on NextBlock")
-
-					// Original user and precompile balances should be unchanged
-					is.expectBalanceChange(user.AccAddr, userBeforeSnapshot, big.NewInt(0), big.NewInt(0), "user after fallback deposit")
-					is.expectBalanceChange(callsData.precompileAddr.Bytes(), precompileBeforeSnapshot, big.NewInt(0), big.NewInt(0), "precompile after fallback deposit")
 				})
 				It("it should consume at least the deposit requested gas", func() {
 					txArgs, callArgs := callsData.getTxAndCallArgs(directCall, "")
@@ -542,79 +521,34 @@ var _ = DescribeTableSubtree("a user interact with the WEVMOS precompiled contra
 	Context("calling a reverter contract", func() {
 		When("to call the deposit", func() {
 			It("it should return funds to the contract caller and emit the event", func() {
-				// Get initial balance snapshots for all relevant parties
-				senderBeforeSnapshot, err := is.getBalanceSnapshot(txSender.AccAddr)
-				Expect(err).ToNot(HaveOccurred(), "failed to get sender initial balance")
+				borrow := big.NewInt(0)
+				if conversionFactor.Cmp(big.NewInt(1)) != 0 { // 18-decimal chain (conversionFactor = 1)
+					borrow = big.NewInt(1)
+				}
 
-				contractBeforeSnapshot, err := is.getBalanceSnapshot(revertContractAddr.Bytes())
-				Expect(err).ToNot(HaveOccurred(), "failed to get contract initial balance")
+				senderIntegerDelta = new(big.Int).Sub(new(big.Int).Neg((new(big.Int).Quo(depositAmount, conversionFactor))), borrow)
+				senderFractionalDelta = new(big.Int).Mod(new(big.Int).Sub(conversionFactor, depositFractional), conversionFactor)
 
-				precompileBeforeSnapshot, err := is.getBalanceSnapshot(callsData.precompileAddr.Bytes())
-				Expect(err).ToNot(HaveOccurred(), "failed to get precompile initial balance")
+				contractIntegerDelta = new(big.Int).Quo(depositAmount, conversionFactor)
+				contractFractionalDelta = depositFractional
+
+				precisebankIntegerDelta = borrow
 
 				txArgs, callArgs := callsData.getTxAndCallArgs(contractCall, "depositWithRevert", false, false)
 				txArgs.Amount = depositAmount
 
-				_, _, err = is.factory.CallContractAndCheckLogs(txSender.Priv, txArgs, callArgs, depositCheck)
+				_, _, err := is.factory.CallContractAndCheckLogs(txSender.Priv, txArgs, callArgs, depositCheck)
 				Expect(err).ToNot(HaveOccurred(), "unexpected error calling the precompile")
 				Expect(is.network.NextBlock()).ToNot(HaveOccurred(), "error on NextBlock")
-
-				// For contract calls:
-				// 1. txSender pays the deposit amount (balance decreases)
-				// 2. Contract receives the deposit amount back from precompile (balance increases)
-				// 3. Precompile acts as passthrough (balance stays 0)
-
-				// Calculate expected balance changes based on chain decimals
-				var expectedSenderIntegerDelta, expectedContractIntegerDelta *big.Int
-				var expectedSenderExtendedDelta, expectedContractExtendedDelta *big.Int
-
-				switch {
-				case conversionFactor.Cmp(big.NewInt(1e12)) == 0: // 6-decimal chain
-					expectedSenderIntegerDelta = new(big.Int).Neg((new(big.Int).Add(new(big.Int).Quo(depositAmount, conversionFactor), big.NewInt(1))))
-					expectedContractIntegerDelta = new(big.Int).Quo(depositAmount, conversionFactor)
-					expectedSenderExtendedDelta = new(big.Int).Sub(conversionFactor, depositFractional)
-					expectedContractExtendedDelta = depositFractional
-				case conversionFactor.Cmp(big.NewInt(1e6)) == 0: // 12-decimal chain
-					expectedSenderIntegerDelta = new(big.Int).Neg((new(big.Int).Add(new(big.Int).Quo(depositAmount, conversionFactor), big.NewInt(1))))
-					expectedContractIntegerDelta = new(big.Int).Quo(depositAmount, conversionFactor)
-					expectedSenderExtendedDelta = new(big.Int).Sub(conversionFactor, depositFractional)
-					expectedContractExtendedDelta = depositFractional
-				default: // 18-decimal chain (conversionFactor = 1)
-					expectedSenderIntegerDelta = new(big.Int).Neg(depositAmount)
-					expectedContractIntegerDelta = depositAmount
-					expectedSenderExtendedDelta = big.NewInt(0)
-					expectedContractExtendedDelta = big.NewInt(0)
-				}
-
-				// Sender loses the deposit amount
-				is.expectBalanceChange(txSender.AccAddr, senderBeforeSnapshot,
-					expectedSenderIntegerDelta, expectedSenderExtendedDelta, "sender after contract deposit")
-
-				// Contract receives the deposit amount (since it's the msg.sender to the precompile)
-				is.expectBalanceChange(revertContractAddr.Bytes(), contractBeforeSnapshot,
-					expectedContractIntegerDelta, expectedContractExtendedDelta, "contract after receiving deposit")
-
-				// Precompile remains at zero balance
-				is.expectBalanceChange(callsData.precompileAddr.Bytes(), precompileBeforeSnapshot,
-					big.NewInt(0), big.NewInt(0), "precompile after contract deposit")
 			})
 		})
 		DescribeTable("to call the deposit", func(before, after bool) {
-			// Get initial balance snapshot for sender
-			senderBeforeSnapshot, err := is.getBalanceSnapshot(txSender.AccAddr)
-			Expect(err).ToNot(HaveOccurred(), "failed to get sender initial balance")
-
 			txArgs, callArgs := callsData.getTxAndCallArgs(contractCall, "depositWithRevert", before, after)
 			txArgs.Amount = depositAmount
 
-			_, _, err = is.factory.CallContractAndCheckLogs(txSender.Priv, txArgs, callArgs, depositCheck)
+			_, _, err := is.factory.CallContractAndCheckLogs(txSender.Priv, txArgs, callArgs, depositCheck)
 			Expect(err).To(HaveOccurred(), "execution should have reverted")
 			Expect(is.network.NextBlock()).ToNot(HaveOccurred(), "error on NextBlock")
-
-			// When transaction reverts, all balance changes should be rolled back
-			// So sender balance should remain exactly the same
-			is.expectBalanceChange(txSender.AccAddr, senderBeforeSnapshot,
-				big.NewInt(0), big.NewInt(0), "sender after reverted deposit")
 		},
 			Entry("it should not move funds and dont emit the event reverting before changing state", true, false),
 			Entry("it should not move funds and dont emit the event reverting after changing state", false, true),
@@ -623,6 +557,11 @@ var _ = DescribeTableSubtree("a user interact with the WEVMOS precompiled contra
 	Context("calling an erc20 method", func() {
 		When("transferring tokens", func() {
 			It("it should transfer tokens to a receiver using `transfer`", func() {
+				senderIntegerDelta = new(big.Int).Neg(transferAmount)
+				senderFractionalDelta = big.NewInt(0)
+				receiverIntegerDelta = transferAmount
+				receiverFractionalDelta = big.NewInt(0)
+
 				// First, sender needs to deposit to get WERC20 tokens
 				// Use a larger deposit amount to ensure sufficient balance for transfer
 				depositForTransfer := new(big.Int).Mul(transferAmount, big.NewInt(10)) // 10x transfer amount
@@ -632,52 +571,19 @@ var _ = DescribeTableSubtree("a user interact with the WEVMOS precompiled contra
 				Expect(err).ToNot(HaveOccurred(), "failed to deposit before transfer")
 				Expect(is.network.NextBlock()).ToNot(HaveOccurred(), "error on NextBlock after deposit")
 
-				// Get balance snapshots after deposit, before transfer
-				senderBeforeSnapshot, err := is.getBalanceSnapshot(txSender.AccAddr)
-				Expect(err).ToNot(HaveOccurred(), "failed to get sender initial balance")
-
-				receiverBeforeSnapshot, err := is.getBalanceSnapshot(user.AccAddr)
-				Expect(err).ToNot(HaveOccurred(), "failed to get receiver initial balance")
-
 				// Now perform the transfer
 				txArgs, transferArgs := callsData.getTxAndCallArgs(directCall, erc20.TransferMethod, user.Addr, transferAmount)
 
 				_, _, err = is.factory.CallContractAndCheckLogs(txSender.Priv, txArgs, transferArgs, transferCheck)
 				Expect(err).ToNot(HaveOccurred(), "unexpected result calling contract")
 				Expect(is.network.NextBlock()).ToNot(HaveOccurred(), "error on NextBlock after transfer")
-
-				// Calculate expected balance changes
-				transferAmountIntegerDelta := big.NewInt(10) // 10 integer units
-				transferAmountExtendedDelta := big.NewInt(0)
-
-				// Sender loses the transfer amount
-				is.expectBalanceChange(txSender.AccAddr, senderBeforeSnapshot,
-					new(big.Int).Neg(transferAmountIntegerDelta), new(big.Int).Neg(transferAmountExtendedDelta), "sender after transfer")
-
-				// Receiver gains the transfer amount
-				is.expectBalanceChange(user.AccAddr, receiverBeforeSnapshot,
-					transferAmountIntegerDelta, transferAmountExtendedDelta, "receiver after transfer")
 			})
 			It("it should fail to transfer tokens to a receiver using `transferFrom`", func() {
-				// Get initial balance snapshots for both parties
-				senderBeforeSnapshot, err := is.getBalanceSnapshot(txSender.AccAddr)
-				Expect(err).ToNot(HaveOccurred(), "failed to get sender initial balance")
-
-				receiverBeforeSnapshot, err := is.getBalanceSnapshot(user.AccAddr)
-				Expect(err).ToNot(HaveOccurred(), "failed to get receiver initial balance")
-
 				txArgs, transferArgs := callsData.getTxAndCallArgs(directCall, erc20.TransferFromMethod, txSender.Addr, user.Addr, transferAmount)
 
 				insufficientAllowanceCheck := failCheck.WithErrContains(erc20.ErrInsufficientAllowance.Error())
-				_, _, err = is.factory.CallContractAndCheckLogs(txSender.Priv, txArgs, transferArgs, insufficientAllowanceCheck)
+				_, _, err := is.factory.CallContractAndCheckLogs(txSender.Priv, txArgs, transferArgs, insufficientAllowanceCheck)
 				Expect(err).ToNot(HaveOccurred(), "unexpected result calling contract")
-
-				// When transfer fails, balances should remain unchanged
-				is.expectBalanceChange(txSender.AccAddr, senderBeforeSnapshot,
-					big.NewInt(0), big.NewInt(0), "sender after failed transferFrom")
-
-				is.expectBalanceChange(user.AccAddr, receiverBeforeSnapshot,
-					big.NewInt(0), big.NewInt(0), "receiver after failed transferFrom")
 			})
 		})
 		When("querying information", func() {
