@@ -16,7 +16,7 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 )
 
-// ParseHexAddress parses the address from the event attributes and checks if it is a bypass address.
+// ParseAddress parses the address from the event attributes
 func ParseAddress(event sdk.Event, key string) (sdk.AccAddress, error) {
 	attr, ok := event.GetAttribute(key)
 	if !ok {
