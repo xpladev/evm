@@ -42,7 +42,6 @@ func ParseAmount(event sdk.Event) (*uint256.Int, error) {
 		return nil, fmt.Errorf("failed to parse coins from %q: %w", amountAttr.Value, err)
 	}
 
-	// Otherwise, use regular denom and convert to 18 decimals
 	regularAmount := amountCoins.AmountOf(evmtypes.GetEVMCoinDenom())
 	amount, err := utils.Uint256FromBigInt(evmtypes.ConvertAmountTo18DecimalsBigInt(regularAmount.BigInt()))
 	if err != nil {

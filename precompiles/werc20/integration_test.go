@@ -94,7 +94,7 @@ var _ = DescribeTableSubtree("a user interact with the WEVMOS precompiled contra
 	// Create deposit with 1000 integer units + fractional part
 	depositAmount := big.NewInt(1000)
 	depositAmount = depositAmount.Mul(depositAmount, conversionFactor)                                       // 1000 integer units
-	depositFractional := new(big.Int).Div(new(big.Int).Mul(conversionFactor, big.NewInt(3)), big.NewInt(10)) // Half conversion factor as fractional
+	depositFractional := new(big.Int).Div(new(big.Int).Mul(conversionFactor, big.NewInt(3)), big.NewInt(10)) // 0.3 * conversion factor as fractional
 	depositAmount = depositAmount.Add(depositAmount, depositFractional)
 
 	withdrawAmount := depositAmount
