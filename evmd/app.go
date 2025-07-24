@@ -495,10 +495,16 @@ func NewExampleApp(
 	)
 
 	// set the EVM priority nonce mempool
-	evmMempool := mempool.NewEVMMempool(app.CreateQueryContext, *app.EVMKeeper, encodingConfig.TxConfig.TxDecoder(), nil)
-	app.EVMMempool = evmMempool
+	if evmtypes.GetChainConfig() != nil {
+		evmMempool := mempool.NewEVMMempool(app.CreateQueryContext, app.EVMKeeper, app.FeeMarketKeeper, app.txConfig.TxDecoder(), nil)
+		app.EVMMempool = evmMempool
+		app.SetMempool(evmMempool)
+		checkTxHandler := mempool.NewCheckTxHandler(evmMempool)
+		app.SetCheckTxHandler(checkTxHandler)
 
-	bApp.SetMempool(evmMempool)
+		abciProposalHandler := baseapp.NewDefaultProposalHandler(evmMempool, app)
+		app.SetPrepareProposal(abciProposalHandler.PrepareProposalHandler())
+	}
 
 	app.Erc20Keeper = erc20keeper.NewKeeper(
 		keys[erc20types.StoreKey],

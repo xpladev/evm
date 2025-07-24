@@ -48,7 +48,7 @@ type EVMMempoolConfig struct {
 	CosmosPool mempool.ExtMempool
 }
 
-func NewEVMMempool(ctx func(height int64, prove bool) (sdk.Context, error), vmKeeper VMKeeperI, txDecoder sdk.TxDecoder, config *EVMMempoolConfig) *EVMMempool {
+func NewEVMMempool(ctx func(height int64, prove bool) (sdk.Context, error), vmKeeper VMKeeperI, feeMarketKeeper FeeMarketKeeperI, txDecoder sdk.TxDecoder, config *EVMMempoolConfig) *EVMMempool {
 	var txPool *txpool.TxPool
 	var cosmosPool mempool.ExtMempool
 	bondDenom := "wei"
@@ -60,9 +60,7 @@ func NewEVMMempool(ctx func(height int64, prove bool) (sdk.Context, error), vmKe
 
 	var blockchain *Blockchain
 	if txPool == nil {
-		//todo: implement blockchain
-		blockchain = NewBlockchain(ctx, vmKeeper)
-		//todo: custom configs for txpool
+		blockchain = NewBlockchain(ctx, vmKeeper, feeMarketKeeper)
 		legacyPool := legacypool.New(legacypool.DefaultConfig, blockchain)
 		txPoolInit, err := txpool.New(uint64(0), blockchain, []txpool.SubPool{legacyPool})
 		if err != nil {
@@ -132,12 +130,13 @@ func (m *EVMMempool) getEVMMessage(tx sdk.Tx) (*evmtypes.MsgEthereumTx, error) {
 
 func (m *EVMMempool) Insert(ctx context.Context, tx sdk.Tx) error {
 	// ASSUMPTION: these are all successful upon CheckTx
-
+	//todo: should not allow insertion before block 1 has completed
 	// Try to get EVM message
 	ethMsg, err := m.getEVMMessage(tx)
 	if err == nil {
 		// Insert into EVM pool
 		ethTxs := []*ethtypes.Transaction{ethMsg.AsTransaction()}
+		fmt.Println("Inserting eth tx:", ethTxs)
 		errs := m.txPool.Add(ethTxs, true)
 		if len(errs) > 0 && errs[0] != nil {
 			return errs[0]
@@ -152,6 +151,7 @@ func (m *EVMMempool) Insert(ctx context.Context, tx sdk.Tx) error {
 	// For ErrExpectedOneMessage or ErrNotEVMTransaction, treat as cosmos transaction
 
 	// Insert into cosmos pool for non-EVM transactions
+	fmt.Println("Inserting Cosmos tx:", tx)
 	return m.cosmosPool.Insert(ctx, tx)
 }
 
@@ -219,6 +219,7 @@ func (m *EVMMempool) setupPendingTransactions(goCtx context.Context, i [][]byte)
 }
 
 func (m *EVMMempool) Select(goCtx context.Context, i [][]byte) mempool.Iterator {
+	fmt.Println("SELECT")
 	evmIterator, cosmosIterator, bondDenom := m.setupPendingTransactions(goCtx, i)
 
 	combinedIterator := &EVMMempoolIterator{

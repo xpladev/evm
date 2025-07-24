@@ -36,14 +36,15 @@ import (
 
 type MempoolTestSuite struct {
 	suite.Suite
-	ctx            sdk.Context
-	mempool        *EVMMempool
-	mockVMKeeper   *mocks.MockVMKeeper
-	cosmosPool     cosmosMempool.ExtMempool
-	txDecoder      sdk.TxDecoder
-	mockChain      *mocks.MockBlockChain
-	encodingConfig testutil2.TestEncodingConfig
-	ctxFunc        func(height int64, prove bool) (sdk.Context, error)
+	ctx                 sdk.Context
+	mempool             *EVMMempool
+	mockVMKeeper        *mocks.MockVMKeeper
+	mockFeeMarketKeeper *mocks.MockFeeMarketKeeper
+	cosmosPool          cosmosMempool.ExtMempool
+	txDecoder           sdk.TxDecoder
+	mockChain           *mocks.MockBlockChain
+	encodingConfig      testutil2.TestEncodingConfig
+	ctxFunc             func(height int64, prove bool) (sdk.Context, error)
 }
 
 func (suite *MempoolTestSuite) SetupTest() {
@@ -65,6 +66,10 @@ func (suite *MempoolTestSuite) SetupTest() {
 			EvmDenom: "wei",
 		},
 		Accounts: make(map[common.Address]*statedb.Account),
+	}
+
+	suite.mockFeeMarketKeeper = &mocks.MockFeeMarketKeeper{
+		BlockGasWanted: 1000000, // 1M gas
 	}
 
 	// Create a PriorityNonceMempool as the cosmosPool
@@ -89,7 +94,7 @@ func (suite *MempoolTestSuite) SetupTest() {
 	suite.ctxFunc = func(height int64, prove bool) (sdk.Context, error) {
 		return suite.ctx, nil
 	}
-	suite.mempool = NewEVMMempool(suite.ctxFunc, suite.mockVMKeeper, suite.txDecoder, &EVMMempoolConfig{
+	suite.mempool = NewEVMMempool(suite.ctxFunc, suite.mockVMKeeper, suite.mockFeeMarketKeeper, suite.txDecoder, &EVMMempoolConfig{
 		TxPool:     txPool,
 		CosmosPool: suite.cosmosPool,
 	})
@@ -210,7 +215,7 @@ func (suite *MempoolTestSuite) TestNewEVMMempool() {
 					ctxFunc := func(height int64, prove bool) (sdk.Context, error) {
 						return suite.ctx, nil
 					}
-					NewEVMMempool(ctxFunc, suite.mockVMKeeper, suite.txDecoder, &EVMMempoolConfig{
+					NewEVMMempool(ctxFunc, suite.mockVMKeeper, suite.mockFeeMarketKeeper, suite.txDecoder, &EVMMempoolConfig{
 						TxPool:     txPool,
 						CosmosPool: suite.cosmosPool,
 					})
@@ -219,7 +224,7 @@ func (suite *MempoolTestSuite) TestNewEVMMempool() {
 				ctxFunc := func(height int64, prove bool) (sdk.Context, error) {
 					return suite.ctx, nil
 				}
-				mempoolInstance := NewEVMMempool(ctxFunc, suite.mockVMKeeper, suite.txDecoder, &EVMMempoolConfig{
+				mempoolInstance := NewEVMMempool(ctxFunc, suite.mockVMKeeper, suite.mockFeeMarketKeeper, suite.txDecoder, &EVMMempoolConfig{
 					TxPool:     txPool,
 					CosmosPool: suite.cosmosPool,
 				})
@@ -286,7 +291,7 @@ func (suite *MempoolTestSuite) TestInsert() {
 		suite.T().Run(tc.name, func(t *testing.T) {
 			// Reset state for each test by creating a new cosmos pool
 			suite.cosmosPool = cosmosMempool.DefaultPriorityMempool()
-			suite.mempool = NewEVMMempool(suite.ctxFunc, suite.mockVMKeeper, suite.txDecoder, &EVMMempoolConfig{
+			suite.mempool = NewEVMMempool(suite.ctxFunc, suite.mockVMKeeper, suite.mockFeeMarketKeeper, suite.txDecoder, &EVMMempoolConfig{
 				TxPool:     suite.mempool.txPool,
 				CosmosPool: suite.cosmosPool,
 			})
@@ -351,7 +356,7 @@ func (suite *MempoolTestSuite) TestRemove() {
 		suite.T().Run(tc.name, func(t *testing.T) {
 			// Reset state for each test by creating a new cosmos pool
 			suite.cosmosPool = cosmosMempool.DefaultPriorityMempool()
-			suite.mempool = NewEVMMempool(suite.ctxFunc, suite.mockVMKeeper, suite.txDecoder, &EVMMempoolConfig{
+			suite.mempool = NewEVMMempool(suite.ctxFunc, suite.mockVMKeeper, suite.mockFeeMarketKeeper, suite.txDecoder, &EVMMempoolConfig{
 				TxPool:     suite.mempool.txPool,
 				CosmosPool: suite.cosmosPool,
 			})
@@ -426,7 +431,7 @@ func (suite *MempoolTestSuite) TestSelect() {
 		suite.T().Run(tc.name, func(t *testing.T) {
 			// Reset state for each test by creating a new cosmos pool
 			suite.cosmosPool = cosmosMempool.DefaultPriorityMempool()
-			suite.mempool = NewEVMMempool(suite.ctxFunc, suite.mockVMKeeper, suite.txDecoder, &EVMMempoolConfig{
+			suite.mempool = NewEVMMempool(suite.ctxFunc, suite.mockVMKeeper, suite.mockFeeMarketKeeper, suite.txDecoder, &EVMMempoolConfig{
 				TxPool:     suite.mempool.txPool,
 				CosmosPool: suite.cosmosPool,
 			})
@@ -496,7 +501,7 @@ func (suite *MempoolTestSuite) TestIterator() {
 		suite.T().Run(tc.name, func(t *testing.T) {
 			// Reset state for each test by creating a new cosmos pool
 			suite.cosmosPool = cosmosMempool.DefaultPriorityMempool()
-			suite.mempool = NewEVMMempool(suite.ctxFunc, suite.mockVMKeeper, suite.txDecoder, &EVMMempoolConfig{
+			suite.mempool = NewEVMMempool(suite.ctxFunc, suite.mockVMKeeper, suite.mockFeeMarketKeeper, suite.txDecoder, &EVMMempoolConfig{
 				TxPool:     suite.mempool.txPool,
 				CosmosPool: suite.cosmosPool,
 			})
@@ -714,7 +719,7 @@ func (suite *MempoolTestSuite) TestTransactionOrdering() {
 			}
 
 			// Let the constructor create the cosmosPool with correct priority logic
-			suite.mempool = NewEVMMempool(suite.ctxFunc, suite.mockVMKeeper, suite.txDecoder, &EVMMempoolConfig{
+			suite.mempool = NewEVMMempool(suite.ctxFunc, suite.mockVMKeeper, suite.mockFeeMarketKeeper, suite.txDecoder, &EVMMempoolConfig{
 				TxPool:     txPool,
 				CosmosPool: nil, // Let it create its own with correct priority logic
 			})
@@ -742,6 +747,9 @@ func BenchmarkInsertCosmosTransaction(b *testing.B) {
 		},
 		Accounts: make(map[common.Address]*statedb.Account),
 	}
+	mockFeeMarketKeeper := &mocks.MockFeeMarketKeeper{
+		BlockGasWanted: 1000000, // 1M gas
+	}
 	cosmosPool := cosmosMempool.DefaultPriorityMempool()
 	txDecoder := encodingConfig.TxConfig.TxDecoder()
 	testChain := mocks.NewMockBlockChain(mockVMKeeper)
@@ -757,7 +765,7 @@ func BenchmarkInsertCosmosTransaction(b *testing.B) {
 	ctxFunc := func(height int64, prove bool) (sdk.Context, error) {
 		return sdk.NewContext(cms, cmtproto.Header{}, false, log.NewNopLogger()), nil
 	}
-	mpool := NewEVMMempool(ctxFunc, mockVMKeeper, txDecoder, &EVMMempoolConfig{
+	mpool := NewEVMMempool(ctxFunc, mockVMKeeper, mockFeeMarketKeeper, txDecoder, &EVMMempoolConfig{
 		TxPool:     txPool,
 		CosmosPool: cosmosPool,
 	})
@@ -1002,7 +1010,7 @@ func (suite *MempoolTestSuite) TestSelectBy() {
 				Subpools: []txpool.SubPool{legacyPool},
 			}
 
-			suite.mempool = NewEVMMempool(suite.ctxFunc, suite.mockVMKeeper, suite.txDecoder, &EVMMempoolConfig{
+			suite.mempool = NewEVMMempool(suite.ctxFunc, suite.mockVMKeeper, suite.mockFeeMarketKeeper, suite.txDecoder, &EVMMempoolConfig{
 				TxPool:     txPool,
 				CosmosPool: suite.cosmosPool,
 			})
@@ -1049,6 +1057,9 @@ func BenchmarkSelect(b *testing.B) {
 		},
 		Accounts: make(map[common.Address]*statedb.Account),
 	}
+	mockFeeMarketKeeper := &mocks.MockFeeMarketKeeper{
+		BlockGasWanted: 1000000, // 1M gas
+	}
 	cosmosPool := cosmosMempool.DefaultPriorityMempool()
 	txDecoder := encodingConfig.TxConfig.TxDecoder()
 	testChain := mocks.NewMockBlockChain(mockVMKeeper)
@@ -1059,7 +1070,7 @@ func BenchmarkSelect(b *testing.B) {
 	ctxFunc := func(height int64, prove bool) (sdk.Context, error) {
 		return ctx, nil
 	}
-	mpool := NewEVMMempool(ctxFunc, mockVMKeeper, txDecoder, &EVMMempoolConfig{
+	mpool := NewEVMMempool(ctxFunc, mockVMKeeper, mockFeeMarketKeeper, txDecoder, &EVMMempoolConfig{
 		TxPool:     txPool,
 		CosmosPool: cosmosPool,
 	})
@@ -1106,6 +1117,9 @@ func BenchmarkSelectBy(b *testing.B) {
 		},
 		Accounts: make(map[common.Address]*statedb.Account),
 	}
+	mockFeeMarketKeeper := &mocks.MockFeeMarketKeeper{
+		BlockGasWanted: 1000000, // 1M gas
+	}
 	cosmosPool := cosmosMempool.DefaultPriorityMempool()
 	txDecoder := encodingConfig.TxConfig.TxDecoder()
 	testChain := mocks.NewMockBlockChain(mockVMKeeper)
@@ -1116,7 +1130,7 @@ func BenchmarkSelectBy(b *testing.B) {
 	ctxFunc := func(height int64, prove bool) (sdk.Context, error) {
 		return ctx, nil
 	}
-	mpool := NewEVMMempool(ctxFunc, mockVMKeeper, txDecoder, &EVMMempoolConfig{
+	mpool := NewEVMMempool(ctxFunc, mockVMKeeper, mockFeeMarketKeeper, txDecoder, &EVMMempoolConfig{
 		TxPool:     txPool,
 		CosmosPool: cosmosPool,
 	})

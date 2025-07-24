@@ -25,3 +25,7 @@ type VMKeeperI interface {
 	DeleteAccount(ctx sdk.Context, addr common.Address) error
 	KVStoreKeys() map[string]*storetypes.KVStoreKey
 }
+
+type FeeMarketKeeperI interface {
+	GetBlockGasWanted(ctx sdk.Context) uint64
+}
