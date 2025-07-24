@@ -6,11 +6,6 @@ var (
 	ParamStoreKeyPermissionlessRegistration = []byte("PermissionlessRegistration")
 )
 
-var (
-	CtxKeyDynamicPrecompiles = "DynamicPrecompiles"
-	CtxKeyNativePrecompiles  = "NativePrecompiles"
-)
-
 func NewParams(
 	enableErc20 bool,
 	permissionlessRegistration bool,

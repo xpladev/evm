@@ -24,6 +24,7 @@ import (
 // endpoints provided by the API. The API follows a JSON-RPC standard. If not
 // otherwise specified, the interface is derived from the Alchemy Ethereum API:
 // https://docs.alchemy.com/alchemy/apis/ethereum
+
 type EthereumAPI interface {
 	// Getting Blocks
 	//

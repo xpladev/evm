@@ -21,14 +21,24 @@ const (
 	// abiPath defines the path to the ERC-20 precompile ABI JSON file.
 	abiPath = "abi.json"
 
-	GasTransfer    = 3_000_000
-	GasApprove     = 30_956
-	GasName        = 3_421
-	GasSymbol      = 3_464
-	GasDecimals    = 427
-	GasTotalSupply = 2_477
-	GasBalanceOf   = 2_851
-	GasAllowance   = 3_246
+	// NOTE: These gas values have been derived from tests that have been concluded on a testing branch, which
+	// is not being merged to the main branch. The reason for this was to not clutter the repository with the
+	// necessary tests for this use case.
+	//
+	// The results can be inspected here:
+	// https://github.com/evmos/evmos/blob/malte/erc20-gas-tests/precompiles/erc20/plot_gas_values.ipynb
+
+	GasTransfer          = 9_000
+	GasTransferFrom      = 30_500
+	GasApprove           = 8_100
+	GasIncreaseAllowance = 8_580
+	GasDecreaseAllowance = 3_620
+	GasName              = 3_421
+	GasSymbol            = 3_464
+	GasDecimals          = 427
+	GasTotalSupply       = 2_480
+	GasBalanceOf         = 2_870
+	GasAllowance         = 3_225
 )
 
 // Embed abi json file to the executable binary. Needed when importing as dependency.
@@ -98,7 +108,7 @@ func (p Precompile) RequiredGas(input []byte) uint64 {
 	case TransferMethod:
 		return GasTransfer
 	case TransferFromMethod:
-		return GasTransfer
+		return GasTransferFrom
 	case ApproveMethod:
 		return GasApprove
 	// ERC-20 queries
@@ -143,6 +153,9 @@ func (p Precompile) run(evm *vm.EVM, contract *vm.Contract, readOnly bool) (bz [
 		return nil, err
 	}
 
+	// Start the balance change handler before executing the precompile.
+	p.GetBalanceHandler().BeforeBalanceChange(ctx)
+
 	// This handles any out of gas errors that may occur during the execution of a precompile tx or query.
 	// It avoids panics and returns the out of gas error so the EVM can continue gracefully.
 	defer cmn.HandleGasError(ctx, contract, initialGas, &err)()
@@ -156,6 +169,12 @@ func (p Precompile) run(evm *vm.EVM, contract *vm.Contract, readOnly bool) (bz [
 
 	if !contract.UseGas(cost, nil, tracing.GasChangeCallPrecompiledContract) {
 		return nil, vm.ErrOutOfGas
+	}
+
+	// Process the native balance changes after the method execution.
+	err = p.GetBalanceHandler().AfterBalanceChange(ctx, stateDB)
+	if err != nil {
+		return nil, err
 	}
 
 	return bz, nil

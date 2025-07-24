@@ -4,6 +4,8 @@ name: Lint
 
 on:
   pull_request:
+  merge_group:
+
 
 permissions: read-all
 
@@ -38,8 +40,7 @@ jobs:
             go.mod
             go.sum
             *.toml
-
-      - name: Run linting
+      - name: run linting
         if: env.GIT_DIFF
         id: lint_long
         run: |
