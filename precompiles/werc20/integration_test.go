@@ -82,8 +82,6 @@ var _ = DescribeTableSubtree("a user interact with the WEVMOS precompiled contra
 		precisebankModuleAccAddr sdk.AccAddress
 
 		// Shared balance snapshots for common test scenarios
-		// userBeforeSnapshot       *BalanceSnapshot
-
 		senderBeforeSnapshot            *BalanceSnapshot
 		receiverBeforeSnapshot          *BalanceSnapshot
 		precompileBeforeSnapshot        *BalanceSnapshot
