@@ -69,8 +69,8 @@ func (b Blockchain) CurrentBlock() *types.Header {
 		GasLimit:   gasLimit.Uint64(),
 		GasUsed:    b.feeMarketKeeper.GetBlockGasWanted(ctx),
 		ParentHash: b.previousHeaderHash,
-		Root:       common.BytesToHash(ctx.BlockHeader().AppHash),
-		Difficulty: big.NewInt(0), // 0 difficulty on PoS
+		Root:       common.BytesToHash(ctx.BlockHeader().AppHash), // we actually don't care that this isn't the ctx header, as long as we properly track roots and parent roots to prevent the reorg from triggering
+		Difficulty: big.NewInt(0),                                 // 0 difficulty on PoS
 	}
 
 	chainConfig := evmtypes.GetEthChainConfig()
