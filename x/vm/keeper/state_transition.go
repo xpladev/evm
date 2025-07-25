@@ -173,16 +173,17 @@ func calculateCumulativeGasFromEthResponse(meter storetypes.GasMeter, res *types
 // returning.
 //
 // For relevant discussion see: https://github.com/cosmos/cosmos-sdk/discussions/9072
-func (k *Keeper) ApplyTransaction(ctx sdk.Context, tx *ethtypes.Transaction) (*types.MsgEthereumTxResponse, error) {
+func (k *Keeper) ApplyTransaction(ctx sdk.Context, msgEth *types.MsgEthereumTx) (*types.MsgEthereumTxResponse, error) {
 	cfg, err := k.EVMConfig(ctx, ctx.BlockHeader().ProposerAddress)
 	if err != nil {
 		return nil, errorsmod.Wrap(err, "failed to load evm config")
 	}
-	txConfig := k.TxConfig(ctx, tx.Hash())
+	ethTx := msgEth.AsTransaction()
+	txConfig := k.TxConfig(ctx, ethTx.Hash())
 
 	// get the signer according to the chain rules from the config and block height
 	signer := ethtypes.MakeSigner(types.GetEthChainConfig(), big.NewInt(ctx.BlockHeight()), uint64(ctx.BlockTime().Unix())) //#nosec G115 -- int overflow is not a concern here
-	msg, err := core.TransactionToMessage(tx, signer, cfg.BaseFee)
+	msg, err := core.TransactionToMessage(ethTx, signer, cfg.BaseFee)
 	if err != nil {
 		return nil, errorsmod.Wrap(err, "failed to return ethereum transaction as core message")
 	}
@@ -211,7 +212,7 @@ func (k *Keeper) ApplyTransaction(ctx sdk.Context, tx *ethtypes.Transaction) (*t
 		}
 
 		receipt := &ethtypes.Receipt{
-			Type:              tx.Type(),
+			Type:              ethTx.Type(),
 			PostState:         nil,
 			CumulativeGasUsed: calculateCumulativeGasFromEthResponse(ctx.GasMeter(), res),
 			Bloom:             bloomReceipt,
@@ -224,7 +225,7 @@ func (k *Keeper) ApplyTransaction(ctx sdk.Context, tx *ethtypes.Transaction) (*t
 			TransactionIndex:  txConfig.TxIndex,
 		}
 
-		signerAddr, err := signer.Sender(tx)
+		signerAddr, err := signer.Sender(ethTx)
 		if err != nil {
 			return nil, errorsmod.Wrap(err, "failed to extract sender address from ethereum transaction")
 		}
