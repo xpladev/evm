@@ -1,6 +1,7 @@
 package mempool
 
 import (
+	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	mempool "github.com/cosmos/cosmos-sdk/types/mempool"
 	authante "github.com/cosmos/cosmos-sdk/x/auth/ante"
@@ -23,8 +24,10 @@ func NewEthSignerExtractionAdapter(fallback mempool.SignerExtractionAdapter) Eth
 // GetSigners implements the Adapter interface
 // NOTE: only the first item is used by the mempool
 func (s EthSignerExtractionAdapter) GetSigners(tx sdk.Tx) ([]mempool.SignerData, error) {
+	fmt.Println(tx)
 	if txWithExtensions, ok := tx.(authante.HasExtensionOptionsTx); ok {
 		opts := txWithExtensions.GetExtensionOptions()
+		fmt.Println(opts[0].GetTypeUrl())
 		if len(opts) > 0 && opts[0].GetTypeUrl() == "/cosmos.evm.vm.v1.ExtensionOptionsEthereumTx" {
 			for _, msg := range tx.GetMsgs() {
 				if ethMsg, ok := msg.(*evmtypes.MsgEthereumTx); ok {
@@ -38,6 +41,8 @@ func (s EthSignerExtractionAdapter) GetSigners(tx sdk.Tx) ([]mempool.SignerData,
 			}
 		}
 	}
+
+	fmt.Println("WHY ARE WE FALLING BACK")
 
 	return s.fallback.GetSigners(tx)
 }

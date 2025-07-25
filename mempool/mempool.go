@@ -14,6 +14,7 @@ import (
 	evmtypes "github.com/cosmos/evm/x/vm/types"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/holiman/uint256"
+	"math/big"
 )
 
 var _ mempool.ExtMempool = &EVMMempool{}
@@ -40,6 +41,7 @@ type (
 
 		/** Chain Params **/
 		bondDenom string
+		chainID   *big.Int
 	}
 )
 
@@ -226,6 +228,7 @@ func (m *EVMMempool) Select(goCtx context.Context, i [][]byte) mempool.Iterator 
 		evmIterator:    evmIterator,
 		cosmosIterator: cosmosIterator,
 		bondDenom:      bondDenom,
+		chainID:        m.blockchain.Config().ChainID,
 	}
 
 	return combinedIterator
@@ -262,6 +265,7 @@ func (m *EVMMempool) SelectBy(goCtx context.Context, i [][]byte, f func(sdk.Tx) 
 		evmIterator:    evmIterator,
 		cosmosIterator: cosmosIterator,
 		bondDenom:      bondDenom,
+		chainID:        m.blockchain.Config().ChainID,
 	}
 
 	// todo: ensure that this is not an infinite loop
@@ -360,7 +364,7 @@ func (i *EVMMempoolIterator) convertEVMToSDKTx(nextEVMTx *txpool.LazyTransaction
 		return nil
 	}
 	msgEthereumTx := &evmtypes.MsgEthereumTx{}
-	if err := msgEthereumTx.FromEthereumTx(nextEVMTx.Tx); err != nil {
+	if err := msgEthereumTx.FromSignedEthereumTx(nextEVMTx.Tx, ethtypes.LatestSignerForChainID(i.chainID)); err != nil {
 		return nil // Return nil for invalid tx instead of panicking
 	}
 	return msgEthereumTx
