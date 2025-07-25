@@ -3,6 +3,7 @@ package evmd
 import (
 	"encoding/json"
 	"fmt"
+	mempool2 "github.com/cosmos/cosmos-sdk/types/mempool"
 	"github.com/cosmos/evm/mempool"
 	"io"
 	"os"
@@ -494,6 +495,7 @@ func NewExampleApp(
 		app.SetCheckTxHandler(checkTxHandler)
 
 		abciProposalHandler := baseapp.NewDefaultProposalHandler(evmMempool, app)
+		abciProposalHandler.SetSignerExtractionAdapter(mempool.NewEthSignerExtractionAdapter(mempool2.NewDefaultSignerExtractionAdapter()))
 		app.SetPrepareProposal(abciProposalHandler.PrepareProposalHandler())
 	}
 

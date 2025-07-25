@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"errors"
+	mempool2 "github.com/cosmos/evm/mempool"
 	"io"
 	"os"
 
@@ -322,7 +323,7 @@ func newApp(
 			// Setup Mempool and Proposal Handlers
 			mpool = mempool.NewPriorityMempool(mempool.PriorityNonceMempoolConfig[int64]{
 				TxPriority:      mempool.NewDefaultTxPriority(),
-				SignerExtractor: evmd.NewEthSignerExtractionAdapter(mempool.NewDefaultSignerExtractionAdapter()),
+				SignerExtractor: mempool2.NewEthSignerExtractionAdapter(mempool.NewDefaultSignerExtractionAdapter()),
 				MaxTx:           maxTxs,
 			})
 		} else {

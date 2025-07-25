@@ -2,6 +2,7 @@ package evm
 
 import (
 	anteinterfaces "github.com/cosmos/evm/ante/interfaces"
+	"github.com/cosmos/evm/mempool"
 
 	errorsmod "cosmossdk.io/errors"
 
@@ -20,6 +21,12 @@ func IncrementNonce(
 	// we merged the nonce verification to nonce increment, so when tx includes multiple messages
 	// with same sender, they'll be accepted.
 	if txNonce != nonce {
+		if txNonce > nonce {
+			return errorsmod.Wrapf(
+				mempool.ErrNonceGap,
+				"tx nonce: %d, account nonce: %d", txNonce, nonce,
+			)
+		}
 		return errorsmod.Wrapf(
 			errortypes.ErrInvalidSequence,
 			"invalid nonce; got %d, expected %d", txNonce, nonce,
