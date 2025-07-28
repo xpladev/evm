@@ -1,7 +1,6 @@
 package mempool
 
 import (
-	"fmt"
 	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/mempool"
@@ -38,7 +37,6 @@ func NewEVMMempoolIterator(evmIterator *miner.TransactionsByPriceAndNonce, cosmo
 	hasCosmos := cosmosIterator != nil && cosmosIterator.Tx() != nil
 
 	if !hasEVM && !hasCosmos {
-		fmt.Println("New Iterator is Empty")
 		return nil
 	}
 
@@ -123,7 +121,6 @@ func (i *EVMMempoolIterator) Next() mempool.Iterator {
 		if nextEVMTx != nil {
 			// We used EVM transaction, advance EVM iterator
 			if i.evmIterator != nil {
-				fmt.Printf("Shifting EVM tx during selection: %x\n", nextEVMTx.Tx.Hash())
 				i.evmIterator.Shift()
 			}
 		} else {
@@ -193,7 +190,6 @@ func (i *EVMMempoolIterator) Tx() sdk.Tx {
 	if i.shouldUseEVM() {
 		if nextEVMTx != nil {
 			evmTx := i.convertEVMToSDKTx(nextEVMTx)
-			fmt.Println("TX", nextEVMTx.Tx.Hash())
 			if evmTx != nil {
 				// Track that we're returning an EVM transaction
 				i.lastTxWasEVM = true

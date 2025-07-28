@@ -142,7 +142,6 @@ func (m *EVMMempool) Insert(ctx context.Context, tx sdk.Tx) error {
 	if err == nil {
 		// Insert into EVM pool
 		ethTxs := []*ethtypes.Transaction{ethMsg.AsTransaction()}
-		fmt.Println("Inserting eth tx:", ethTxs)
 		errs := m.txPool.Add(ethTxs, true)
 		if len(errs) > 0 && errs[0] != nil {
 			return errs[0]
@@ -151,7 +150,6 @@ func (m *EVMMempool) Insert(ctx context.Context, tx sdk.Tx) error {
 	}
 
 	// Insert into cosmos pool for non-EVM transactions
-	fmt.Println("Inserting Cosmos tx:", tx)
 	return m.cosmosPool.Insert(ctx, tx)
 }
 
@@ -183,7 +181,6 @@ func (m *EVMMempool) InsertInvalidSequence(txBytes []byte) error {
 			continue
 		}
 	}
-	fmt.Println("Inserting eth tx:", ethTxs[0].Hash())
 	errs := m.txPool.Add(ethTxs, false) // TODO: proper sync parameters
 	if errs != nil {
 		if len(errs) != 1 {
@@ -242,7 +239,6 @@ func (m *EVMMempool) Remove(tx sdk.Tx) error {
 	ethMsg, err := m.getEVMMessage(tx)
 	if err == nil {
 		// Remove from EVM pool
-		fmt.Println("Removing eth tx:", ethMsg.AsTransaction().Hash())
 		m.txPool.Subpools[0].RemoveTx(ethMsg.AsTransaction().Hash(), true, true)
 		return nil
 	}

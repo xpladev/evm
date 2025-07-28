@@ -179,7 +179,6 @@ func (p *TxPool) loop(head *types.Header) {
 	}()
 	var errc chan error
 	for errc == nil {
-		fmt.Println(p.Subpools[0].Stats())
 		// Something interesting might have happened, run a reset if there is
 		// one needed but none is running. The resetter will run on its own
 		// goroutine to allow chain head events to be consumed contiguously.
