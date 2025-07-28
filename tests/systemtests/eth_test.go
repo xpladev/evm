@@ -26,11 +26,13 @@ func StartChain(t *testing.T, sut *systemtests.SystemUnderTest) {
 
 func TestNonceGappedTxsPass(t *testing.T) {
 	t.Skip("nonce gaps are not yet supported")
+	pk := "0x88cbead91aee890d27bf06e003ade3d4e952427e88f88d31d61d3ef5e5d54305"
+
 	sut := systemtests.Sut
+	sut.ResetChain(t)
 	StartChain(t, sut)
 
-	// this PK is derived from the accounts created in testnet.go
-	pk := "0x88cbead91aee890d27bf06e003ade3d4e952427e88f88d31d61d3ef5e5d54305"
+	sut.AwaitNBlocks(t, 10)
 
 	// get the directory of the counter project to run commands from
 	_, filename, _, _ := runtime.Caller(0)
@@ -69,7 +71,7 @@ func TestNonceGappedTxsPass(t *testing.T) {
 			"--private-key", pk,
 			"--nonce", "2",
 		).CombinedOutput()
-		require.NoError(t, gappedErr)
+		require.NoError(t, gappedErr, "response: %s", string(gappedRes))
 	}()
 
 	// wait a bit to make sure the tx is submitted and waiting in the txpool.
@@ -83,7 +85,7 @@ func TestNonceGappedTxsPass(t *testing.T) {
 		"--private-key", pk,
 		"--nonce", "1",
 	).CombinedOutput()
-	require.NoError(t, err)
+	require.NoError(t, err, "response: %s", string(res))
 
 	wg.Wait()
 
@@ -93,8 +95,12 @@ func TestNonceGappedTxsPass(t *testing.T) {
 	receipt, err := parseReceipt(string(res))
 	require.NoError(t, err)
 
-	// the gapped tx should be the regular receipt + 1.
-	require.Equal(t, gappedReceipt.TransactionIndex, receipt.TransactionIndex+1)
+	// the gapped tx should be the regular receipt + 1 if they were in the same block.
+	if gappedReceipt.BlockNumber == receipt.BlockNumber {
+		require.Equal(t, gappedReceipt.TransactionIndex, receipt.TransactionIndex+1, "gapped tx: %d ---- other tx: %d ----", gappedReceipt.TransactionIndex, receipt.TransactionIndex)
+	}
+	require.Equal(t, gappedReceipt.Status, uint64(1))
+	require.Equal(t, receipt.Status, uint64(1))
 }
 
 func parseContractAddress(output string) string {
