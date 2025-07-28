@@ -25,9 +25,10 @@ func StartChain(t *testing.T, sut *systemtests.SystemUnderTest) {
 }
 
 func TestNonceGappedTxsPass(t *testing.T) {
-	t.Skip("nonce gaps are not yet supported")
+	//t.Skip("nonce gaps are not yet supported")
 	sut := systemtests.Sut
 	StartChain(t, sut)
+	sut.AwaitNBlocks(t, 10)
 
 	// this PK is derived from the accounts created in testnet.go
 	pk := "0x88cbead91aee890d27bf06e003ade3d4e952427e88f88d31d61d3ef5e5d54305"

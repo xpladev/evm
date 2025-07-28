@@ -37,6 +37,9 @@ type (
 		bondDenom  string
 		evmDenom   string
 
+		/** Verification **/
+		verifyTxFn func(tx sdk.Tx) ([]byte, error)
+
 		/** Concurrency **/
 		mtx sync.Mutex
 	}
@@ -45,11 +48,13 @@ type (
 type EVMMempoolConfig struct {
 	TxPool     *txpool.TxPool
 	CosmosPool mempool.ExtMempool
+	VerifyTxFn func(tx sdk.Tx) ([]byte, error)
 }
 
 func NewEVMMempool(ctx func(height int64, prove bool) (sdk.Context, error), vmKeeper VMKeeperI, feeMarketKeeper FeeMarketKeeperI, txConfig client.TxConfig, config *EVMMempoolConfig) *EVMMempool {
 	var txPool *txpool.TxPool
 	var cosmosPool mempool.ExtMempool
+	var verifyTxFn func(tx sdk.Tx) ([]byte, error)
 
 	bondDenom := evmtypes.GetEVMCoinDenom()
 	evmDenom := types.ExtendedCoinDenom()
@@ -57,6 +62,7 @@ func NewEVMMempool(ctx func(height int64, prove bool) (sdk.Context, error), vmKe
 	if config != nil {
 		txPool = config.TxPool
 		cosmosPool = config.CosmosPool
+		verifyTxFn = config.VerifyTxFn
 	}
 
 	var blockchain *Blockchain
@@ -107,6 +113,7 @@ func NewEVMMempool(ctx func(height int64, prove bool) (sdk.Context, error), vmKe
 		blockchain:   blockchain,
 		bondDenom:    bondDenom,
 		evmDenom:     evmDenom,
+		verifyTxFn:   verifyTxFn,
 	}
 }
 
@@ -235,22 +242,45 @@ func (m *EVMMempool) Remove(tx sdk.Tx) error {
 	m.mtx.Lock()
 	defer m.mtx.Unlock()
 
-	// Try to get EVM message
-	ethMsg, err := m.getEVMMessage(tx)
+	_, err := m.getEVMMessage(tx)
 	if err == nil {
-		// Remove from EVM pool
-		m.txPool.Subpools[0].RemoveTx(ethMsg.AsTransaction().Hash(), true, true)
+		// Comet will attempt to remove transactions from the mempool after completing successfully.
+		// We should not do this with EVM transactions because removing them causes the subsequent ones to
+		// be dequeued as temporarily invalid, only to be requeued a block later.
+		// The EVM mempool handles removal based on account nonce automatically.
+		//if m.shouldRemoveFromEVMPool(tx) {
+		//	ethTx := ethMsg.AsTransaction()
+		//	m.legacyTxPool.RemoveTx(ethTx.Hash(), true, true)
+		//}
 		return nil
 	}
 
-	// Handle validation errors
 	if errors.Is(err, ErrNoMessages) {
 		return err
 	}
-	// For ErrExpectedOneMessage or ErrNotEVMTransaction, treat as cosmos transaction
 
-	// Remove from cosmos pool for non-EVM transactions
 	return m.cosmosPool.Remove(tx)
+}
+
+func (m *EVMMempool) shouldRemoveFromEVMPool(tx sdk.Tx) bool {
+	if m.verifyTxFn == nil {
+		return false
+	}
+
+	// todo: This is an inefficiency that could be optimized by getting more information from the removal function.
+	// Currently, we remove transactions on completion and on recheckTx errors. However, we do not know why the removal
+	// happened, so we need to reverify. If it was a successful transaction or a nonce gap error, we let the mempool handle the cleaning.
+	// If it was any other Cosmos or antehandler related issue, then we remove it.
+	_, err := m.verifyTxFn(tx)
+	if err == nil {
+		return false
+	}
+
+	if errors.Is(err, ErrNonceGap) {
+		return false
+	}
+
+	return true
 }
 
 func (m *EVMMempool) SelectBy(goCtx context.Context, i [][]byte, f func(sdk.Tx) bool) {

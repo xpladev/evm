@@ -437,7 +437,7 @@ func NewExampleApp(
 
 	app.GovKeeper = *govKeeper.SetHooks(
 		govtypes.NewMultiGovHooks(
-		// register the governance hooks
+			// register the governance hooks
 		),
 	)
 
@@ -488,7 +488,11 @@ func NewExampleApp(
 
 	// set the EVM priority nonce mempool
 	if evmtypes.GetChainConfig() != nil {
-		evmMempool := mempool.NewEVMMempool(app.CreateQueryContext, app.EVMKeeper, app.FeeMarketKeeper, app.txConfig, nil)
+		mempoolConfig := &mempool.EVMMempoolConfig{
+			VerifyTxFn: app.PrepareProposalVerifyTx,
+		}
+		
+		evmMempool := mempool.NewEVMMempool(app.CreateQueryContext, app.EVMKeeper, app.FeeMarketKeeper, app.txConfig, mempoolConfig)
 		app.EVMMempool = evmMempool
 		app.SetMempool(evmMempool)
 		checkTxHandler := mempool.NewCheckTxHandler(evmMempool)
