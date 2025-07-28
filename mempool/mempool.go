@@ -5,20 +5,21 @@ import (
 	"cosmossdk.io/math"
 	"errors"
 	"fmt"
+	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/mempool"
 	mempool2 "github.com/cosmos/cosmos-sdk/types/mempool"
 	"github.com/cosmos/evm/mempool/miner"
 	"github.com/cosmos/evm/mempool/txpool"
 	"github.com/cosmos/evm/mempool/txpool/legacypool"
+	"github.com/cosmos/evm/x/precisebank/types"
 	evmtypes "github.com/cosmos/evm/x/vm/types"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/holiman/uint256"
-	"math/big"
+	"sync"
 )
 
 var _ mempool.ExtMempool = &EVMMempool{}
-var _ mempool.Iterator = &EVMMempoolIterator{}
 
 type (
 	EVMMempool struct {
@@ -31,17 +32,13 @@ type (
 		cosmosPool   mempool.ExtMempool
 
 		/** Utils **/
-		txDecoder  sdk.TxDecoder
+		txConfig   client.TxConfig
 		blockchain *Blockchain
-	}
-	EVMMempoolIterator struct {
-		/** Mempool Iterators **/
-		evmIterator    *miner.TransactionsByPriceAndNonce
-		cosmosIterator mempool.Iterator
+		bondDenom  string
+		evmDenom   string
 
-		/** Chain Params **/
-		bondDenom string
-		chainID   *big.Int
+		/** Concurrency **/
+		mtx sync.Mutex
 	}
 )
 
@@ -50,10 +47,12 @@ type EVMMempoolConfig struct {
 	CosmosPool mempool.ExtMempool
 }
 
-func NewEVMMempool(ctx func(height int64, prove bool) (sdk.Context, error), vmKeeper VMKeeperI, feeMarketKeeper FeeMarketKeeperI, txDecoder sdk.TxDecoder, config *EVMMempoolConfig) *EVMMempool {
+func NewEVMMempool(ctx func(height int64, prove bool) (sdk.Context, error), vmKeeper VMKeeperI, feeMarketKeeper FeeMarketKeeperI, txConfig client.TxConfig, config *EVMMempoolConfig) *EVMMempool {
 	var txPool *txpool.TxPool
 	var cosmosPool mempool.ExtMempool
-	bondDenom := "wei"
+
+	bondDenom := evmtypes.GetEVMCoinDenom()
+	evmDenom := types.ExtendedCoinDenom()
 
 	if config != nil {
 		txPool = config.TxPool
@@ -104,8 +103,10 @@ func NewEVMMempool(ctx func(height int64, prove bool) (sdk.Context, error), vmKe
 		txPool:       txPool,
 		legacyTxPool: txPool.Subpools[0].(*legacypool.LegacyPool),
 		cosmosPool:   cosmosPool,
-		txDecoder:    txDecoder,
+		txConfig:     txConfig,
 		blockchain:   blockchain,
+		bondDenom:    bondDenom,
+		evmDenom:     evmDenom,
 	}
 }
 
@@ -131,8 +132,11 @@ func (m *EVMMempool) getEVMMessage(tx sdk.Tx) (*evmtypes.MsgEthereumTx, error) {
 }
 
 func (m *EVMMempool) Insert(ctx context.Context, tx sdk.Tx) error {
+	m.mtx.Lock()
+	defer m.mtx.Unlock()
+
 	// ASSUMPTION: these are all successful upon CheckTx
-	//todo: should not allow insertion before block 1 has completed
+	// todo: should not allow insertion before block 1 has completed
 	// Try to get EVM message
 	ethMsg, err := m.getEVMMessage(tx)
 	if err == nil {
@@ -145,12 +149,6 @@ func (m *EVMMempool) Insert(ctx context.Context, tx sdk.Tx) error {
 		}
 		return nil
 	}
-
-	// Handle validation errors
-	if errors.Is(err, ErrNoMessages) {
-		return err
-	}
-	// For ErrExpectedOneMessage or ErrNotEVMTransaction, treat as cosmos transaction
 
 	// Insert into cosmos pool for non-EVM transactions
 	fmt.Println("Inserting Cosmos tx:", tx)
@@ -168,7 +166,7 @@ func (m *EVMMempool) InsertInvalidSequence(txBytes []byte) error {
 		pick up transactions with Nonce gaps on RecheckTx.
 	}
 	*/
-	tx, err := m.txDecoder(txBytes)
+	tx, err := m.txConfig.TxDecoder()(txBytes)
 	if err != nil {
 		return err
 	}
@@ -185,6 +183,7 @@ func (m *EVMMempool) InsertInvalidSequence(txBytes []byte) error {
 			continue
 		}
 	}
+	fmt.Println("Inserting eth tx:", ethTxs[0].Hash())
 	errs := m.txPool.Add(ethTxs, false) // TODO: proper sync parameters
 	if errs != nil {
 		if len(errs) != 1 {
@@ -196,7 +195,7 @@ func (m *EVMMempool) InsertInvalidSequence(txBytes []byte) error {
 }
 
 // setupPendingTransactions extracts common logic for setting up pending transactions
-func (m *EVMMempool) setupPendingTransactions(goCtx context.Context, i [][]byte) (*miner.TransactionsByPriceAndNonce, mempool.Iterator, string) {
+func (m *EVMMempool) setupPendingTransactions(goCtx context.Context, i [][]byte) (*miner.TransactionsByPriceAndNonce, mempool2.Iterator) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 	baseFee := m.vmKeeper.GetBaseFee(ctx)
 	var baseFeeUint *uint256.Int
@@ -215,21 +214,17 @@ func (m *EVMMempool) setupPendingTransactions(goCtx context.Context, i [][]byte)
 	orderedEVMPendingTxes := miner.NewTransactionsByPriceAndNonce(nil, evmPendingTxes, baseFee)
 
 	cosmosPendingTxes := m.cosmosPool.Select(ctx, i)
-	bondDenom := m.vmKeeper.GetParams(ctx).EvmDenom
 
-	return orderedEVMPendingTxes, cosmosPendingTxes, bondDenom
+	return orderedEVMPendingTxes, cosmosPendingTxes
 }
 
 func (m *EVMMempool) Select(goCtx context.Context, i [][]byte) mempool.Iterator {
-	fmt.Println("SELECT")
-	evmIterator, cosmosIterator, bondDenom := m.setupPendingTransactions(goCtx, i)
+	m.mtx.Lock()
+	defer m.mtx.Unlock()
 
-	combinedIterator := &EVMMempoolIterator{
-		evmIterator:    evmIterator,
-		cosmosIterator: cosmosIterator,
-		bondDenom:      bondDenom,
-		chainID:        m.blockchain.Config().ChainID,
-	}
+	evmIterator, cosmosIterator := m.setupPendingTransactions(goCtx, i)
+
+	combinedIterator := NewEVMMempoolIterator(evmIterator, cosmosIterator, m.txConfig, m.bondDenom, m.blockchain.Config().ChainID)
 
 	return combinedIterator
 }
@@ -240,10 +235,14 @@ func (m *EVMMempool) CountTx() int {
 }
 
 func (m *EVMMempool) Remove(tx sdk.Tx) error {
+	m.mtx.Lock()
+	defer m.mtx.Unlock()
+
 	// Try to get EVM message
 	ethMsg, err := m.getEVMMessage(tx)
 	if err == nil {
 		// Remove from EVM pool
+		fmt.Println("Removing eth tx:", ethMsg.AsTransaction().Hash())
 		m.txPool.Subpools[0].RemoveTx(ethMsg.AsTransaction().Hash(), true, true)
 		return nil
 	}
@@ -259,137 +258,14 @@ func (m *EVMMempool) Remove(tx sdk.Tx) error {
 }
 
 func (m *EVMMempool) SelectBy(goCtx context.Context, i [][]byte, f func(sdk.Tx) bool) {
-	evmIterator, cosmosIterator, bondDenom := m.setupPendingTransactions(goCtx, i)
+	m.mtx.Lock()
+	defer m.mtx.Unlock()
 
-	var combinedIterator mempool.Iterator = &EVMMempoolIterator{
-		evmIterator:    evmIterator,
-		cosmosIterator: cosmosIterator,
-		bondDenom:      bondDenom,
-		chainID:        m.blockchain.Config().ChainID,
-	}
+	evmIterator, cosmosIterator := m.setupPendingTransactions(goCtx, i)
 
-	// todo: ensure that this is not an infinite loop
-	// both txPool and PriorityNonceMempool should eventually be exhausted
-	// should write tests to make sure of this
-	if combinedIterator.Tx() == nil {
-		return
-	}
+	var combinedIterator = NewEVMMempoolIterator(evmIterator, cosmosIterator, m.txConfig, m.bondDenom, m.blockchain.Config().ChainID)
 
 	for combinedIterator != nil && f(combinedIterator.Tx()) {
 		combinedIterator = combinedIterator.Next()
-	}
-}
-
-// shouldUseEVM returns true if EVM transaction should be used, false for Cosmos
-func (i *EVMMempoolIterator) shouldUseEVM() bool {
-	var nextEVMTx *txpool.LazyTransaction
-	var evmFee *uint256.Int
-	if i.evmIterator != nil {
-		nextEVMTx, evmFee = i.evmIterator.Peek()
-	}
-
-	var nextCosmosTx sdk.Tx
-	if i.cosmosIterator != nil {
-		nextCosmosTx = i.cosmosIterator.Tx()
-	}
-
-	// If only one type available
-	if nextEVMTx == nil {
-		return false // Use Cosmos
-	}
-	if nextCosmosTx == nil {
-		return true // Use EVM
-	}
-
-	// Both have transactions - compare fees
-	cosmosTxFee, ok := nextCosmosTx.(sdk.FeeTx)
-	if !ok {
-		return true // Use EVM if Cosmos tx has no fee
-	}
-
-	cosmosFees := cosmosTxFee.GetFee()
-	var cosmosTxEVMDenomFee *sdk.Coin
-	for _, coin := range cosmosFees {
-		if coin.Denom == i.bondDenom {
-			cosmosTxEVMDenomFee = &coin
-			break
-		}
-	}
-
-	if cosmosTxEVMDenomFee == nil {
-		return true // Use EVM if Cosmos tx has wrong denomination
-	}
-
-	cosmosTxAmount, overflow := uint256.FromBig(cosmosTxEVMDenomFee.Amount.BigInt())
-	if overflow || !cosmosTxAmount.Gt(evmFee) {
-		return true // Use EVM if Cosmos fee is not higher
-	}
-
-	return false // Use Cosmos if it has higher fee
-}
-
-func (i *EVMMempoolIterator) Next() mempool.Iterator {
-	// Check if both iterators are exhausted
-	var hasEVM, hasCosmos bool
-	if i.evmIterator != nil {
-		nextEVMTx, _ := i.evmIterator.Peek()
-		hasEVM = nextEVMTx != nil
-	}
-	if i.cosmosIterator != nil {
-		nextCosmosTx := i.cosmosIterator.Tx()
-		hasCosmos = nextCosmosTx != nil
-	}
-
-	if !hasEVM && !hasCosmos {
-		return nil
-	}
-
-	// Advance the iterator that was used
-	if i.shouldUseEVM() {
-		if i.evmIterator != nil {
-			i.evmIterator.Pop()
-		}
-	} else {
-		if i.cosmosIterator != nil {
-			i.cosmosIterator = i.cosmosIterator.Next()
-		}
-	}
-
-	return i
-}
-
-// convertEVMToSDKTx converts an EVM transaction to SDK transaction
-func (i *EVMMempoolIterator) convertEVMToSDKTx(nextEVMTx *txpool.LazyTransaction) sdk.Tx {
-	if nextEVMTx == nil {
-		return nil
-	}
-	msgEthereumTx := &evmtypes.MsgEthereumTx{}
-	if err := msgEthereumTx.FromSignedEthereumTx(nextEVMTx.Tx, ethtypes.LatestSignerForChainID(i.chainID)); err != nil {
-		return nil // Return nil for invalid tx instead of panicking
-	}
-	return msgEthereumTx
-}
-
-func (i *EVMMempoolIterator) Tx() sdk.Tx {
-	var nextEVMTx *txpool.LazyTransaction
-	if i.evmIterator != nil {
-		nextEVMTx, _ = i.evmIterator.Peek()
-	}
-
-	var nextCosmosTx sdk.Tx
-	if i.cosmosIterator != nil {
-		nextCosmosTx = i.cosmosIterator.Tx()
-	}
-
-	// If no transactions available
-	if nextEVMTx == nil && nextCosmosTx == nil {
-		return nil
-	}
-
-	// Return the appropriate transaction
-	if i.shouldUseEVM() {
-		return i.convertEVMToSDKTx(nextEVMTx)
-	} else {
-		return nextCosmosTx
 	}
 }

@@ -115,11 +115,16 @@ func (b Blockchain) StateAt(hash common.Hash) (vm.StateDB, error) {
 	if hash == common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000") || hash == types.EmptyCodeHash {
 		return vm.StateDB(nil), nil
 	}
+
+	// Always get the latest context to avoid stale nonce state
+	// This ensures we're validating against the most recent account nonces
 	ctx, err := b.GetLatestCtx()
 	if err != nil {
-		fmt.Println(err)
-		return nil, err
+		// Handle state pruning gracefully - if we can't get the latest context,
+		// something is seriously wrong with the chain state
+		return nil, fmt.Errorf("failed to get latest context for StateAt: %w", err)
 	}
+
 	return statedb.New(ctx, b.vmKeeper, statedb.NewEmptyTxConfig(common.Hash(ctx.BlockHeader().AppHash))), nil
 }
 

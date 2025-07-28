@@ -488,7 +488,7 @@ func NewExampleApp(
 
 	// set the EVM priority nonce mempool
 	if evmtypes.GetChainConfig() != nil {
-		evmMempool := mempool.NewEVMMempool(app.CreateQueryContext, app.EVMKeeper, app.FeeMarketKeeper, app.txConfig.TxDecoder(), nil)
+		evmMempool := mempool.NewEVMMempool(app.CreateQueryContext, app.EVMKeeper, app.FeeMarketKeeper, app.txConfig, nil)
 		app.EVMMempool = evmMempool
 		app.SetMempool(evmMempool)
 		checkTxHandler := mempool.NewCheckTxHandler(evmMempool)
