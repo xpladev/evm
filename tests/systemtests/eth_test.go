@@ -42,6 +42,8 @@ func TestPriorityReplacement(t *testing.T) {
 	sut.ResetChain(t)
 	StartChain(t, sut)
 
+	sut.AwaitNBlocks(t, 10)
+
 	// get the directory of the counter project to run commands from
 	_, filename, _, _ := runtime.Caller(0)
 	testDir := filepath.Dir(filename)
