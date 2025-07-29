@@ -136,6 +136,11 @@ func (m *EVMMempool) GetBlockchain() *Blockchain {
 	return m.blockchain
 }
 
+// GetTxPool returns the underlying EVM transaction pool
+func (m *EVMMempool) GetTxPool() *txpool.TxPool {
+	return m.txPool
+}
+
 // getEVMMessage validates the transaction has exactly one message and returns the EVM message if it exists
 func (m *EVMMempool) getEVMMessage(tx sdk.Tx) (*evmtypes.MsgEthereumTx, error) {
 	msgs := tx.GetMsgs()

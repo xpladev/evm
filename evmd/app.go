@@ -497,6 +497,11 @@ func NewExampleApp(
 
 		evmMempool := mempool.NewEVMMempool(app.CreateQueryContext, app.EVMKeeper, app.FeeMarketKeeper, app.txConfig, app.clientCtx, mempoolConfig)
 		app.EVMMempool = evmMempool
+		
+		// Set the global mempool for RPC access
+		if err := mempool.SetGlobalEVMMempool(evmMempool); err != nil {
+			panic(err)
+		}
 		app.SetMempool(evmMempool)
 		checkTxHandler := mempool.NewCheckTxHandler(evmMempool)
 		app.SetCheckTxHandler(checkTxHandler)
