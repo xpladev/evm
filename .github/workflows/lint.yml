@@ -3,6 +3,7 @@ name: Lint
 # This workflow runs on every pull request and push to main
 
 on:
+  merge_group:
   pull_request:
 
 permissions: read-all
