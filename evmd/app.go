@@ -3,8 +3,9 @@ package evmd
 import (
 	"encoding/json"
 	"fmt"
-	mempool2 "github.com/cosmos/cosmos-sdk/types/mempool"
+	sdkmempool "github.com/cosmos/cosmos-sdk/types/mempool"
 	"github.com/cosmos/evm/mempool"
+	evmserver "github.com/cosmos/evm/server"
 	"io"
 	"os"
 
@@ -150,6 +151,7 @@ var (
 	_ runtime.AppI            = (*EVMD)(nil)
 	_ servertypes.Application = (*EVMD)(nil)
 	_ ibctesting.TestingApp   = (*EVMD)(nil)
+	_ evmserver.EVMAppCreator = (*EVMD)(nil)
 )
 
 // EVMD extends an ABCI application, but with most of its parameters exported.
@@ -160,6 +162,7 @@ type EVMD struct {
 	appCodec          codec.Codec
 	interfaceRegistry types.InterfaceRegistry
 	txConfig          client.TxConfig
+	clientCtx         client.Context
 
 	// keys to access the substores
 	keys    map[string]*storetypes.KVStoreKey
@@ -491,15 +494,15 @@ func NewExampleApp(
 		mempoolConfig := &mempool.EVMMempoolConfig{
 			VerifyTxFn: app.PrepareProposalVerifyTx,
 		}
-		
-		evmMempool := mempool.NewEVMMempool(app.CreateQueryContext, app.EVMKeeper, app.FeeMarketKeeper, app.txConfig, mempoolConfig)
+
+		evmMempool := mempool.NewEVMMempool(app.CreateQueryContext, app.EVMKeeper, app.FeeMarketKeeper, app.txConfig, app.clientCtx, mempoolConfig)
 		app.EVMMempool = evmMempool
 		app.SetMempool(evmMempool)
 		checkTxHandler := mempool.NewCheckTxHandler(evmMempool)
 		app.SetCheckTxHandler(checkTxHandler)
 
 		abciProposalHandler := baseapp.NewDefaultProposalHandler(evmMempool, app)
-		abciProposalHandler.SetSignerExtractionAdapter(mempool.NewEthSignerExtractionAdapter(mempool2.NewDefaultSignerExtractionAdapter()))
+		abciProposalHandler.SetSignerExtractionAdapter(mempool.NewEthSignerExtractionAdapter(sdkmempool.NewDefaultSignerExtractionAdapter()))
 		app.SetPrepareProposal(abciProposalHandler.PrepareProposalHandler())
 	}
 
@@ -1117,6 +1120,10 @@ func (app *EVMD) GetAnteHandler() sdk.AnteHandler {
 // GetTxConfig implements the TestingApp interface.
 func (app *EVMD) GetTxConfig() client.TxConfig {
 	return app.txConfig
+}
+
+func (app *EVMD) SetClientCtx(clientCtx client.Context) {
+	app.clientCtx = clientCtx
 }
 
 // AutoCliOpts returns the autocli options for the app.

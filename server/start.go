@@ -55,6 +55,10 @@ import (
 // DBOpener is a function to open `application.db`, potentially with customized options.
 type DBOpener func(opts types.AppOptions, rootDir string, backend dbm.BackendType) (dbm.DB, error)
 
+type EVMAppCreator interface {
+	SetClientCtx(clientCtx client.Context)
+}
+
 // StartOptions defines options that can be customized in `StartCmd`
 type StartOptions struct {
 	AppCreator      types.AppCreator
@@ -122,7 +126,7 @@ which accepts a path for the resulting pprof file.
 			withTM, _ := cmd.Flags().GetBool(srvflags.WithCometBFT)
 			if !withTM {
 				serverCtx.Logger.Info("starting ABCI without Tendermint")
-				return startStandAlone(serverCtx, opts)
+				return startStandAlone(serverCtx, clientCtx, opts)
 			}
 
 			serverCtx.Logger.Info("Unlocking keyring")
@@ -215,7 +219,7 @@ which accepts a path for the resulting pprof file.
 // Parameters:
 // - svrCtx: The context object that holds server configurations, logger, and other stateful information.
 // - opts: Options for starting the server, including functions for creating the application and opening the database.
-func startStandAlone(svrCtx *server.Context, opts StartOptions) error {
+func startStandAlone(svrCtx *server.Context, clientCtx client.Context, opts StartOptions) error {
 	addr := svrCtx.Viper.GetString(srvflags.Address)
 	transport := svrCtx.Viper.GetString(srvflags.Transport)
 	home := svrCtx.Viper.GetString(flags.FlagHome)
@@ -238,6 +242,11 @@ func startStandAlone(svrCtx *server.Context, opts StartOptions) error {
 	}
 
 	app := opts.AppCreator(svrCtx.Logger, db, traceWriter, svrCtx.Viper)
+	evmApp, ok := app.(EVMAppCreator)
+	if !ok {
+		svrCtx.Logger.Error("failed to get server config", "error", err.Error())
+	}
+	evmApp.SetClientCtx(clientCtx)
 
 	config, err := cosmosevmserverconfig.GetConfig(svrCtx.Viper)
 	if err != nil {
@@ -344,6 +353,11 @@ func startInProcess(svrCtx *server.Context, clientCtx client.Context, opts Start
 	}
 
 	app := opts.AppCreator(svrCtx.Logger, db, traceWriter, svrCtx.Viper)
+	evmApp, ok := app.(EVMAppCreator)
+	if !ok {
+		svrCtx.Logger.Error("failed to get server config", "error", err.Error())
+	}
+	evmApp.SetClientCtx(clientCtx)
 
 	nodeKey, err := p2p.LoadOrGenNodeKey(cfg.NodeKeyFile())
 	if err != nil {

@@ -254,6 +254,8 @@ type LegacyPool struct {
 	initDoneCh      chan struct{}  // is closed once the pool is initialized (for tests)
 
 	changesSinceReorg int // A counter for how many drops we've performed in-between reorg.
+
+	BroadCastTxFn func(txs []*types.Transaction) error
 }
 
 type txpoolResetRequest struct {
@@ -1322,6 +1324,17 @@ func (pool *LegacyPool) runReorg(done chan struct{}, reset *txpoolResetRequest, 
 		var txs []*types.Transaction
 		for _, set := range events {
 			txs = append(txs, set.Flatten()...)
+		}
+		// On successful transaction, broadcast the transaction through the Comet Mempool
+		// Two inefficiencies:
+		// 1. The transactions might have already been broadcasted, demoted, and repromoted
+		//		a. tx_nonces_for_account: [1,2,3,4,5,6], [1,2,3] pass, [4] fails, [5,6] get demoted, [4] gets reinserted, [4,5,6] get re-promoted and thus rebroadcasted
+		// 2. The transaction will pass through Comet, into the appside mempool, and attempted to be reinserted
+		//    It will not, because there is a check, but the attempt is there.
+		if pool.BroadCastTxFn != nil {
+			if err := pool.BroadCastTxFn(txs); err != nil {
+				log.Error("Failed to broadcast transactions", "err", err, "count", len(txs))
+			}
 		}
 		pool.txFeed.Send(core.NewTxsEvent{Txs: txs})
 	}

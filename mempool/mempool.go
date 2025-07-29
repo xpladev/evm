@@ -46,12 +46,13 @@ type (
 )
 
 type EVMMempoolConfig struct {
-	TxPool     *txpool.TxPool
-	CosmosPool mempool.ExtMempool
-	VerifyTxFn func(tx sdk.Tx) ([]byte, error)
+	TxPool        *txpool.TxPool
+	CosmosPool    mempool.ExtMempool
+	VerifyTxFn    func(tx sdk.Tx) ([]byte, error)
+	BroadCastTxFn func(txs []*ethtypes.Transaction) error
 }
 
-func NewEVMMempool(ctx func(height int64, prove bool) (sdk.Context, error), vmKeeper VMKeeperI, feeMarketKeeper FeeMarketKeeperI, txConfig client.TxConfig, config *EVMMempoolConfig) *EVMMempool {
+func NewEVMMempool(ctx func(height int64, prove bool) (sdk.Context, error), vmKeeper VMKeeperI, feeMarketKeeper FeeMarketKeeperI, txConfig client.TxConfig, clientCtx client.Context, config *EVMMempoolConfig) *EVMMempool {
 	var txPool *txpool.TxPool
 	var cosmosPool mempool.ExtMempool
 	var verifyTxFn func(tx sdk.Tx) ([]byte, error)
@@ -59,16 +60,29 @@ func NewEVMMempool(ctx func(height int64, prove bool) (sdk.Context, error), vmKe
 	bondDenom := evmtypes.GetEVMCoinDenom()
 	evmDenom := types.ExtendedCoinDenom()
 
-	if config != nil {
-		txPool = config.TxPool
-		cosmosPool = config.CosmosPool
-		verifyTxFn = config.VerifyTxFn
+	if config == nil {
+		panic("config must not be nil")
 	}
+
+	txPool = config.TxPool
+	cosmosPool = config.CosmosPool
+	verifyTxFn = config.VerifyTxFn
 
 	var blockchain *Blockchain
 	if txPool == nil {
 		blockchain = NewBlockchain(ctx, vmKeeper, feeMarketKeeper)
 		legacyPool := legacypool.New(legacypool.DefaultConfig, blockchain)
+
+		// Set up broadcast function using clientCtx
+		if config.BroadCastTxFn != nil {
+			legacyPool.BroadCastTxFn = config.BroadCastTxFn
+		} else {
+			// Create default broadcast function using clientCtx
+			legacyPool.BroadCastTxFn = func(txs []*ethtypes.Transaction) error {
+				return broadcastEVMTransactions(clientCtx, txConfig, txs)
+			}
+		}
+
 		txPoolInit, err := txpool.New(uint64(0), blockchain, []txpool.SubPool{legacyPool})
 		if err != nil {
 			panic(err)
@@ -294,4 +308,33 @@ func (m *EVMMempool) SelectBy(goCtx context.Context, i [][]byte, f func(sdk.Tx) 
 	for combinedIterator != nil && f(combinedIterator.Tx()) {
 		combinedIterator = combinedIterator.Next()
 	}
+}
+
+// broadcastEVMTransactions converts EVM transactions to Cosmos transactions and broadcasts them
+func broadcastEVMTransactions(clientCtx client.Context, txConfig client.TxConfig, ethTxs []*ethtypes.Transaction) error {
+	for _, ethTx := range ethTxs {
+		msg := &evmtypes.MsgEthereumTx{}
+		if err := msg.FromEthereumTx(ethTx); err != nil {
+			return fmt.Errorf("failed to convert EVM tx to Cosmos msg: %w", err)
+		}
+
+		txBuilder := txConfig.NewTxBuilder()
+		if err := txBuilder.SetMsgs(msg); err != nil {
+			return fmt.Errorf("failed to set msg in tx builder: %w", err)
+		}
+
+		txBytes, err := txConfig.TxEncoder()(txBuilder.GetTx())
+		if err != nil {
+			return fmt.Errorf("failed to encode transaction: %w", err)
+		}
+
+		res, err := clientCtx.BroadcastTxSync(txBytes)
+		if err != nil {
+			return fmt.Errorf("failed to broadcast transaction %s: %w", ethTx.Hash().Hex(), err)
+		}
+		if res.Code != 0 {
+			return fmt.Errorf("transaction %s rejected by mempool: code=%d, log=%s", ethTx.Hash().Hex(), res.Code, res.RawLog)
+		}
+	}
+	return nil
 }
