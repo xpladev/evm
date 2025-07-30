@@ -2,6 +2,7 @@ package systemtests
 
 import (
 	"encoding/hex"
+	"fmt"
 	"math/big"
 	"os/exec"
 	"path/filepath"
@@ -58,21 +59,25 @@ func TestNonceGappedTxsPass(t *testing.T) {
 
 	wg := sync.WaitGroup{}
 
-	var gappedRes []byte
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		var gappedErr error
-		gappedRes, gappedErr = exec.Command(
-			"cast", "send",
-			contractAddr,
-			"increment()",
-			"--rpc-url", "http://127.0.0.1:8545",
-			"--private-key", pk,
-			"--nonce", "2",
-		).CombinedOutput()
-		require.NoError(t, gappedErr, "response: %s", string(gappedRes))
-	}()
+	outOfOrderNonces := []uint64{4, 2, 5, 3}
+	responses := make([][]byte, len(outOfOrderNonces))
+
+	for i, nonce := range outOfOrderNonces {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			res1, err1 := exec.Command(
+				"cast", "send",
+				contractAddr,
+				"increment()",
+				"--rpc-url", "http://127.0.0.1:8545",
+				"--private-key", pk,
+				"--nonce", fmt.Sprintf("%d", nonce),
+			).CombinedOutput()
+			require.NoError(t, err1, "response: %s", string(res1))
+			responses[i] = res1
+		}()
+	}
 
 	// wait a bit to make sure the tx is submitted and waiting in the txpool.
 	time.Sleep(2 * time.Second)
@@ -89,18 +94,15 @@ func TestNonceGappedTxsPass(t *testing.T) {
 
 	wg.Wait()
 
-	gappedReceipt, err := parseReceipt(string(gappedRes))
-	require.NoError(t, err)
-
 	receipt, err := parseReceipt(string(res))
 	require.NoError(t, err)
-
-	// the gapped tx should be the regular receipt + 1 if they were in the same block.
-	if gappedReceipt.BlockNumber == receipt.BlockNumber {
-		require.Equal(t, gappedReceipt.TransactionIndex, receipt.TransactionIndex+1, "gapped tx: %d ---- other tx: %d ----", gappedReceipt.TransactionIndex, receipt.TransactionIndex)
-	}
-	require.Equal(t, gappedReceipt.Status, uint64(1))
 	require.Equal(t, receipt.Status, uint64(1))
+
+	for _, bz := range responses {
+		receipt, err := parseReceipt(string(bz))
+		require.NoError(t, err)
+		require.Equal(t, receipt.Status, uint64(1))
+	}
 }
 
 func parseContractAddress(output string) string {
