@@ -11,7 +11,14 @@ func (m QueryTraceTxRequest) UnpackInterfaces(unpacker codectypes.AnyUnpacker) e
 			return err
 		}
 	}
-	return m.Msg.UnpackInterfaces(unpacker)
+
+	if m.Msg != nil {
+		if err := m.Msg.UnpackInterfaces(unpacker); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (m QueryTraceBlockRequest) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
