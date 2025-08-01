@@ -6,7 +6,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/mempool"
 	"github.com/cosmos/evm/mempool/miner"
 	"github.com/cosmos/evm/mempool/txpool"
-	types2 "github.com/cosmos/evm/x/vm/types"
+	msgtypes "github.com/cosmos/evm/x/vm/types"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/holiman/uint256"
 	"math/big"
@@ -14,6 +14,10 @@ import (
 
 var _ mempool.Iterator = &EVMMempoolIterator{}
 
+// EVMMempoolIterator provides a unified iterator over both EVM and Cosmos transactions in the mempool.
+// It implements priority-based transaction selection, choosing between EVM and Cosmos transactions
+// based on their fee values. The iterator maintains state to track transaction types and ensures
+// proper sequencing during block building.
 type EVMMempoolIterator struct {
 	/** Mempool Iterators **/
 	evmIterator    *miner.TransactionsByPriceAndNonce
@@ -25,12 +29,12 @@ type EVMMempoolIterator struct {
 	/** Chain Params **/
 	bondDenom string
 	chainID   *big.Int
-
-	/** State tracking **/
-	lastTxWasEVM bool
-	lastTxHash   string
 }
 
+// NewEVMMempoolIterator creates a new unified iterator over EVM and Cosmos transactions.
+// It combines iterators from both transaction pools and selects transactions based on fee priority.
+// Returns nil if both iterators are empty or nil. The bondDenom parameter specifies the native
+// token denomination for fee comparisons, and chainId is used for EVM transaction conversion.
 func NewEVMMempoolIterator(evmIterator *miner.TransactionsByPriceAndNonce, cosmosIterator mempool.Iterator, txConfig client.TxConfig, bondDenom string, chainId *big.Int) mempool.Iterator {
 	// Check if we have any transactions at all
 	hasEVM := evmIterator != nil && !evmIterator.Empty()
@@ -49,7 +53,9 @@ func NewEVMMempoolIterator(evmIterator *miner.TransactionsByPriceAndNonce, cosmo
 	}
 }
 
-// shouldUseEVM returns true if EVM transaction should be used, false for Cosmos
+// shouldUseEVM determines which transaction type to prioritize based on fee comparison.
+// Returns true if the EVM transaction should be selected, false if Cosmos transaction should be used.
+// EVM transactions are preferred when Cosmos transactions lack fees or use non-bondDenom denominations.
 func (i *EVMMempoolIterator) shouldUseEVM() bool {
 	var nextEVMTx *txpool.LazyTransaction
 	var evmFee *uint256.Int
@@ -97,6 +103,9 @@ func (i *EVMMempoolIterator) shouldUseEVM() bool {
 	return false // Use Cosmos if it has higher fee
 }
 
+// Next advances the iterator to the next transaction and returns the updated iterator.
+// It determines which iterator (EVM or Cosmos) provided the current transaction and advances
+// that iterator accordingly. Returns nil when no more transactions are available.
 func (i *EVMMempoolIterator) Next() mempool.Iterator {
 	// Determine what transaction we just returned and advance the correct iterator
 	var nextEVMTx *txpool.LazyTransaction
@@ -116,7 +125,7 @@ func (i *EVMMempoolIterator) Next() mempool.Iterator {
 
 	// Advance the iterator that provided the current transaction
 	// NOTE: We don't modify the EVM pool during iteration - transactions
-	// will be removed later via Remove() after block execution
+	// are automatically removed by the maintenance loop in the txpool.
 	if i.shouldUseEVM() {
 		if nextEVMTx != nil {
 			// We used EVM transaction, advance EVM iterator
@@ -153,12 +162,14 @@ func (i *EVMMempoolIterator) Next() mempool.Iterator {
 	return i
 }
 
-// convertEVMToSDKTx converts an EVM transaction to SDK transaction
+// convertEVMToSDKTx converts an Ethereum transaction to a Cosmos SDK transaction.
+// It wraps the EVM transaction in a MsgEthereumTx and builds a proper SDK transaction
+// using the configured transaction builder and bond denomination for fees.
 func (i *EVMMempoolIterator) convertEVMToSDKTx(nextEVMTx *txpool.LazyTransaction) sdk.Tx {
 	if nextEVMTx == nil {
 		return nil
 	}
-	msgEthereumTx := &types2.MsgEthereumTx{}
+	msgEthereumTx := &msgtypes.MsgEthereumTx{}
 	if err := msgEthereumTx.FromSignedEthereumTx(nextEVMTx.Tx, ethtypes.LatestSignerForChainID(i.chainID)); err != nil {
 		return nil // Return nil for invalid tx instead of panicking
 	}
@@ -169,6 +180,9 @@ func (i *EVMMempoolIterator) convertEVMToSDKTx(nextEVMTx *txpool.LazyTransaction
 	return cosmosTx
 }
 
+// Tx returns the current transaction from the iterator.
+// It selects between EVM and Cosmos transactions based on fee priority
+// and converts EVM transactions to SDK format.
 func (i *EVMMempoolIterator) Tx() sdk.Tx {
 	// Get current transactions from both iterators
 	var nextEVMTx *txpool.LazyTransaction
@@ -191,19 +205,12 @@ func (i *EVMMempoolIterator) Tx() sdk.Tx {
 		if nextEVMTx != nil {
 			evmTx := i.convertEVMToSDKTx(nextEVMTx)
 			if evmTx != nil {
-				// Track that we're returning an EVM transaction
-				i.lastTxWasEVM = true
-				i.lastTxHash = nextEVMTx.Tx.Hash().Hex()
 				return evmTx
 			}
 		}
 		// Fall back to cosmos if EVM fails
-		i.lastTxWasEVM = false
-		i.lastTxHash = ""
 		return nextCosmosTx
 	} else {
-		i.lastTxWasEVM = false
-		i.lastTxHash = ""
 		return nextCosmosTx
 	}
 }
