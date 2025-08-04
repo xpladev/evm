@@ -52,6 +52,12 @@ while [[ $# -gt 0 ]]; do
 		install=false
 		shift # Move past the flag
 		;;
+	--only-install)
+		echo "Flag --only-install passed -> Skipping starting the chain."
+		install=true
+		start_chain=false
+		shift # Move past the flag
+		;;
 	--remote-debugging)
 		echo "Flag --remote-debugging passed -> Building with remote debugging options."
 		BUILD_FOR_DEBUG=true
@@ -220,10 +226,12 @@ if [[ $overwrite == "y" || $overwrite == "Y" ]]; then
 	fi
 fi
 
-# Start the node
-evmd start "$TRACE" \
-	--log_level $LOGLEVEL \
-	--minimum-gas-prices=0.0001atest \
-	--home "$HOMEDIR" \
-	--json-rpc.api eth,txpool,personal,net,debug,web3 \
-	--chain-id "$CHAINID"
+if [[ $start_chain != "false" ]]; then
+	# Start the node
+	evmd start "$TRACE" \
+		--log_level $LOGLEVEL \
+		--minimum-gas-prices=0.0001atest \
+		--home "$HOMEDIR" \
+		--json-rpc.api eth,txpool,personal,net,debug,web3 \
+		--chain-id "$CHAINID"
+fi
