@@ -2,6 +2,7 @@ package mempool
 
 import (
 	"context"
+	errorsmod "cosmossdk.io/errors"
 	"cosmossdk.io/math"
 	"errors"
 	"fmt"
@@ -166,13 +167,15 @@ func (m *EVMMempool) GetTxPool() *txpool.TxPool {
 // EVM transactions are routed to the EVM transaction pool, while all other
 // transactions are inserted into the Cosmos mempool. The method assumes
 // transactions have already passed CheckTx validation.
-func (m *EVMMempool) Insert(ctx context.Context, tx sdk.Tx) error {
+func (m *EVMMempool) Insert(goCtx context.Context, tx sdk.Tx) error {
 	m.mtx.Lock()
 	defer m.mtx.Unlock()
 
-	// ASSUMPTION: these are all successful upon CheckTx
-	// todo: should not allow insertion before block 1 has completed
-	// Try to get EVM message
+	ctx := sdk.UnwrapSDKContext(goCtx)
+	if ctx.BlockHeight() < 2 {
+		return errorsmod.Wrap(sdkerrors.ErrInvalidHeight, "Mempool is not ready. Please wait for block 1 to finalize.")
+	}
+
 	ethMsg, err := m.getEVMMessage(tx)
 	if err == nil {
 		// Insert into EVM pool
@@ -185,7 +188,7 @@ func (m *EVMMempool) Insert(ctx context.Context, tx sdk.Tx) error {
 	}
 
 	// Insert into cosmos pool for non-EVM transactions
-	return m.cosmosPool.Insert(ctx, tx)
+	return m.cosmosPool.Insert(goCtx, tx)
 }
 
 // InsertInvalidNonce handles transactions that failed with nonce gap errors.
