@@ -1,14 +1,15 @@
 package ante
 
 import (
+	"github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/evm/ante/evm"
+	"github.com/cosmos/evm/mempool"
 	testconstants "github.com/cosmos/evm/testutil/constants"
 	"github.com/cosmos/evm/testutil/integration/evm/grpc"
 	"github.com/cosmos/evm/testutil/integration/evm/network"
 	testkeyring "github.com/cosmos/evm/testutil/keyring"
 
 	sdktypes "github.com/cosmos/cosmos-sdk/types"
-	errortypes "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 func (s *EvmUnitAnteTestSuite) TestIncrementSequence() {
@@ -31,9 +32,16 @@ func (s *EvmUnitAnteTestSuite) TestIncrementSequence() {
 	}{
 		{
 			name:          "fail: invalid sequence",
-			expectedError: errortypes.ErrInvalidSequence,
+			expectedError: mempool.ErrNonceGap,
 			malleate: func(acct sdktypes.AccountI) uint64 {
 				return acct.GetSequence() + 1
+			},
+		},
+		{
+			name:          "fail: invalid sequence",
+			expectedError: errors.ErrInvalidSequence,
+			malleate: func(acct sdktypes.AccountI) uint64 {
+				return acct.GetSequence() - 1
 			},
 		},
 		{

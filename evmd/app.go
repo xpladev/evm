@@ -440,7 +440,7 @@ func NewExampleApp(
 
 	app.GovKeeper = *govKeeper.SetHooks(
 		govtypes.NewMultiGovHooks(
-			// register the governance hooks
+		// register the governance hooks
 		),
 	)
 
@@ -492,12 +492,12 @@ func NewExampleApp(
 	// set the EVM priority nonce mempool
 	if evmtypes.GetChainConfig() != nil {
 		mempoolConfig := &mempool.EVMMempoolConfig{
-			VerifyTxFn: app.PrepareProposalVerifyTx,
+			CheckTxFn: app.CheckTx,
 		}
 
 		evmMempool := mempool.NewEVMMempool(app.CreateQueryContext, app.EVMKeeper, app.FeeMarketKeeper, app.txConfig, app.clientCtx, mempoolConfig)
 		app.EVMMempool = evmMempool
-		
+
 		// Set the global mempool for RPC access
 		if err := mempool.SetGlobalEVMMempool(evmMempool); err != nil {
 			panic(err)

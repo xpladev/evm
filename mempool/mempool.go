@@ -6,6 +6,7 @@ import (
 	"cosmossdk.io/math"
 	"errors"
 	"fmt"
+	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -45,7 +46,7 @@ type (
 		evmDenom   string
 
 		/** Verification **/
-		verifyTxFn func(tx sdk.Tx) ([]byte, error)
+		checkTxFn func(req *abci.RequestCheckTx) (*abci.ResponseCheckTx, error)
 
 		/** Concurrency **/
 		mtx sync.Mutex
@@ -58,7 +59,7 @@ type (
 type EVMMempoolConfig struct {
 	TxPool        *txpool.TxPool
 	CosmosPool    mempool.ExtMempool
-	VerifyTxFn    func(tx sdk.Tx) ([]byte, error)
+	CheckTxFn     func(req *abci.RequestCheckTx) (*abci.ResponseCheckTx, error)
 	BroadCastTxFn func(txs []*ethtypes.Transaction) error
 }
 
@@ -69,7 +70,7 @@ type EVMMempoolConfig struct {
 func NewEVMMempool(ctx func(height int64, prove bool) (sdk.Context, error), vmKeeper VMKeeperI, feeMarketKeeper FeeMarketKeeperI, txConfig client.TxConfig, clientCtx client.Context, config *EVMMempoolConfig) *EVMMempool {
 	var txPool *txpool.TxPool
 	var cosmosPool mempool.ExtMempool
-	var verifyTxFn func(tx sdk.Tx) ([]byte, error)
+	var checkTxFn func(req *abci.RequestCheckTx) (*abci.ResponseCheckTx, error)
 
 	bondDenom := evmtypes.GetEVMCoinDenom()
 	evmDenom := types.ExtendedCoinDenom()
@@ -80,7 +81,7 @@ func NewEVMMempool(ctx func(height int64, prove bool) (sdk.Context, error), vmKe
 
 	txPool = config.TxPool
 	cosmosPool = config.CosmosPool
-	verifyTxFn = config.VerifyTxFn
+	checkTxFn = config.CheckTxFn
 
 	var blockchain *Blockchain
 
@@ -91,12 +92,12 @@ func NewEVMMempool(ctx func(height int64, prove bool) (sdk.Context, error), vmKe
 
 		// Set up broadcast function using clientCtx
 		if config.BroadCastTxFn != nil {
-			legacyPool.BroadCastTxFn = config.BroadCastTxFn
+			legacyPool.BroadcastTxFn = config.BroadCastTxFn
 		} else {
 			// Create default broadcast function using clientCtx.
 			// The EVM mempool will broadcast transactions when it promotes them
 			// from queued into pending, noting their readiness to be executed.
-			legacyPool.BroadCastTxFn = func(txs []*ethtypes.Transaction) error {
+			legacyPool.BroadcastTxFn = func(txs []*ethtypes.Transaction) error {
 				return broadcastEVMTransactions(clientCtx, txConfig, txs)
 			}
 		}
@@ -147,7 +148,7 @@ func NewEVMMempool(ctx func(height int64, prove bool) (sdk.Context, error), vmKe
 		blockchain:   blockchain,
 		bondDenom:    bondDenom,
 		evmDenom:     evmDenom,
-		verifyTxFn:   verifyTxFn,
+		checkTxFn:    checkTxFn,
 	}
 }
 
@@ -274,7 +275,7 @@ func (m *EVMMempool) Remove(tx sdk.Tx) error {
 // It uses the verification function to check if the transaction failed for reasons
 // other than nonce gaps or successful execution, in which case manual removal is needed.
 func (m *EVMMempool) shouldRemoveFromEVMPool(tx sdk.Tx) bool {
-	if m.verifyTxFn == nil {
+	if m.checkTxFn == nil {
 		return false
 	}
 
@@ -282,13 +283,15 @@ func (m *EVMMempool) shouldRemoveFromEVMPool(tx sdk.Tx) bool {
 	// Currently, we remove transactions on completion and on recheckTx errors. However, we do not know why the removal
 	// happened, so we need to reverify. If it was a successful transaction or a sequence error, we let the mempool handle the cleaning.
 	// If it was any other Cosmos or antehandler related issue, then we remove it.
-	_, err := m.verifyTxFn(tx)
-	if err == nil {
-		return false
-	}
-
-	if errors.Is(err, ErrNonceGap) || errors.Is(err, sdkerrors.ErrInvalidSequence) {
-		return false
+	txBytes, err := m.txConfig.TxEncoder()(tx)
+	res, err := m.checkTxFn(&abci.RequestCheckTx{
+		Tx:   txBytes,
+		Type: abci.CheckTxType_Recheck,
+	})
+	if err == nil || res == nil || res.Code != 0 {
+		if errors.Is(err, ErrNonceGap) || errors.Is(err, sdkerrors.ErrInvalidSequence) {
+			return false
+		}
 	}
 
 	return true

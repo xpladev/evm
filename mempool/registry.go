@@ -1,9 +1,5 @@
 package mempool
 
-import (
-	"errors"
-)
-
 // globalEVMMempool holds the global reference to the EVMMempool instance.
 // It can only be set during application initialization.
 var globalEVMMempool *EVMMempool
@@ -11,9 +7,9 @@ var globalEVMMempool *EVMMempool
 // SetGlobalEVMMempool sets the global EVMMempool instance.
 // This should only be called during application initialization.
 func SetGlobalEVMMempool(mempool *EVMMempool) error {
-	if globalEVMMempool != nil {
-		return errors.New("global EVM mempool already set")
-	}
+	//if globalEVMMempool != nil {
+	//	return errors.New("global EVM mempool already set")
+	//}
 	globalEVMMempool = mempool
 	return nil
 }

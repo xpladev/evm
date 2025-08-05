@@ -108,11 +108,8 @@ func (b Blockchain) GetBlock(_ common.Hash, _ uint64) *types.Block {
 	if currBlock.Number.Cmp(big.NewInt(0)) == 0 {
 		currBlock.ParentHash = common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000")
 		return types.NewBlockWithHeader(currBlock)
-	} else if currBlock.Number.Cmp(big.NewInt(1)) == 0 {
-		return types.NewBlockWithHeader(currBlock)
 	}
-
-	panic("GetBlock should never be called on a Cosmos chain due to instant finality - this indicates a reorg is being attempted")
+	return types.NewBlockWithHeader(currBlock)
 }
 
 // SubscribeChainHeadEvent allows subscribers to receive notifications when new blocks are finalized.
