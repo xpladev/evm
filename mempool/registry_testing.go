@@ -1,3 +1,6 @@
+//go:build test
+// +build test
+
 package mempool
 
 // globalEVMMempool holds the global reference to the EVMMempool instance.
@@ -6,10 +9,8 @@ var globalEVMMempool *EVMMempool
 
 // SetGlobalEVMMempool sets the global EVMMempool instance.
 // This should only be called during application initialization.
+// In testing builds, it allows resetting by not returning an error.
 func SetGlobalEVMMempool(mempool *EVMMempool) error {
-	//if globalEVMMempool != nil {
-	//	return errors.New("global EVM mempool already set")
-	//}
 	globalEVMMempool = mempool
 	return nil
 }
