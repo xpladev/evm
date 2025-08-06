@@ -1,6 +1,8 @@
 package erc20
 
 import (
+	testconstants "github.com/cosmos/evm/testutil/constants"
+	evmtypes "github.com/cosmos/evm/x/vm/types"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/cosmos/evm/precompiles/erc20"
@@ -48,6 +50,11 @@ func (s *PrecompileTestSuite) SetupTest() {
 	integrationNetwork := network.NewUnitTestNetwork(s.create, options...)
 	grpcHandler := grpc.NewIntegrationHandler(integrationNetwork)
 	txFactory := factory.New(integrationNetwork, grpcHandler)
+
+	configurator := evmtypes.NewEVMConfigurator()
+	configurator.ResetTestConfig()
+	configurator.WithEVMCoinInfo(testconstants.ExampleChainCoinInfo[testconstants.ExampleChainID])
+	configurator.Configure()
 
 	ctx := integrationNetwork.GetContext()
 	sk := integrationNetwork.App.GetStakingKeeper()

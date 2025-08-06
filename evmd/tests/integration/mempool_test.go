@@ -9,5 +9,5 @@ import (
 )
 
 func TestMempoolIntegrationTestSuite(t *testing.T) {
-	suite.Run(t, mempool.NewMempoolIntegrationTestSuite(CreateEvmdForMempoolTests))
+	suite.Run(t, mempool.NewMempoolIntegrationTestSuite(CreateEvmd))
 }

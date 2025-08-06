@@ -17,7 +17,6 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	simutils "github.com/cosmos/cosmos-sdk/testutil/sims"
-	"github.com/cosmos/cosmos-sdk/types/mempool"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 )
@@ -36,10 +35,7 @@ func CreateEvmd(chainID string, evmChainID uint64, customBaseAppOptions ...func(
 	appOptions := simutils.NewAppOptionsWithFlagHome(defaultNodeHome)
 
 	// Use noop mempool for regular integration tests to avoid EVM mempool state issues
-	baseAppOptions := append(customBaseAppOptions,
-		baseapp.SetChainID(chainID),
-		baseapp.SetMempool(mempool.NoOpMempool{}),
-	)
+	baseAppOptions := append(customBaseAppOptions, baseapp.SetChainID(chainID))
 
 	return evmd.NewExampleApp(
 		logger,
@@ -78,34 +74,4 @@ func SetupEvmd() (ibctesting.TestingApp, map[string]json.RawMessage) {
 	genesisState[minttypes.ModuleName] = app.AppCodec().MustMarshalJSON(mintGen)
 
 	return app, genesisState
-}
-
-// CreateEvmdForMempoolTests creates an evmos app specifically configured for mempool integration tests.
-// This version keeps the full EVM mempool functionality including transaction verification.
-func CreateEvmdForMempoolTests(chainID string, evmChainID uint64, customBaseAppOptions ...func(*baseapp.BaseApp)) evm.EvmApp {
-	defaultNodeHome, err := clienthelpers.GetNodeHomeDirectory(".evmd")
-	if err != nil {
-		panic(err)
-	}
-
-	db := dbm.NewMemDB()
-	logger := log.NewNopLogger()
-	loadLatest := true
-	appOptions := simutils.NewAppOptionsWithFlagHome(defaultNodeHome)
-
-	// Keep the default mempool configuration for mempool tests (allows EVM mempool to be created)
-	baseAppOptions := append(customBaseAppOptions, baseapp.SetChainID(chainID))
-
-	app := evmd.NewExampleApp(
-		logger,
-		db,
-		nil,
-		loadLatest,
-		appOptions,
-		evmChainID,
-		testconfig.EvmAppOptions,
-		baseAppOptions...,
-	)
-
-	return app
 }

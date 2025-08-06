@@ -31,7 +31,7 @@ func (s *EvmUnitAnteTestSuite) TestIncrementSequence() {
 		malleate      func(acct sdktypes.AccountI) uint64
 	}{
 		{
-			name:          "fail: invalid sequence",
+			name:          "fail: nonce gap",
 			expectedError: mempool.ErrNonceGap,
 			malleate: func(acct sdktypes.AccountI) uint64 {
 				return acct.GetSequence() + 1
@@ -41,6 +41,9 @@ func (s *EvmUnitAnteTestSuite) TestIncrementSequence() {
 			name:          "fail: invalid sequence",
 			expectedError: errors.ErrInvalidSequence,
 			malleate: func(acct sdktypes.AccountI) uint64 {
+				err := acct.SetSequence(acct.GetSequence() + 1)
+				s.Require().NoError(err)
+				unitNetwork.App.GetAccountKeeper().SetAccount(unitNetwork.GetContext(), acct)
 				return acct.GetSequence() - 1
 			},
 		},

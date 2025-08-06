@@ -59,10 +59,11 @@ func (s *MempoolIntegrationTestSuite) SetupTestWithChainID(chainID testconstants
 	gh := grpc.NewIntegrationHandler(nw)
 	tf := factory.New(nw, gh)
 
-	evmConfigurator := evmtypes.NewEVMConfigurator().
-		WithEVMCoinInfo(testconstants.ExampleChainCoinInfo[chainID])
-	evmConfigurator.ResetTestConfig()
-	err := evmConfigurator.Configure()
+	// Configure EVM to use the correct chain config
+	configurator := evmtypes.NewEVMConfigurator()
+	configurator.ResetTestConfig()
+	configurator.WithEVMCoinInfo(testconstants.ExampleChainCoinInfo[chainID])
+	err := configurator.Configure()
 	s.Require().NoError(err)
 
 	s.network = nw
