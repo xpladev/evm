@@ -1,6 +1,7 @@
 package mempool
 
 import (
+	"context"
 	"math/big"
 
 	sdkmath "cosmossdk.io/math"
@@ -12,6 +13,11 @@ import (
 	basefactory "github.com/cosmos/evm/testutil/integration/base/factory"
 	utiltx "github.com/cosmos/evm/testutil/tx"
 	evmtypes "github.com/cosmos/evm/x/vm/types"
+
+	cosmostx "github.com/cosmos/cosmos-sdk/client/tx"
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
+	"github.com/cosmos/cosmos-sdk/types/tx/signing"
+	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 )
 
 // TestCountEmptyMempool tests counting transactions in an empty mempool
@@ -87,11 +93,8 @@ func (s *MempoolIntegrationTestSuite) TestCountMultipleTransactions() {
 			sdk.NewCoins(sdk.NewCoin(s.network.GetBaseDenom(), sdkmath.NewInt(int64(1000+seq*10)))),
 		)
 
-		// Build transaction (sequence will be automatically fetched from account keeper)
-		tx, err := s.factory.BuildCosmosTx(sender1.Priv, basefactory.CosmosTxArgs{
-			Msgs: []sdk.Msg{bankMsg},
-			Fees: sdk.NewCoins(sdk.NewCoin(s.network.GetBaseDenom(), sdkmath.NewInt(int64(1000000000000000+seq*10000000000000)))),
-		})
+		// Build transaction manually without simulation
+		tx, err := s.buildTxWithoutSimulation(sender1.Priv, bankMsg, uint64(seq), int64(1000000000000000+seq*10000000000000))
 		s.Require().NoError(err)
 		transactions = append(transactions, tx)
 
@@ -102,9 +105,6 @@ func (s *MempoolIntegrationTestSuite) TestCountMultipleTransactions() {
 		currentCount := mpoolInstance.CountTx()
 		s.T().Logf("After inserting tx %d from sender1 (seq %d): count = %d (initial = %d)", seq+1, seq, currentCount, initialCount)
 		s.Require().Greater(currentCount, initialCount, "count should increase with each insertion")
-
-		// Increment the account sequence for next transaction
-		s.incrementAccountSequence(sender1.AccAddr)
 	}
 
 	// Create 3 transactions from sender2 (sequences 0, 1, 2)
@@ -115,11 +115,8 @@ func (s *MempoolIntegrationTestSuite) TestCountMultipleTransactions() {
 			sdk.NewCoins(sdk.NewCoin(s.network.GetBaseDenom(), sdkmath.NewInt(int64(2000+seq*10)))),
 		)
 
-		// Build transaction (sequence will be automatically fetched from account keeper)
-		tx, err := s.factory.BuildCosmosTx(sender2.Priv, basefactory.CosmosTxArgs{
-			Msgs: []sdk.Msg{bankMsg},
-			Fees: sdk.NewCoins(sdk.NewCoin(s.network.GetBaseDenom(), sdkmath.NewInt(int64(2000000000000000+seq*10000000000000)))),
-		})
+		// Build transaction manually without simulation
+		tx, err := s.buildTxWithoutSimulation(sender2.Priv, bankMsg, uint64(seq), int64(2000000000000000+seq*10000000000000))
 		s.Require().NoError(err)
 		transactions = append(transactions, tx)
 
@@ -130,9 +127,6 @@ func (s *MempoolIntegrationTestSuite) TestCountMultipleTransactions() {
 		currentCount := mpoolInstance.CountTx()
 		s.T().Logf("After inserting tx %d from sender2 (seq %d): count = %d (initial = %d)", seq+1, seq, currentCount, initialCount)
 		s.Require().Greater(currentCount, initialCount, "count should increase with each insertion")
-
-		// Increment the account sequence for next transaction
-		s.incrementAccountSequence(sender2.AccAddr)
 	}
 
 	// Final count verification
@@ -245,10 +239,7 @@ func (s *MempoolIntegrationTestSuite) TestCountMixedTransactionTypes() {
 			sdk.NewCoins(sdk.NewCoin(s.network.GetBaseDenom(), sdkmath.NewInt(int64(1000+i*10)))),
 		)
 
-		cosmosTx, err := s.factory.BuildCosmosTx(cosmosAccount.Priv, basefactory.CosmosTxArgs{
-			Msgs: []sdk.Msg{bankMsg},
-			Fees: sdk.NewCoins(sdk.NewCoin(s.network.GetBaseDenom(), sdkmath.NewInt(int64(1000000000000000+i*10000000000000)))),
-		})
+		cosmosTx, err := s.buildTxWithoutSimulation(cosmosAccount.Priv, bankMsg, uint64(i), int64(1000000000000000+i*10000000000000))
 		s.Require().NoError(err)
 		transactions = append(transactions, cosmosTx)
 
@@ -281,9 +272,6 @@ func (s *MempoolIntegrationTestSuite) TestCountMixedTransactionTypes() {
 		currentCount = mpoolInstance.CountTx()
 		s.T().Logf("After inserting EVM tx %d: count = %d (initial = %d)", i+1, currentCount, initialCount)
 		s.Require().Greater(currentCount, initialCount, "count should increase with each insertion")
-
-		// Increment cosmos account sequence for next transaction
-		s.incrementAccountSequence(cosmosAccount.AccAddr)
 	}
 
 	// Final count verification
@@ -484,19 +472,65 @@ func (s *MempoolIntegrationTestSuite) TestCountConsistency() {
 	s.T().Log("Successfully verified count consistency across operations")
 }
 
-// incrementAccountSequence increments the account sequence in the account keeper
-// This allows multiple transactions from the same account to have unique sequence numbers
-func (s *MempoolIntegrationTestSuite) incrementAccountSequence(addr sdk.AccAddress) {
+// buildTxWithoutSimulation builds a transaction manually without gas simulation
+// This allows us to set explicit sequence numbers for testing multiple transactions
+func (s *MempoolIntegrationTestSuite) buildTxWithoutSimulation(privKey cryptotypes.PrivKey, msg sdk.Msg, sequence uint64, feeAmount int64) (sdk.Tx, error) {
+	txConfig := s.network.App.GetTxConfig()
+	txBuilder := txConfig.NewTxBuilder()
+
+	// Set the message
+	err := txBuilder.SetMsgs(msg)
+	if err != nil {
+		return nil, err
+	}
+
+	// Set fee amount and gas limit
+	fees := sdk.NewCoins(sdk.NewCoin(s.network.GetBaseDenom(), sdkmath.NewInt(feeAmount)))
+	txBuilder.SetFeeAmount(fees)
+	txBuilder.SetGasLimit(200000) // Fixed gas limit to avoid simulation
+
+	// Get account info for signing
+	senderAddress := sdk.AccAddress(privKey.PubKey().Address().Bytes())
 	accountKeeper := s.network.App.GetAccountKeeper()
-	ctx := s.network.GetContext()
+	account := accountKeeper.GetAccount(s.network.GetContext(), senderAddress)
 
-	account := accountKeeper.GetAccount(ctx, addr)
-	s.Require().NotNil(account, "account should exist")
+	// Create signer data with explicit sequence
+	signerData := authsigning.SignerData{
+		ChainID:       s.network.GetChainID(),
+		AccountNumber: account.GetAccountNumber(),
+		Sequence:      sequence, // Use the explicit sequence provided
+		Address:       senderAddress.String(),
+		PubKey:        privKey.PubKey(),
+	}
 
-	// Increment the sequence number
-	err := account.SetSequence(account.GetSequence() + 1)
-	s.Require().NoError(err)
+	// Sign the transaction
+	signMode := signing.SignMode_SIGN_MODE_DIRECT
+	sigsV2 := signing.SignatureV2{
+		PubKey: privKey.PubKey(),
+		Data: &signing.SingleSignatureData{
+			SignMode:  signMode,
+			Signature: nil,
+		},
+		Sequence: sequence,
+	}
 
-	// Save the updated account
-	accountKeeper.SetAccount(ctx, account)
+	err = txBuilder.SetSignatures(sigsV2)
+	if err != nil {
+		return nil, err
+	}
+
+	// Generate signature
+	signature, err := cosmostx.SignWithPrivKey(
+		context.Background(), signMode, signerData, txBuilder, privKey, txConfig, sequence,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	err = txBuilder.SetSignatures(signature)
+	if err != nil {
+		return nil, err
+	}
+
+	return txBuilder.GetTx(), nil
 }

@@ -56,7 +56,8 @@ func (s *MempoolIntegrationTestSuite) SetupTestWithChainID(chainID testconstants
 	gh := grpc.NewIntegrationHandler(nw)
 	tf := factory.New(nw, gh)
 
-	nw.NextBlock()
+	err := nw.NextBlock()
+	s.Require().NoError(err)
 
 	s.network = nw
 	s.factory = tf
