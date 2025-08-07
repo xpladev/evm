@@ -440,7 +440,7 @@ func NewExampleApp(
 
 	app.GovKeeper = *govKeeper.SetHooks(
 		govtypes.NewMultiGovHooks(
-		// register the governance hooks
+			// register the governance hooks
 		),
 	)
 
@@ -488,28 +488,6 @@ func NewExampleApp(
 		&app.Erc20Keeper,
 		tracer,
 	)
-
-	// set the EVM priority nonce mempool
-	if evmtypes.GetChainConfig() != nil {
-		mempoolConfig := &mempool.EVMMempoolConfig{
-			CheckTxFn: app.CheckTx,
-		}
-
-		evmMempool := mempool.NewEVMMempool(app.CreateQueryContext, app.EVMKeeper, app.FeeMarketKeeper, app.txConfig, app.clientCtx, mempoolConfig)
-		app.EVMMempool = evmMempool
-
-		// Set the global mempool for RPC access
-		if err := mempool.SetGlobalEVMMempool(evmMempool); err != nil {
-			panic(err)
-		}
-		app.SetMempool(evmMempool)
-		checkTxHandler := mempool.NewCheckTxHandler(evmMempool)
-		app.SetCheckTxHandler(checkTxHandler)
-
-		abciProposalHandler := baseapp.NewDefaultProposalHandler(evmMempool, app)
-		abciProposalHandler.SetSignerExtractionAdapter(mempool.NewEthSignerExtractionAdapter(sdkmempool.NewDefaultSignerExtractionAdapter()))
-		app.SetPrepareProposal(abciProposalHandler.PrepareProposalHandler())
-	}
 
 	app.Erc20Keeper = erc20keeper.NewKeeper(
 		keys[erc20types.StoreKey],
@@ -778,6 +756,28 @@ func NewExampleApp(
 	app.SetEndBlocker(app.EndBlocker)
 
 	app.setAnteHandler(app.txConfig, maxGasWanted)
+
+	// set the EVM priority nonce mempool
+	if evmtypes.GetChainConfig() != nil {
+		mempoolConfig := &mempool.EVMMempoolConfig{
+			AnteHandler: app.GetAnteHandler(),
+		}
+
+		evmMempool := mempool.NewEVMMempool(app.CreateQueryContext, app.EVMKeeper, app.FeeMarketKeeper, app.txConfig, app.clientCtx, mempoolConfig)
+		app.EVMMempool = evmMempool
+
+		// Set the global mempool for RPC access
+		if err := mempool.SetGlobalEVMMempool(evmMempool); err != nil {
+			panic(err)
+		}
+		app.SetMempool(evmMempool)
+		checkTxHandler := mempool.NewCheckTxHandler(evmMempool)
+		app.SetCheckTxHandler(checkTxHandler)
+
+		abciProposalHandler := baseapp.NewDefaultProposalHandler(evmMempool, app)
+		abciProposalHandler.SetSignerExtractionAdapter(mempool.NewEthSignerExtractionAdapter(sdkmempool.NewDefaultSignerExtractionAdapter()))
+		app.SetPrepareProposal(abciProposalHandler.PrepareProposalHandler())
+	}
 
 	// In v0.46, the SDK introduces _postHandlers_. PostHandlers are like
 	// antehandlers, but are run _after_ the `runMsgs` execution. They are also

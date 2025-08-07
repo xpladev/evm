@@ -6,7 +6,6 @@ import (
 	"cosmossdk.io/math"
 	"errors"
 	"fmt"
-	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -46,7 +45,7 @@ type (
 		evmDenom   string
 
 		/** Verification **/
-		checkTxFn func(req *abci.RequestCheckTx) (*abci.ResponseCheckTx, error)
+		anteHandler sdk.AnteHandler
 
 		/** Concurrency **/
 		mtx sync.Mutex
@@ -59,7 +58,7 @@ type (
 type EVMMempoolConfig struct {
 	TxPool        *txpool.TxPool
 	CosmosPool    mempool.ExtMempool
-	CheckTxFn     func(req *abci.RequestCheckTx) (*abci.ResponseCheckTx, error)
+	AnteHandler   sdk.AnteHandler
 	BroadCastTxFn func(txs []*ethtypes.Transaction) error
 }
 
@@ -70,7 +69,7 @@ type EVMMempoolConfig struct {
 func NewEVMMempool(ctx func(height int64, prove bool) (sdk.Context, error), vmKeeper VMKeeperI, feeMarketKeeper FeeMarketKeeperI, txConfig client.TxConfig, clientCtx client.Context, config *EVMMempoolConfig) *EVMMempool {
 	var txPool *txpool.TxPool
 	var cosmosPool mempool.ExtMempool
-	var checkTxFn func(req *abci.RequestCheckTx) (*abci.ResponseCheckTx, error)
+	var anteHandler sdk.AnteHandler
 
 	bondDenom := evmtypes.GetEVMCoinDenom()
 	evmDenom := types.ExtendedCoinDenom()
@@ -81,7 +80,7 @@ func NewEVMMempool(ctx func(height int64, prove bool) (sdk.Context, error), vmKe
 
 	txPool = config.TxPool
 	cosmosPool = config.CosmosPool
-	checkTxFn = config.CheckTxFn
+	anteHandler = config.AnteHandler
 
 	var blockchain *Blockchain
 
@@ -148,7 +147,7 @@ func NewEVMMempool(ctx func(height int64, prove bool) (sdk.Context, error), vmKe
 		blockchain:   blockchain,
 		bondDenom:    bondDenom,
 		evmDenom:     evmDenom,
-		checkTxFn:    checkTxFn,
+		anteHandler:  anteHandler,
 	}
 }
 
@@ -272,29 +271,28 @@ func (m *EVMMempool) Remove(tx sdk.Tx) error {
 }
 
 // shouldRemoveFromEVMPool determines whether an EVM transaction should be manually removed.
-// It uses the verification function to check if the transaction failed for reasons
+// It uses the AnteHandler to check if the transaction failed for reasons
 // other than nonce gaps or successful execution, in which case manual removal is needed.
 func (m *EVMMempool) shouldRemoveFromEVMPool(tx sdk.Tx) bool {
-	if m.checkTxFn == nil {
+	if m.anteHandler == nil {
 		return false
 	}
 
-	// This is an inefficiency that could be optimized by getting more information from the removal function.
-	// Currently, we remove transactions on completion and on recheckTx errors. However, we do not know why the removal
-	// happened, so we need to reverify. If it was a successful transaction or a sequence error, we let the mempool handle the cleaning.
+	// Use AnteHandler directly instead of checkTxFn to avoid potential deadlocks.
+	// If it was a successful transaction or a sequence error, we let the mempool handle the cleaning.
 	// If it was any other Cosmos or antehandler related issue, then we remove it.
-	txBytes, err := m.txConfig.TxEncoder()(tx)
-	res, err := m.checkTxFn(&abci.RequestCheckTx{
-		Tx:   txBytes,
-		Type: abci.CheckTxType_Recheck,
-	})
-	if err == nil || res == nil || res.Code != 0 {
-		if errors.Is(err, ErrNonceGap) || errors.Is(err, sdkerrors.ErrInvalidSequence) {
-			return false
-		}
+	ctx, err := m.blockchain.GetLatestCtx()
+	if err != nil {
+		return false // Cannot validate, keep transaction
+	}
+	_, err = m.anteHandler(ctx, tx, false)
+	
+	// Keep nonce gap transactions, remove others that fail validation
+	if errors.Is(err, ErrNonceGap) || errors.Is(err, sdkerrors.ErrInvalidSequence) {
+		return false
 	}
 
-	return true
+	return err != nil
 }
 
 // SelectBy iterates through transactions until the provided filter function returns false.

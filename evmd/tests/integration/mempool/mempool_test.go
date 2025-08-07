@@ -1,6 +1,7 @@
-package integration
+package mempool
 
 import (
+	"github.com/cosmos/evm/evmd/tests/integration"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -9,5 +10,5 @@ import (
 )
 
 func TestMempoolIntegrationTestSuite(t *testing.T) {
-	suite.Run(t, mempool.NewMempoolIntegrationTestSuite(CreateEvmd))
+	suite.Run(t, mempool.NewMempoolIntegrationTestSuite(integration.CreateEvmd))
 }
