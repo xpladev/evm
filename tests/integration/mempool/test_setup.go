@@ -1,6 +1,7 @@
 package mempool
 
 import (
+	"github.com/cosmos/evm/mempool"
 	"github.com/stretchr/testify/suite"
 
 	sdkmath "cosmossdk.io/math"
@@ -45,6 +46,8 @@ func (s *MempoolIntegrationTestSuite) SetupTest() {
 // SetupTestWithChainID initializes the test environment with a specific chain ID.
 func (s *MempoolIntegrationTestSuite) SetupTestWithChainID(chainID testconstants.ChainID) {
 	s.keyring = keyring.New(3)
+
+	mempool.ResetGlobalEVMMempool()
 
 	options := []network.ConfigOption{
 		network.WithChainID(chainID),

@@ -39,10 +39,11 @@ type (
 		cosmosPool   mempool.ExtMempool
 
 		/** Utils **/
-		txConfig   client.TxConfig
-		blockchain *Blockchain
-		bondDenom  string
-		evmDenom   string
+		txConfig      client.TxConfig
+		blockchain    *Blockchain
+		bondDenom     string
+		evmDenom      string
+		blockGasLimit uint64 // Block gas limit from consensus parameters
 
 		/** Verification **/
 		anteHandler sdk.AnteHandler
@@ -60,6 +61,7 @@ type EVMMempoolConfig struct {
 	CosmosPool    mempool.ExtMempool
 	AnteHandler   sdk.AnteHandler
 	BroadCastTxFn func(txs []*ethtypes.Transaction) error
+	BlockGasLimit uint64 // Block gas limit from consensus parameters
 }
 
 // NewEVMMempool creates a new unified mempool for EVM and Cosmos transactions.
@@ -82,11 +84,15 @@ func NewEVMMempool(ctx func(height int64, prove bool) (sdk.Context, error), vmKe
 	cosmosPool = config.CosmosPool
 	anteHandler = config.AnteHandler
 
+	if config.BlockGasLimit == 0 {
+		config.BlockGasLimit = 100_000_000
+	}
+
 	var blockchain *Blockchain
 
 	// Default txPool
 	if txPool == nil {
-		blockchain = NewBlockchain(ctx, vmKeeper, feeMarketKeeper)
+		blockchain = NewBlockchain(ctx, vmKeeper, feeMarketKeeper, config.BlockGasLimit)
 		legacyPool := legacypool.New(legacypool.DefaultConfig, blockchain)
 
 		// Set up broadcast function using clientCtx
@@ -139,15 +145,16 @@ func NewEVMMempool(ctx func(height int64, prove bool) (sdk.Context, error), vmKe
 	}
 
 	return &EVMMempool{
-		vmKeeper:     vmKeeper,
-		txPool:       txPool,
-		legacyTxPool: txPool.Subpools[0].(*legacypool.LegacyPool),
-		cosmosPool:   cosmosPool,
-		txConfig:     txConfig,
-		blockchain:   blockchain,
-		bondDenom:    bondDenom,
-		evmDenom:     evmDenom,
-		anteHandler:  anteHandler,
+		vmKeeper:      vmKeeper,
+		txPool:        txPool,
+		legacyTxPool:  txPool.Subpools[0].(*legacypool.LegacyPool),
+		cosmosPool:    cosmosPool,
+		txConfig:      txConfig,
+		blockchain:    blockchain,
+		bondDenom:     bondDenom,
+		evmDenom:      evmDenom,
+		blockGasLimit: config.BlockGasLimit,
+		anteHandler:   anteHandler,
 	}
 }
 
@@ -285,13 +292,14 @@ func (m *EVMMempool) shouldRemoveFromEVMPool(tx sdk.Tx) bool {
 	if err != nil {
 		return false // Cannot validate, keep transaction
 	}
+
 	_, err = m.anteHandler(ctx, tx, true)
 	// Keep nonce gap transactions, remove others that fail validation
 	if errors.Is(err, ErrNonceGap) || errors.Is(err, sdkerrors.ErrInvalidSequence) || errors.Is(err, sdkerrors.ErrOutOfGas) {
 		return false
 	}
 
-	return err != nil
+	return true
 }
 
 // SelectBy iterates through transactions until the provided filter function returns false.

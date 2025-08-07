@@ -759,8 +759,10 @@ func NewExampleApp(
 
 	// set the EVM priority nonce mempool
 	if evmtypes.GetChainConfig() != nil {
+		// Get the actual block gas limit from consensus parameters
 		mempoolConfig := &mempool.EVMMempoolConfig{
-			AnteHandler: app.GetAnteHandler(),
+			AnteHandler:   app.GetAnteHandler(),
+			BlockGasLimit: 100_000_000,
 		}
 
 		evmMempool := mempool.NewEVMMempool(app.CreateQueryContext, app.EVMKeeper, app.FeeMarketKeeper, app.txConfig, app.clientCtx, mempoolConfig)

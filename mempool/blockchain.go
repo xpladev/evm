@@ -2,7 +2,7 @@ package mempool
 
 import (
 	errors2 "cosmossdk.io/errors"
-	sdkmath "cosmossdk.io/math"
+	types2 "cosmossdk.io/store/types"
 	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/evm/mempool/txpool"
@@ -15,7 +15,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/params"
-	"math"
 	"math/big"
 )
 
@@ -32,18 +31,20 @@ type Blockchain struct {
 	feeMarketKeeper    FeeMarketKeeperI
 	chainHeadFeed      *event.Feed
 	zeroHeader         *types.Header
+	blockGasLimit      uint64
 	previousHeaderHash common.Hash
 }
 
 // NewBlockchain creates a new Blockchain instance that bridges Cosmos SDK state with Ethereum mempools.
 // The ctx function provides access to Cosmos SDK contexts at different heights, vmKeeper manages EVM state,
 // and feeMarketKeeper handles fee market operations like base fee calculations.
-func NewBlockchain(ctx func(height int64, prove bool) (sdk.Context, error), vmKeeper VMKeeperI, feeMarketKeeper FeeMarketKeeperI) *Blockchain {
+func NewBlockchain(ctx func(height int64, prove bool) (sdk.Context, error), vmKeeper VMKeeperI, feeMarketKeeper FeeMarketKeeperI, blockGasLimit uint64) *Blockchain {
 	return &Blockchain{
 		ctx:             ctx,
 		vmKeeper:        vmKeeper,
 		feeMarketKeeper: feeMarketKeeper,
 		chainHeadFeed:   new(event.Feed),
+		blockGasLimit:   blockGasLimit,
 		// Used as a placeholder for the first block, before the context is available.
 		zeroHeader: &types.Header{
 			Difficulty: big.NewInt(0),
@@ -69,19 +70,11 @@ func (b Blockchain) CurrentBlock() *types.Header {
 		return b.zeroHeader
 	}
 
-	consParams := ctx.ConsensusParams()
-	gasLimit := sdkmath.NewIntFromUint64(math.MaxUint64)
-
-	// NOTE: a MaxGas equal to -1 means that block gas is unlimited
-	if consParams.Block != nil && consParams.Block.MaxGas > -1 {
-		gasLimit = sdkmath.NewInt(consParams.Block.MaxGas)
-	}
-
 	// todo: make sure that the base fee calculation and parameters here are correct.
 	header := &types.Header{
 		Number:     big.NewInt(ctx.BlockHeight()),
 		Time:       uint64(ctx.BlockTime().Unix()),
-		GasLimit:   gasLimit.Uint64(),
+		GasLimit:   b.blockGasLimit,
 		GasUsed:    b.feeMarketKeeper.GetBlockGasWanted(ctx),
 		ParentHash: b.previousHeaderHash,
 		Root:       common.BytesToHash(ctx.BlockHeader().AppHash), // we actually don't care that this isn't the ctx header, as long as we properly track roots and parent roots to prevent the reorg from triggering
@@ -155,5 +148,6 @@ func (b Blockchain) GetLatestCtx() (sdk.Context, error) {
 	if err != nil {
 		return sdk.Context{}, errors2.Wrapf(err, "getting latest context")
 	}
+	ctx = ctx.WithBlockGasMeter(types2.NewGasMeter(b.blockGasLimit))
 	return ctx, nil
 }
