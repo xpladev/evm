@@ -275,25 +275,23 @@ func (m *EVMMempool) Remove(tx sdk.Tx) error {
 // other than nonce gaps or successful execution, in which case manual removal is needed.
 func (m *EVMMempool) shouldRemoveFromEVMPool(tx sdk.Tx) bool {
 	//todo: fix the logic here
-	//if m.anteHandler == nil {
-	//	return false
-	//}
-	//
-	//// If it was a successful transaction or a sequence error, we let the mempool handle the cleaning.
-	//// If it was any other Cosmos or antehandler related issue, then we remove it.
-	//ctx, err := m.blockchain.GetLatestCtx()
-	//if err != nil {
-	//	return false // Cannot validate, keep transaction
-	//}
-	//_, err = m.anteHandler(ctx, tx, true)
-	//
-	//// Keep nonce gap transactions, remove others that fail validation
-	//if errors.Is(err, ErrNonceGap) || errors.Is(err, sdkerrors.ErrInvalidSequence) {
-	//	return false
-	//}
-	//
-	//return err != nil
-	return false
+	if m.anteHandler == nil {
+		return false
+	}
+
+	// If it was a successful transaction or a sequence error, we let the mempool handle the cleaning.
+	// If it was any other Cosmos or antehandler related issue, then we remove it.
+	ctx, err := m.blockchain.GetLatestCtx()
+	if err != nil {
+		return false // Cannot validate, keep transaction
+	}
+	_, err = m.anteHandler(ctx, tx, true)
+	// Keep nonce gap transactions, remove others that fail validation
+	if errors.Is(err, ErrNonceGap) || errors.Is(err, sdkerrors.ErrInvalidSequence) || errors.Is(err, sdkerrors.ErrOutOfGas) {
+		return false
+	}
+
+	return err != nil
 }
 
 // SelectBy iterates through transactions until the provided filter function returns false.
