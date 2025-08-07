@@ -156,7 +156,7 @@ if [[ $overwrite == "y" || $overwrite == "Y" ]]; then
 			sed -i '' 's/timeout_prevote_delta = "500ms"/timeout_prevote_delta = "5s"/g' "$CONFIG"
 			sed -i '' 's/timeout_precommit = "1s"/timeout_precommit = "10s"/g' "$CONFIG"
 			sed -i '' 's/timeout_precommit_delta = "500ms"/timeout_precommit_delta = "5s"/g' "$CONFIG"
-			sed -i '' 's/timeout_commit = "5s"/timeout_commit = "150s"/g' "$CONFIG"
+			sed -i '' 's/timeout_commit = "5s"/timeout_commit = "1s"/g' "$CONFIG"
 			sed -i '' 's/timeout_broadcast_tx_commit = "10s"/timeout_broadcast_tx_commit = "150s"/g' "$CONFIG"
 		else
 			sed -i 's/timeout_propose = "3s"/timeout_propose = "30s"/g' "$CONFIG"
@@ -165,10 +165,12 @@ if [[ $overwrite == "y" || $overwrite == "Y" ]]; then
 			sed -i 's/timeout_prevote_delta = "500ms"/timeout_prevote_delta = "5s"/g' "$CONFIG"
 			sed -i 's/timeout_precommit = "1s"/timeout_precommit = "10s"/g' "$CONFIG"
 			sed -i 's/timeout_precommit_delta = "500ms"/timeout_precommit_delta = "5s"/g' "$CONFIG"
-			sed -i 's/timeout_commit = "5s"/timeout_commit = "150s"/g' "$CONFIG"
+			sed -i 's/timeout_commit = "5s"/timeout_commit = "1s"/g' "$CONFIG"
 			sed -i 's/timeout_broadcast_tx_commit = "10s"/timeout_broadcast_tx_commit = "150s"/g' "$CONFIG"
 		fi
 	fi
+
+  sed -i '' 's/timeout_commit = "5s"/timeout_commit = "1s"/g' "$CONFIG"
 
 	# enable prometheus metrics and all APIs for dev node
 	if [[ "$OSTYPE" == "darwin"* ]]; then

@@ -274,25 +274,26 @@ func (m *EVMMempool) Remove(tx sdk.Tx) error {
 // It uses the AnteHandler to check if the transaction failed for reasons
 // other than nonce gaps or successful execution, in which case manual removal is needed.
 func (m *EVMMempool) shouldRemoveFromEVMPool(tx sdk.Tx) bool {
-	if m.anteHandler == nil {
-		return false
-	}
-
-	// Use AnteHandler directly instead of checkTxFn to avoid potential deadlocks.
-	// If it was a successful transaction or a sequence error, we let the mempool handle the cleaning.
-	// If it was any other Cosmos or antehandler related issue, then we remove it.
-	ctx, err := m.blockchain.GetLatestCtx()
-	if err != nil {
-		return false // Cannot validate, keep transaction
-	}
-	_, err = m.anteHandler(ctx, tx, false)
-	
-	// Keep nonce gap transactions, remove others that fail validation
-	if errors.Is(err, ErrNonceGap) || errors.Is(err, sdkerrors.ErrInvalidSequence) {
-		return false
-	}
-
-	return err != nil
+	//todo: fix the logic here
+	//if m.anteHandler == nil {
+	//	return false
+	//}
+	//
+	//// If it was a successful transaction or a sequence error, we let the mempool handle the cleaning.
+	//// If it was any other Cosmos or antehandler related issue, then we remove it.
+	//ctx, err := m.blockchain.GetLatestCtx()
+	//if err != nil {
+	//	return false // Cannot validate, keep transaction
+	//}
+	//_, err = m.anteHandler(ctx, tx, true)
+	//
+	//// Keep nonce gap transactions, remove others that fail validation
+	//if errors.Is(err, ErrNonceGap) || errors.Is(err, sdkerrors.ErrInvalidSequence) {
+	//	return false
+	//}
+	//
+	//return err != nil
+	return false
 }
 
 // SelectBy iterates through transactions until the provided filter function returns false.
