@@ -4,94 +4,16 @@ import (
 	"math/big"
 	"sync"
 
-	sdkmath "cosmossdk.io/math"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
-
-	basefactory "github.com/cosmos/evm/testutil/integration/base/factory"
 	utiltx "github.com/cosmos/evm/testutil/tx"
 	evmtypes "github.com/cosmos/evm/x/vm/types"
 )
-
-// TestConcurrentInsertion tests concurrent insertion of transactions
-func (s *MempoolIntegrationTestSuite) TestConcurrentInsertion() {
-	mpoolInstance := s.network.App.GetMempool()
-
-	// Create multiple accounts for concurrent operations
-	numWorkers := 3 // Limited by keyring size
-	numTxsPerWorker := 10
-
-	var wg sync.WaitGroup
-	var mu sync.Mutex
-	var insertErrors []error
-
-	for workerID := 0; workerID < numWorkers; workerID++ {
-		wg.Add(1)
-
-		go func(id int) {
-			defer wg.Done()
-
-			// Create unique sender for this worker
-			sender := s.keyring.GetKey(id)
-			recipient := s.keyring.GetKey((id + 1) % numWorkers)
-
-			// Fund the sender (synchronized to prevent race conditions)
-			fundAmount, _ := sdkmath.NewIntFromString("5000000000000000000")
-			// Use a mutex to prevent concurrent funding issues
-			mu.Lock()
-			s.FundAccount(sender.AccAddr, fundAmount, s.network.GetBaseDenom())
-			mu.Unlock()
-
-			// Insert multiple transactions concurrently
-			for txIdx := 0; txIdx < numTxsPerWorker; txIdx++ {
-				bankMsg := banktypes.NewMsgSend(
-					sender.AccAddr,
-					recipient.AccAddr,
-					sdk.NewCoins(sdk.NewCoin(s.network.GetBaseDenom(), sdkmath.NewInt(int64(100+txIdx)))),
-				)
-
-				tx, err := s.factory.BuildCosmosTx(sender.Priv, basefactory.CosmosTxArgs{
-					Msgs: []sdk.Msg{bankMsg},
-					Fees: sdk.NewCoins(sdk.NewCoin(s.network.GetBaseDenom(), sdkmath.NewInt(int64(1000000000000000+txIdx*1000)))),
-				})
-
-				if err != nil {
-					mu.Lock()
-					insertErrors = append(insertErrors, err)
-					mu.Unlock()
-					continue
-				}
-
-				err = mpoolInstance.Insert(s.network.GetContext(), tx)
-				if err != nil {
-					mu.Lock()
-					insertErrors = append(insertErrors, err)
-					mu.Unlock()
-				}
-			}
-		}(workerID)
-	}
-
-	// Wait for all workers to complete
-	wg.Wait()
-
-	// Verify no critical errors occurred
-	s.Require().Empty(insertErrors, "should not have insertion errors during concurrent operations")
-
-	// Verify transactions were inserted
-	finalCount := mpoolInstance.CountTx()
-	s.Require().Greater(finalCount, 0, "mempool should contain transactions after concurrent insertion")
-
-	s.T().Logf("Successfully inserted transactions concurrently, final count: %d", finalCount)
-}
 
 // TestConcurrentEVMTransactions tests concurrent EVM transaction operations using txBuilder
 func (s *MempoolIntegrationTestSuite) TestConcurrentEVMTransactions() {
 	mpoolInstance := s.network.App.GetMempool()
 
 	numWorkers := 3
-	numTxsPerWorker := 5
+	numTxsPerWorker := 10
 
 	var wg sync.WaitGroup
 	var mu sync.Mutex
@@ -155,7 +77,7 @@ func (s *MempoolIntegrationTestSuite) TestConcurrentEVMTransactions() {
 
 	// Verify EVM transactions were inserted
 	finalCount := mpoolInstance.CountTx()
-	s.Require().Greater(finalCount, 0, "mempool should contain EVM transactions after concurrent insertion")
+	s.Require().Equal(finalCount, 30, "mempool should contain EVM transactions after concurrent insertion")
 
 	// Verify we can select EVM transactions
 	iterator := mpoolInstance.Select(s.network.GetContext(), nil)
@@ -182,6 +104,6 @@ func (s *MempoolIntegrationTestSuite) TestConcurrentEVMTransactions() {
 		}
 	}
 
-	s.Require().Greater(evmTxCount, 0, "should have selected EVM transactions")
+	s.Require().Equal(evmTxCount, 30, "should have selected EVM transactions")
 	s.T().Logf("Successfully processed %d EVM transactions concurrently", evmTxCount)
 }

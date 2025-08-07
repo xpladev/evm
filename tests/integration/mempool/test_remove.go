@@ -87,14 +87,14 @@ func (s *MempoolIntegrationTestSuite) TestRemoveEVMTransaction() {
 	s.Require().NoError(err)
 
 	initialCount := mpoolInstance.CountTx()
-	s.Require().Greater(initialCount, 0, "mempool should contain the inserted transaction")
+	s.Require().Equal(initialCount, 1, "mempool should contain the inserted transaction")
 
 	// Remove transaction
 	err = mpoolInstance.Remove(tx)
 	s.Require().NoError(err)
 
 	finalCount := mpoolInstance.CountTx()
-	s.Require().Less(finalCount, initialCount, "mempool count should decrease after removal")
+	s.Require().Equal(finalCount, initialCount-1, "mempool count should decrease after removal")
 
 	s.T().Log("Successfully removed EVM transaction from mempool")
 }
@@ -171,7 +171,7 @@ func (s *MempoolIntegrationTestSuite) TestRemoveMultipleTransactions() {
 	}
 
 	initialCount := mpoolInstance.CountTx()
-	s.Require().GreaterOrEqual(initialCount, len(transactions), "mempool should contain all inserted transactions")
+	s.Require().Equal(initialCount, len(transactions), "mempool should contain all inserted transactions")
 
 	// Remove transactions one by one
 	for i, tx := range transactions {
@@ -231,7 +231,7 @@ func (s *MempoolIntegrationTestSuite) TestRemoveAfterSelect() {
 	s.Require().NoError(err)
 
 	finalCount := mpoolInstance.CountTx()
-	s.Require().Less(finalCount, initialCount, "mempool count should decrease after removal")
+	s.Require().Equal(finalCount, initialCount-1, "mempool count should decrease after removal")
 
 	// Verify transaction is no longer selectable (mempool should be empty)
 	newIterator := mpoolInstance.Select(s.network.GetContext(), nil)
@@ -339,21 +339,21 @@ func (s *MempoolIntegrationTestSuite) TestRemoveAndReinsert() {
 	s.Require().NoError(err)
 
 	countAfterInsert := mpoolInstance.CountTx()
-	s.Require().Greater(countAfterInsert, 0, "mempool should contain transaction after insert")
+	s.Require().Equal(countAfterInsert, 1, "mempool should contain transaction after insert")
 
 	// Remove transaction
 	err = mpoolInstance.Remove(tx)
 	s.Require().NoError(err)
 
 	countAfterRemove := mpoolInstance.CountTx()
-	s.Require().Less(countAfterRemove, countAfterInsert, "mempool count should decrease after removal")
+	s.Require().Equal(countAfterRemove, 0, "mempool count should decrease after removal")
 
 	// Reinsert the same transaction
 	err = mpoolInstance.Insert(s.network.GetContext(), tx)
 	s.Require().NoError(err)
 
 	countAfterReinsert := mpoolInstance.CountTx()
-	s.Require().Greater(countAfterReinsert, countAfterRemove, "mempool count should increase after reinsertion")
+	s.Require().Equal(countAfterReinsert, 1, "mempool count should increase after reinsertion")
 
 	s.T().Log("Successfully removed and reinserted transaction")
 }
