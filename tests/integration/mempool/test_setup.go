@@ -1,17 +1,14 @@
 package mempool
 
 import (
-	"github.com/cosmos/evm/mempool"
 	"github.com/stretchr/testify/suite"
 
 	sdkmath "cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 
 	testconstants "github.com/cosmos/evm/testutil/constants"
-	basefactory "github.com/cosmos/evm/testutil/integration/base/factory"
 	"github.com/cosmos/evm/testutil/integration/evm/factory"
 	"github.com/cosmos/evm/testutil/integration/evm/grpc"
 	"github.com/cosmos/evm/testutil/integration/evm/network"
@@ -46,8 +43,6 @@ func (s *MempoolIntegrationTestSuite) SetupTest() {
 // SetupTestWithChainID initializes the test environment with a specific chain ID.
 func (s *MempoolIntegrationTestSuite) SetupTestWithChainID(chainID testconstants.ChainID) {
 	s.keyring = keyring.New(3)
-
-	mempool.ResetGlobalEVMMempool()
 
 	options := []network.ConfigOption{
 		network.WithChainID(chainID),
@@ -103,32 +98,4 @@ func (s *MempoolIntegrationTestSuite) TestBasicSetup() {
 	s.Require().False(bal0.IsZero(), "key 0 should have positive balance")
 
 	s.T().Logf("Test setup successful - accounts funded and network ready")
-}
-
-// TestMempoolCount verifies transaction counting functionality
-func (s *MempoolIntegrationTestSuite) TestMempoolCount() {
-	sender := s.keyring.GetKey(0)
-
-	// Fund the sender
-	s.FundAccount(sender.AccAddr, sdkmath.NewInt(2000000000000000000), s.network.GetBaseDenom())
-
-	// Create and broadcast a transaction (this will add it to mempool and then process it)
-	bankMsg := banktypes.NewMsgSend(
-		sender.AccAddr,
-		s.keyring.GetKey(1).AccAddr,
-		sdk.NewCoins(sdk.NewCoin(s.network.GetBaseDenom(), sdkmath.NewInt(1000))),
-	)
-
-	txRes, err := s.factory.ExecuteCosmosTx(sender.Priv, basefactory.CosmosTxArgs{
-		Msgs: []sdk.Msg{bankMsg},
-		Fees: sdk.NewCoins(sdk.NewCoin(s.network.GetBaseDenom(), sdkmath.NewInt(1000000000000000))),
-	})
-	s.Require().NoError(err)
-	s.Require().False(txRes.IsErr())
-
-	// Process the transaction
-	err = s.network.NextBlock()
-	s.Require().NoError(err)
-
-	s.T().Log("Mempool count test completed successfully")
 }

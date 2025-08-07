@@ -8,7 +8,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
-	mempool "github.com/cosmos/evm/mempool"
 	basefactory "github.com/cosmos/evm/testutil/integration/base/factory"
 	"github.com/cosmos/evm/testutil/keyring"
 	utiltx "github.com/cosmos/evm/testutil/tx"
@@ -17,6 +16,7 @@ import (
 
 // TestRemoveCosmosTransaction tests removal of Cosmos SDK transactions
 func (s *MempoolIntegrationTestSuite) TestRemoveCosmosTransaction() {
+	s.SetupTest()
 	sender := s.keyring.GetKey(0)
 	recipient := s.keyring.GetKey(1)
 
@@ -36,7 +36,7 @@ func (s *MempoolIntegrationTestSuite) TestRemoveCosmosTransaction() {
 	})
 	s.Require().NoError(err)
 
-	mpoolInstance := mempool.GetGlobalEVMMempool()
+	mpoolInstance := s.network.App.GetMempool()
 
 	// Insert transaction
 	err = mpoolInstance.Insert(s.network.GetContext(), tx)
@@ -57,6 +57,7 @@ func (s *MempoolIntegrationTestSuite) TestRemoveCosmosTransaction() {
 
 // TestRemoveEVMTransaction tests removal of EVM transactions
 func (s *MempoolIntegrationTestSuite) TestRemoveEVMTransaction() {
+	s.SetupTest()
 	// Create an Ethereum private key and address
 	sender := s.keyring.GetKey(0)
 	privKey := sender.Priv
@@ -79,7 +80,7 @@ func (s *MempoolIntegrationTestSuite) TestRemoveEVMTransaction() {
 	tx, err := utiltx.PrepareEthTx(s.network.App.GetTxConfig(), privKey, &signedMsg)
 	s.Require().NoError(err)
 
-	mpoolInstance := mempool.GetGlobalEVMMempool()
+	mpoolInstance := s.network.App.GetMempool()
 
 	// Insert transaction
 	err = mpoolInstance.Insert(s.network.GetContext(), tx)
@@ -100,6 +101,7 @@ func (s *MempoolIntegrationTestSuite) TestRemoveEVMTransaction() {
 
 // TestRemoveNonExistentTransaction tests removal of transactions not in mempool
 func (s *MempoolIntegrationTestSuite) TestRemoveNonExistentTransaction() {
+	s.SetupTest()
 	sender := s.keyring.GetKey(0)
 	recipient := s.keyring.GetKey(1)
 
@@ -119,7 +121,7 @@ func (s *MempoolIntegrationTestSuite) TestRemoveNonExistentTransaction() {
 	})
 	s.Require().NoError(err)
 
-	mpoolInstance := mempool.GetGlobalEVMMempool()
+	mpoolInstance := s.network.App.GetMempool()
 	initialCount := mpoolInstance.CountTx()
 
 	// Try to remove transaction that was never inserted
@@ -136,6 +138,7 @@ func (s *MempoolIntegrationTestSuite) TestRemoveNonExistentTransaction() {
 
 // TestRemoveMultipleTransactions tests removal of multiple transactions
 func (s *MempoolIntegrationTestSuite) TestRemoveMultipleTransactions() {
+	s.SetupTest()
 	sender1 := s.keyring.GetKey(0)
 	sender2 := s.keyring.GetKey(1)
 	recipient := s.keyring.GetKey(2)
@@ -144,7 +147,7 @@ func (s *MempoolIntegrationTestSuite) TestRemoveMultipleTransactions() {
 	s.FundAccount(sender1.AccAddr, sdkmath.NewInt(2000000000000000000), s.network.GetBaseDenom())
 	s.FundAccount(sender2.AccAddr, sdkmath.NewInt(2000000000000000000), s.network.GetBaseDenom())
 
-	mpoolInstance := mempool.GetGlobalEVMMempool()
+	mpoolInstance := s.network.App.GetMempool()
 
 	// Create and insert multiple transactions
 	var transactions []sdk.Tx
@@ -189,6 +192,7 @@ func (s *MempoolIntegrationTestSuite) TestRemoveMultipleTransactions() {
 
 // TestRemoveAfterSelect tests removal after selecting transactions
 func (s *MempoolIntegrationTestSuite) TestRemoveAfterSelect() {
+	s.SetupTest()
 	sender := s.keyring.GetKey(0)
 	recipient := s.keyring.GetKey(1)
 
@@ -208,7 +212,7 @@ func (s *MempoolIntegrationTestSuite) TestRemoveAfterSelect() {
 	})
 	s.Require().NoError(err)
 
-	mpoolInstance := mempool.GetGlobalEVMMempool()
+	mpoolInstance := s.network.App.GetMempool()
 
 	err = mpoolInstance.Insert(s.network.GetContext(), tx)
 	s.Require().NoError(err)
@@ -238,13 +242,14 @@ func (s *MempoolIntegrationTestSuite) TestRemoveAfterSelect() {
 
 // TestRemoveMixedTransactionTypes tests removal of both Cosmos and EVM transactions
 func (s *MempoolIntegrationTestSuite) TestRemoveMixedTransactionTypes() {
+	s.SetupTest()
 	sender := s.keyring.GetKey(0)
 	recipient := s.keyring.GetKey(1)
 
 	// Fund the sender
 	s.FundAccount(sender.AccAddr, sdkmath.NewInt(2000000000000000000), s.network.GetBaseDenom())
 
-	mpoolInstance := mempool.GetGlobalEVMMempool()
+	mpoolInstance := s.network.App.GetMempool()
 
 	// Create and insert a Cosmos transaction
 	bankMsg := banktypes.NewMsgSend(
@@ -307,6 +312,7 @@ func (s *MempoolIntegrationTestSuite) TestRemoveMixedTransactionTypes() {
 
 // TestRemoveAndReinsert tests removing a transaction and then reinserting it
 func (s *MempoolIntegrationTestSuite) TestRemoveAndReinsert() {
+	s.SetupTest()
 	sender := s.keyring.GetKey(0)
 	recipient := s.keyring.GetKey(1)
 
@@ -326,7 +332,7 @@ func (s *MempoolIntegrationTestSuite) TestRemoveAndReinsert() {
 	})
 	s.Require().NoError(err)
 
-	mpoolInstance := mempool.GetGlobalEVMMempool()
+	mpoolInstance := s.network.App.GetMempool()
 
 	// Insert transaction
 	err = mpoolInstance.Insert(s.network.GetContext(), tx)

@@ -8,7 +8,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
-	mempool "github.com/cosmos/evm/mempool"
 	basefactory "github.com/cosmos/evm/testutil/integration/base/factory"
 	utiltx "github.com/cosmos/evm/testutil/tx"
 	evmtypes "github.com/cosmos/evm/x/vm/types"
@@ -16,7 +15,7 @@ import (
 
 // TestSelectEmptyMempool tests selection from an empty mempool
 func (s *MempoolIntegrationTestSuite) TestSelectEmptyMempool() {
-	mpoolInstance := mempool.GetGlobalEVMMempool()
+	mpoolInstance := s.network.App.GetMempool()
 
 	// Select from empty mempool
 	iterator := mpoolInstance.Select(s.network.GetContext(), nil)
@@ -46,7 +45,7 @@ func (s *MempoolIntegrationTestSuite) TestSelectSingleTransaction() {
 	})
 	s.Require().NoError(err)
 
-	mpoolInstance := mempool.GetGlobalEVMMempool()
+	mpoolInstance := s.network.App.GetMempool()
 	err = mpoolInstance.Insert(s.network.GetContext(), tx)
 	s.Require().NoError(err)
 
@@ -74,7 +73,7 @@ func (s *MempoolIntegrationTestSuite) TestSelectMultipleTransactions() {
 	s.FundAccount(sender1.AccAddr, sdkmath.NewInt(2000000000000000000), s.network.GetBaseDenom())
 	s.FundAccount(sender2.AccAddr, sdkmath.NewInt(2000000000000000000), s.network.GetBaseDenom())
 
-	mpoolInstance := mempool.GetGlobalEVMMempool()
+	mpoolInstance := s.network.App.GetMempool()
 
 	// Create and insert multiple transactions
 	var insertedTxs []sdk.Tx
@@ -160,7 +159,7 @@ func (s *MempoolIntegrationTestSuite) TestSelectWithMaxBytes() {
 	s.FundAccount(sender.AccAddr, sdkmath.NewInt(2000000000000000000), s.network.GetBaseDenom())
 
 	// Create multiple transactions
-	mpoolInstance := mempool.GetGlobalEVMMempool()
+	mpoolInstance := s.network.App.GetMempool()
 	var insertedTxs []sdk.Tx
 
 	for i := 0; i < 3; i++ {
@@ -204,7 +203,7 @@ func (s *MempoolIntegrationTestSuite) TestSelectEVMTransactions() {
 	privKey := sender.Priv
 
 	// Create EVM transactions with different nonces
-	mpoolInstance := mempool.GetGlobalEVMMempool()
+	mpoolInstance := s.network.App.GetMempool()
 	to := utiltx.GenerateAddress()
 	var insertedTxs []sdk.Tx
 
@@ -273,7 +272,7 @@ func (s *MempoolIntegrationTestSuite) TestSelectByFunction() {
 	s.FundAccount(sender1.AccAddr, sdkmath.NewInt(2000000000000000000), s.network.GetBaseDenom())
 	s.FundAccount(sender2.AccAddr, sdkmath.NewInt(2000000000000000000), s.network.GetBaseDenom())
 
-	mpoolInstance := mempool.GetGlobalEVMMempool()
+	mpoolInstance := s.network.App.GetMempool()
 
 	// Create transactions with different amounts
 	bankMsg1 := banktypes.NewMsgSend(

@@ -9,7 +9,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
-	mempool "github.com/cosmos/evm/mempool"
 	basefactory "github.com/cosmos/evm/testutil/integration/base/factory"
 	utiltx "github.com/cosmos/evm/testutil/tx"
 	evmtypes "github.com/cosmos/evm/x/vm/types"
@@ -22,7 +21,7 @@ import (
 
 // TestCountEmptyMempool tests counting transactions in an empty mempool
 func (s *MempoolIntegrationTestSuite) TestCountEmptyMempool() {
-	mpoolInstance := mempool.GetGlobalEVMMempool()
+	mpoolInstance := s.network.App.GetMempool()
 
 	// Count transactions in empty mempool
 	count := mpoolInstance.CountTx()
@@ -39,7 +38,7 @@ func (s *MempoolIntegrationTestSuite) TestCountSingleTransaction() {
 	// Fund the sender
 	s.FundAccount(sender.AccAddr, sdkmath.NewInt(2000000000000000000), s.network.GetBaseDenom())
 
-	mpoolInstance := mempool.GetGlobalEVMMempool()
+	mpoolInstance := s.network.App.GetMempool()
 
 	// Get initial count
 	initialCount := mpoolInstance.CountTx()
@@ -77,7 +76,7 @@ func (s *MempoolIntegrationTestSuite) TestCountMultipleTransactions() {
 	s.FundAccount(sender1.AccAddr, sdkmath.NewInt(5000000000000000000), s.network.GetBaseDenom())
 	s.FundAccount(sender2.AccAddr, sdkmath.NewInt(5000000000000000000), s.network.GetBaseDenom())
 
-	mpoolInstance := mempool.GetGlobalEVMMempool()
+	mpoolInstance := s.network.App.GetMempool()
 
 	// Get initial count
 	initialCount := mpoolInstance.CountTx()
@@ -142,7 +141,7 @@ func (s *MempoolIntegrationTestSuite) TestCountMultipleEVMTransactions() {
 	sender1 := s.keyring.GetKey(0)
 	sender2 := s.keyring.GetKey(1)
 
-	mpoolInstance := mempool.GetGlobalEVMMempool()
+	mpoolInstance := s.network.App.GetMempool()
 
 	// Get initial count
 	initialCount := mpoolInstance.CountTx()
@@ -224,7 +223,7 @@ func (s *MempoolIntegrationTestSuite) TestCountMixedTransactionTypes() {
 	// Fund accounts
 	s.FundAccount(cosmosAccount.AccAddr, sdkmath.NewInt(5000000000000000000), s.network.GetBaseDenom())
 
-	mpoolInstance := mempool.GetGlobalEVMMempool()
+	mpoolInstance := s.network.App.GetMempool()
 	initialCount := mpoolInstance.CountTx()
 
 	transactions := []sdk.Tx{}
@@ -288,7 +287,7 @@ func (s *MempoolIntegrationTestSuite) TestCountEVMTransactions() {
 	sender := s.keyring.GetKey(0)
 	privKey := sender.Priv
 
-	mpoolInstance := mempool.GetGlobalEVMMempool()
+	mpoolInstance := s.network.App.GetMempool()
 	initialCount := mpoolInstance.CountTx()
 
 	// Create multiple EVM transactions
@@ -337,7 +336,7 @@ func (s *MempoolIntegrationTestSuite) TestCountMixedTransactions() {
 	evmSender := s.keyring.GetKey(1)
 	evmPrivKey := evmSender.Priv
 
-	mpoolInstance := mempool.GetGlobalEVMMempool()
+	mpoolInstance := s.network.App.GetMempool()
 	initialCount := mpoolInstance.CountTx()
 
 	// Insert Cosmos transaction
@@ -395,7 +394,7 @@ func (s *MempoolIntegrationTestSuite) TestCountAfterRemoval() {
 	// Fund the sender
 	s.FundAccount(sender.AccAddr, sdkmath.NewInt(2000000000000000000), s.network.GetBaseDenom())
 
-	mpoolInstance := mempool.GetGlobalEVMMempool()
+	mpoolInstance := s.network.App.GetMempool()
 	initialCount := mpoolInstance.CountTx()
 
 	// Create and insert transaction
@@ -429,7 +428,7 @@ func (s *MempoolIntegrationTestSuite) TestCountAfterRemoval() {
 
 // TestCountConsistency tests that count remains consistent across operations
 func (s *MempoolIntegrationTestSuite) TestCountConsistency() {
-	mpoolInstance := mempool.GetGlobalEVMMempool()
+	mpoolInstance := s.network.App.GetMempool()
 
 	// Perform multiple count operations and verify consistency
 	for i := 0; i < 10; i++ {

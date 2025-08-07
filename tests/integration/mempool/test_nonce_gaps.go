@@ -1,6 +1,7 @@
 package mempool
 
 import (
+	"fmt"
 	"math/big"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -12,11 +13,10 @@ import (
 
 // TestNonceGapSingleTransaction tests handling of a single transaction with nonce gap
 func (s *MempoolIntegrationTestSuite) TestNonceGapSingleTransaction() {
-	// Use a keyring account that's already funded in genesis
 	sender := s.keyring.GetKey(0)
 	privKey := sender.Priv
 
-	mpoolInstance := mempool.GetGlobalEVMMempool()
+	mpoolInstance := s.network.App.GetMempool()
 	initialCount := mpoolInstance.CountTx()
 
 	// Create an EVM transaction with nonce 5 (gap from expected nonce 0)
@@ -42,9 +42,8 @@ func (s *MempoolIntegrationTestSuite) TestNonceGapSingleTransaction() {
 	err = mpoolInstance.Insert(s.network.GetContext(), tx)
 	s.Require().NoError(err)
 
-	// Verify transaction was inserted (behavior depends on mempool implementation)
 	finalCount := mpoolInstance.CountTx()
-	s.Require().GreaterOrEqual(finalCount, initialCount, "transaction with nonce gap should be handled appropriately")
+	s.Require().Equal(finalCount, initialCount, "transaction with nonce gap should be handled appropriately")
 
 	s.T().Log("Successfully tested single transaction with nonce gap")
 }
@@ -55,7 +54,7 @@ func (s *MempoolIntegrationTestSuite) TestNonceGapMultipleTransactions() {
 	sender := s.keyring.GetKey(0)
 	privKey := sender.Priv
 
-	mpoolInstance := mempool.GetGlobalEVMMempool()
+	mpoolInstance := s.network.App.GetMempool()
 	to := utiltx.GenerateAddress()
 
 	// Create transaction with nonce 0 (valid)
@@ -100,9 +99,9 @@ func (s *MempoolIntegrationTestSuite) TestNonceGapMultipleTransactions() {
 	err = mpoolInstance.Insert(s.network.GetContext(), tx2)
 	s.Require().NoError(err)
 
-	// Verify mempool state - exact behavior depends on implementation
+	// Verify mempool state
 	count := mpoolInstance.CountTx()
-	s.Require().Greater(count, 0, "mempool should contain transactions")
+	s.Require().Equal(count, 1, "mempool count should only display the transaction without a gap")
 
 	s.T().Log("Successfully tested multiple transactions with nonce gaps")
 }
@@ -113,7 +112,7 @@ func (s *MempoolIntegrationTestSuite) TestFillNonceGap() {
 	sender := s.keyring.GetKey(0)
 	privKey := sender.Priv
 
-	mpoolInstance := mempool.GetGlobalEVMMempool()
+	mpoolInstance := s.network.App.GetMempool()
 	to := utiltx.GenerateAddress()
 
 	// Create transaction with nonce 2 (creates gap)
@@ -139,16 +138,13 @@ func (s *MempoolIntegrationTestSuite) TestFillNonceGap() {
 
 	countAfterGap := mpoolInstance.CountTx()
 
-	// Try to use InsertInvalidNonce for gap handling if available
-	// Note: This tests the specific EVM mempool functionality for nonce gaps
 	txBytes, err := s.network.App.GetTxConfig().TxEncoder()(tx)
 	s.Require().NoError(err)
 
-	err = mpoolInstance.InsertInvalidNonce(txBytes)
-	// Don't assert on error since behavior may vary for nonce gaps
+	err = mpoolInstance.(*mempool.EVMMempool).InsertInvalidNonce(txBytes)
 
 	finalCount := mpoolInstance.CountTx()
-	s.Require().GreaterOrEqual(finalCount, countAfterGap, "nonce gap handling should not decrease transaction count")
+	s.Require().GreaterOrEqual(finalCount, countAfterGap, "mempool should show all transactions after gap was filled")
 
 	s.T().Log("Successfully tested filling nonce gap")
 }
@@ -159,7 +155,7 @@ func (s *MempoolIntegrationTestSuite) TestSequentialNonceHandling() {
 	sender := s.keyring.GetKey(0)
 	privKey := sender.Priv
 
-	mpoolInstance := mempool.GetGlobalEVMMempool()
+	mpoolInstance := s.network.App.GetMempool()
 	to := utiltx.GenerateAddress()
 
 	// Insert transactions with nonces 0, 3, then fill gap with 1, 2
@@ -190,7 +186,7 @@ func (s *MempoolIntegrationTestSuite) TestSequentialNonceHandling() {
 
 	// Verify all transactions were handled
 	finalCount := mpoolInstance.CountTx()
-	s.Require().Greater(finalCount, 0, "mempool should contain transactions after sequential nonce handling")
+	s.Require().Equal(finalCount, 4, "mempool should contain transactions after sequential nonce handling")
 
 	// Try to select transactions - order may vary based on nonce handling
 	iterator := mpoolInstance.Select(s.network.GetContext(), nil)
@@ -210,7 +206,11 @@ func (s *MempoolIntegrationTestSuite) TestSequentialNonceHandling() {
 		}
 	}
 
-	s.Require().Greater(selectedCount, 0, "should be able to select transactions with resolved nonce gaps")
+	s.Require().Equal(selectedCount, 4, "should be able to select transactions with resolved nonce gaps")
+	err := s.network.NextBlock()
+	s.Require().NoError(err)
+	txCount := mpoolInstance.CountTx()
+	fmt.Println(txCount)
 
 	s.T().Log("Successfully tested sequential nonce handling after gaps")
 }
@@ -221,7 +221,7 @@ func (s *MempoolIntegrationTestSuite) TestInvalidNonceInsertion() {
 	sender := s.keyring.GetKey(0)
 	privKey := sender.Priv
 
-	mpoolInstance := mempool.GetGlobalEVMMempool()
+	mpoolInstance := s.network.App.GetMempool()
 
 	// Create multiple transactions with various nonce scenarios
 	to := utiltx.GenerateAddress()
@@ -252,20 +252,20 @@ func (s *MempoolIntegrationTestSuite) TestInvalidNonceInsertion() {
 		txBytes, err := s.network.App.GetTxConfig().TxEncoder()(tx)
 		s.Require().NoError(err)
 
-		err = mpoolInstance.InsertInvalidNonce(txBytes)
+		err = mpoolInstance.(*mempool.EVMMempool).InsertInvalidNonce(txBytes)
 		// Don't assert on error - behavior may vary for invalid nonces
 	}
 
 	// Verify mempool handled the transactions appropriately
 	count := mpoolInstance.CountTx()
-	s.T().Logf("Mempool contains %d transactions after invalid nonce insertions", count)
+	s.Require().Equal(count, 0, "should not show invalid nonces in count")
 
 	s.T().Log("Successfully tested invalid nonce insertion functionality")
 }
 
 // TestNonceGapWithDifferentAccounts tests nonce gaps across multiple accounts
 func (s *MempoolIntegrationTestSuite) TestNonceGapWithDifferentAccounts() {
-	mpoolInstance := mempool.GetGlobalEVMMempool()
+	mpoolInstance := s.network.App.GetMempool()
 
 	// Use two different keyring accounts
 	sender1 := s.keyring.GetKey(0)
@@ -319,7 +319,7 @@ func (s *MempoolIntegrationTestSuite) TestNonceGapWithDifferentAccounts() {
 
 	// Verify mempool handles different accounts independently
 	count := mpoolInstance.CountTx()
-	s.Require().Greater(count, 0, "mempool should contain transactions from both accounts")
+	s.Require().Equal(count, 1, "mempool should only show transaction with no gap")
 
 	s.T().Log("Successfully tested nonce gaps across different accounts")
 }

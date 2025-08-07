@@ -9,7 +9,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
-	mempool "github.com/cosmos/evm/mempool"
 	basefactory "github.com/cosmos/evm/testutil/integration/base/factory"
 	utiltx "github.com/cosmos/evm/testutil/tx"
 	evmtypes "github.com/cosmos/evm/x/vm/types"
@@ -17,7 +16,7 @@ import (
 
 // TestConcurrentInsertion tests concurrent insertion of transactions
 func (s *MempoolIntegrationTestSuite) TestConcurrentInsertion() {
-	mpoolInstance := mempool.GetGlobalEVMMempool()
+	mpoolInstance := s.network.App.GetMempool()
 
 	// Create multiple accounts for concurrent operations
 	numWorkers := 3 // Limited by keyring size
@@ -89,7 +88,7 @@ func (s *MempoolIntegrationTestSuite) TestConcurrentInsertion() {
 
 // TestConcurrentEVMTransactions tests concurrent EVM transaction operations using txBuilder
 func (s *MempoolIntegrationTestSuite) TestConcurrentEVMTransactions() {
-	mpoolInstance := mempool.GetGlobalEVMMempool()
+	mpoolInstance := s.network.App.GetMempool()
 
 	numWorkers := 3
 	numTxsPerWorker := 5

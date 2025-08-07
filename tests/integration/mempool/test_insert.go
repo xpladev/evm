@@ -8,7 +8,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
-	mempool "github.com/cosmos/evm/mempool"
 	basefactory "github.com/cosmos/evm/testutil/integration/base/factory"
 	utiltx "github.com/cosmos/evm/testutil/tx"
 	evmtypes "github.com/cosmos/evm/x/vm/types"
@@ -36,7 +35,7 @@ func (s *MempoolIntegrationTestSuite) TestInsertCosmosTransaction() {
 	s.Require().NoError(err)
 
 	// Insert transaction into mempool
-	mpoolInstance := mempool.GetGlobalEVMMempool()
+	mpoolInstance := s.network.App.GetMempool()
 	err = mpoolInstance.Insert(s.network.GetContext(), tx)
 	s.Require().NoError(err)
 
@@ -72,7 +71,7 @@ func (s *MempoolIntegrationTestSuite) TestInsertEVMTransaction() {
 	s.Require().NoError(err)
 
 	// Insert transaction into mempool
-	mpoolInstance := mempool.GetGlobalEVMMempool()
+	mpoolInstance := s.network.App.GetMempool()
 	err = mpoolInstance.Insert(s.network.GetContext(), tx)
 	s.Require().NoError(err)
 
@@ -93,7 +92,7 @@ func (s *MempoolIntegrationTestSuite) TestInsertMultipleTransactions() {
 	s.FundAccount(sender1.AccAddr, sdkmath.NewInt(2000000000000000000), s.network.GetBaseDenom())
 	s.FundAccount(sender2.AccAddr, sdkmath.NewInt(2000000000000000000), s.network.GetBaseDenom())
 
-	mpoolInstance := mempool.GetGlobalEVMMempool()
+	mpoolInstance := s.network.App.GetMempool()
 	initialCount := mpoolInstance.CountTx()
 
 	// Create first transaction
@@ -158,7 +157,7 @@ func (s *MempoolIntegrationTestSuite) TestInsertDuplicateTransaction() {
 	})
 	s.Require().NoError(err)
 
-	mpoolInstance := mempool.GetGlobalEVMMempool()
+	mpoolInstance := s.network.App.GetMempool()
 	initialCount := mpoolInstance.CountTx()
 
 	// Insert transaction first time
@@ -199,7 +198,7 @@ func (s *MempoolIntegrationTestSuite) TestInsertInvalidTransaction() {
 	})
 	s.Require().NoError(err)
 
-	mpoolInstance := mempool.GetGlobalEVMMempool()
+	mpoolInstance := s.network.App.GetMempool()
 	initialCount := mpoolInstance.CountTx()
 
 	// Try to insert invalid transaction
@@ -239,7 +238,7 @@ func (s *MempoolIntegrationTestSuite) TestInsertEVMTransactionWithNonceGap() {
 	err = txBuilder.SetMsgs(&signedMsg)
 	s.Require().NoError(err)
 
-	mpoolInstance := mempool.GetGlobalEVMMempool()
+	mpoolInstance := s.network.App.GetMempool()
 
 	// Insert transaction with nonce gap
 	err = mpoolInstance.Insert(s.network.GetContext(), txBuilder.GetTx())

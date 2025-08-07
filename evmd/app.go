@@ -1120,6 +1120,10 @@ func (app *EVMD) SetTransferKeeper(transferKeeper transferkeeper.Keeper) {
 	app.TransferKeeper = transferKeeper
 }
 
+func (app *EVMD) GetMempool() sdkmempool.ExtMempool {
+	return app.EVMMempool
+}
+
 func (app *EVMD) GetAnteHandler() sdk.AnteHandler {
 	return app.BaseApp.AnteHandler()
 }

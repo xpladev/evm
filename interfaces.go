@@ -2,7 +2,7 @@ package evm
 
 import (
 	"encoding/json"
-
+	"github.com/cosmos/cosmos-sdk/types/mempool"
 	erc20keeper "github.com/cosmos/evm/x/erc20/keeper"
 	feemarketkeeper "github.com/cosmos/evm/x/feemarket/keeper"
 	"github.com/cosmos/evm/x/ibc/callbacks/keeper"
@@ -59,4 +59,5 @@ type EvmApp interface { //nolint:revive
 	GetAnteHandler() sdk.AnteHandler
 	GetSubspace(moduleName string) paramstypes.Subspace
 	MsgServiceRouter() *baseapp.MsgServiceRouter
+	GetMempool() mempool.ExtMempool
 }
