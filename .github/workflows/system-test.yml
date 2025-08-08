@@ -34,6 +34,10 @@ jobs:
             go.mod
             go.sum
             *.toml
+      - name: Install Foundry (forge/cast/anvil)
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
       - name: run system tests
         run: |
           make test-system
