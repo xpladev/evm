@@ -220,7 +220,7 @@ func (m *EVMMempool) InsertInvalidNonce(txBytes []byte) error {
 			continue
 		}
 	}
-	errs := m.txPool.Add(ethTxs, false) // TODO: proper sync parameters
+	errs := m.txPool.Add(ethTxs, false)
 	if errs != nil {
 		if len(errs) != 1 {
 			return fmt.Errorf("%w, got %d", ErrExpectedOneError, len(errs))
@@ -281,7 +281,6 @@ func (m *EVMMempool) Remove(tx sdk.Tx) error {
 // It uses the AnteHandler to check if the transaction failed for reasons
 // other than nonce gaps or successful execution, in which case manual removal is needed.
 func (m *EVMMempool) shouldRemoveFromEVMPool(tx sdk.Tx) bool {
-	//todo: fix the logic here
 	if m.anteHandler == nil {
 		return false
 	}

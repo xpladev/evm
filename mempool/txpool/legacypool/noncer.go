@@ -35,7 +35,7 @@ type noncer struct {
 // newNoncer creates a new virtual state database to track the pool nonces.
 func newNoncer(statedb vm.StateDB) *noncer {
 	return &noncer{
-		fallback: statedb, //todo: do we need to copy this? seems like it's just a getter. shouldn't be too bad to get it from ctx/kvstore every time
+		fallback: statedb,
 		nonces:   make(map[common.Address]uint64),
 	}
 }

@@ -70,7 +70,6 @@ func (b Blockchain) CurrentBlock() *types.Header {
 		return b.zeroHeader
 	}
 
-	// todo: make sure that the base fee calculation and parameters here are correct.
 	header := &types.Header{
 		Number:     big.NewInt(ctx.BlockHeight()),
 		Time:       uint64(ctx.BlockTime().Unix()),
