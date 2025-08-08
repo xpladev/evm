@@ -148,16 +148,16 @@ func (b *Backend) GetTransactionReceipt(hash common.Hash) (map[string]interface{
 	// Retry logic for transaction lookup with exponential backoff
 	maxRetries := 3
 	baseDelay := 50 * time.Millisecond
-	
+
 	var res *types.TxResult
 	var err error
-	
+
 	for attempt := 0; attempt <= maxRetries; attempt++ {
 		res, err = b.GetTxByEthHash(hash)
 		if err == nil {
 			break // Found the transaction
 		}
-		
+
 		if attempt < maxRetries {
 			// Exponential backoff: 50ms, 100ms, 200ms
 			delay := time.Duration(1<<attempt) * baseDelay
@@ -165,7 +165,7 @@ func (b *Backend) GetTransactionReceipt(hash common.Hash) (map[string]interface{
 			time.Sleep(delay)
 		}
 	}
-	
+
 	if err != nil {
 		b.Logger.Debug("tx not found after retries", "hash", hexTx, "error", err.Error())
 		return nil, nil

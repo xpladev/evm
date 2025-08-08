@@ -166,8 +166,8 @@ func (b *Backend) Status() (map[string]hexutil.Uint, error) {
 
 	pending, queued := evmMempool.GetTxPool().Stats()
 	return map[string]hexutil.Uint{
-		"pending": hexutil.Uint(pending),
-		"queued":  hexutil.Uint(queued),
+		"pending": hexutil.Uint(pending), // #nosec G115 -- overflow not a concern for tx counts
+		"queued":  hexutil.Uint(queued),  // #nosec G115 -- overflow not a concern for tx counts
 	}, nil
 }
 
@@ -175,7 +175,7 @@ func (b *Backend) Status() (map[string]hexutil.Uint, error) {
 func (b *Backend) convertToRPCTransaction(tx *ethtypes.Transaction, from common.Address) (*types.RPCTransaction, error) {
 	curHeader, err := b.CurrentHeader()
 	if err != nil {
-		curHeader = nil
+		return nil, err
 	}
 	chainConfig := b.ChainConfig()
 

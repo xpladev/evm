@@ -1,16 +1,18 @@
 package mempool_test
 
 import (
-	mempool2 "github.com/cosmos/evm/mempool"
 	"math/big"
 	"testing"
+
+	"github.com/stretchr/testify/require"
+	protov2 "google.golang.org/protobuf/proto"
+
+	mempool2 "github.com/cosmos/evm/mempool"
+	"github.com/cosmos/evm/x/vm/types"
 
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	mempool "github.com/cosmos/cosmos-sdk/types/mempool"
-	"github.com/cosmos/evm/x/vm/types"
-	"github.com/stretchr/testify/require"
-	protov2 "google.golang.org/protobuf/proto"
 )
 
 type mockFallback struct {
@@ -30,6 +32,7 @@ func (m *mockHasExtOptions) GetMsgs() []sdk.Msg { return []sdk.Msg{m.msg} }
 func (m *mockHasExtOptions) GetMsgsV2() ([]protov2.Message, error) {
 	return []protov2.Message{}, nil
 }
+
 func (m *mockHasExtOptions) GetExtensionOptions() []*codectypes.Any {
 	return []*codectypes.Any{
 		{

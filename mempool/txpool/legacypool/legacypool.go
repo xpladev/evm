@@ -19,8 +19,6 @@ package legacypool
 
 import (
 	"errors"
-	"github.com/cosmos/evm/mempool/txpool"
-	"github.com/ethereum/go-ethereum/core/vm"
 	"maps"
 	"math/big"
 	"slices"
@@ -34,6 +32,7 @@ import (
 	"github.com/ethereum/go-ethereum/consensus/misc/eip1559"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto/kzg4844"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
@@ -41,6 +40,8 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/holiman/uint256"
+
+	"github.com/cosmos/evm/mempool/txpool"
 )
 
 const (
@@ -971,7 +972,7 @@ func (pool *LegacyPool) Add(txs []*types.Transaction, sync bool) []error {
 	newErrs, dirtyAddrs := pool.addTxsLocked(news)
 	pool.mu.Unlock()
 
-	var nilSlot = 0
+	nilSlot := 0
 	for _, err := range newErrs {
 		for errs[nilSlot] != nil {
 			nilSlot++
@@ -1400,7 +1401,7 @@ func (pool *LegacyPool) promoteExecutables(accounts []common.Address) []*types.T
 		queuedGauge.Dec(int64(len(readies)))
 
 		// Drop all transactions over the allowed limit
-		var caps = list.Cap(int(pool.config.AccountQueue))
+		caps := list.Cap(int(pool.config.AccountQueue))
 		for _, tx := range caps {
 			hash := tx.Hash()
 			pool.all.Remove(hash)

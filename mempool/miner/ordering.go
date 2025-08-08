@@ -18,12 +18,13 @@ package miner
 
 import (
 	"container/heap"
-	"github.com/cosmos/evm/mempool/txpool"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/holiman/uint256"
+
+	"github.com/cosmos/evm/mempool/txpool"
 )
 
 // txWithMinerFee wraps a transaction with its gas price or effective miner gasTipCap

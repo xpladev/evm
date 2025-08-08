@@ -1,10 +1,11 @@
 package mempool
 
 import (
+	evmtypes "github.com/cosmos/evm/x/vm/types"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/mempool"
 	authante "github.com/cosmos/cosmos-sdk/x/auth/ante"
-	evmtypes "github.com/cosmos/evm/x/vm/types"
 )
 
 var _ mempool.SignerExtractionAdapter = EthSignerExtractionAdapter{}
@@ -38,6 +39,6 @@ func (s EthSignerExtractionAdapter) GetSigners(tx sdk.Tx) ([]mempool.SignerData,
 			}
 		}
 	}
-	
+
 	return s.fallback.GetSigners(tx)
 }

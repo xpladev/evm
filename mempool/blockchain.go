@@ -1,25 +1,31 @@
 package mempool
 
 import (
-	errors2 "cosmossdk.io/errors"
-	types2 "cosmossdk.io/store/types"
 	"fmt"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/evm/mempool/txpool"
-	"github.com/cosmos/evm/mempool/txpool/legacypool"
-	"github.com/cosmos/evm/x/vm/statedb"
-	evmtypes "github.com/cosmos/evm/x/vm/types"
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/params"
-	"math/big"
+
+	"github.com/cosmos/evm/mempool/txpool"
+	"github.com/cosmos/evm/mempool/txpool/legacypool"
+	"github.com/cosmos/evm/x/vm/statedb"
+	evmtypes "github.com/cosmos/evm/x/vm/types"
+
+	errors2 "cosmossdk.io/errors"
+	types2 "cosmossdk.io/store/types"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-var _ txpool.BlockChain = Blockchain{}
-var _ legacypool.BlockChain = Blockchain{}
+var (
+	_ txpool.BlockChain     = Blockchain{}
+	_ legacypool.BlockChain = Blockchain{}
+)
 
 // Blockchain implements the BlockChain interface required by Ethereum transaction pools.
 // It bridges Cosmos SDK blockchain state with Ethereum's transaction pool system by providing
@@ -72,7 +78,7 @@ func (b Blockchain) CurrentBlock() *types.Header {
 
 	header := &types.Header{
 		Number:     big.NewInt(ctx.BlockHeight()),
-		Time:       uint64(ctx.BlockTime().Unix()),
+		Time:       uint64(ctx.BlockTime().Unix()), // #nosec G115 -- overflow not a concern with unix time
 		GasLimit:   b.blockGasLimit,
 		GasUsed:    b.feeMarketKeeper.GetBlockGasWanted(ctx),
 		ParentHash: b.previousHeaderHash,

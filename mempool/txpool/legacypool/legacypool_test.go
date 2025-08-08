@@ -21,7 +21,6 @@ import (
 	crand "crypto/rand"
 	"errors"
 	"fmt"
-	"github.com/cosmos/evm/mempool/txpool"
 	"math/big"
 	"math/rand"
 	"slices"
@@ -41,6 +40,8 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/trie"
 	"github.com/holiman/uint256"
+
+	"github.com/cosmos/evm/mempool/txpool"
 )
 
 var (

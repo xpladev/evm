@@ -1,7 +1,6 @@
 package ante
 
 import (
-	"github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/evm/ante/evm"
 	"github.com/cosmos/evm/mempool"
 	testconstants "github.com/cosmos/evm/testutil/constants"
@@ -10,6 +9,7 @@ import (
 	testkeyring "github.com/cosmos/evm/testutil/keyring"
 
 	sdktypes "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 func (s *EvmUnitAnteTestSuite) TestIncrementSequence() {

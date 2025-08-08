@@ -2,27 +2,30 @@ package mempool
 
 import (
 	"context"
-	errorsmod "cosmossdk.io/errors"
-	"cosmossdk.io/math"
 	"errors"
 	"fmt"
-	"github.com/cosmos/cosmos-sdk/client"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/cosmos/cosmos-sdk/types/mempool"
-	sdkmempool "github.com/cosmos/cosmos-sdk/types/mempool"
+	"sync"
+
+	"github.com/ethereum/go-ethereum/common"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/holiman/uint256"
+
 	"github.com/cosmos/evm/mempool/miner"
 	"github.com/cosmos/evm/mempool/txpool"
 	"github.com/cosmos/evm/mempool/txpool/legacypool"
 	"github.com/cosmos/evm/x/precisebank/types"
 	evmtypes "github.com/cosmos/evm/x/vm/types"
-	"github.com/ethereum/go-ethereum/common"
-	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/holiman/uint256"
-	"sync"
+
+	errorsmod "cosmossdk.io/errors"
+	"cosmossdk.io/math"
+
+	"github.com/cosmos/cosmos-sdk/client"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	sdkmempool "github.com/cosmos/cosmos-sdk/types/mempool"
 )
 
-var _ mempool.ExtMempool = &EVMMempool{}
+var _ sdkmempool.ExtMempool = &EVMMempool{}
 
 type (
 	// EVMMempool is a unified mempool that manages both EVM and Cosmos SDK transactions.
@@ -36,7 +39,7 @@ type (
 		/** Mempools **/
 		txPool       *txpool.TxPool
 		legacyTxPool *legacypool.LegacyPool
-		cosmosPool   mempool.ExtMempool
+		cosmosPool   sdkmempool.ExtMempool
 
 		/** Utils **/
 		txConfig      client.TxConfig
@@ -53,12 +56,12 @@ type (
 	}
 )
 
-// EVMMempoolConfig contains configuration options for creating an EVMMempool.
+// EVMMempoolConfig contains configuration options for creating an EVMsdkmempool.
 // It allows customization of the underlying mempools, verification functions,
-// and broadcasting functions used by the mempool.
+// and broadcasting functions used by the sdkmempool.
 type EVMMempoolConfig struct {
 	TxPool        *txpool.TxPool
-	CosmosPool    mempool.ExtMempool
+	CosmosPool    sdkmempool.ExtMempool
 	AnteHandler   sdk.AnteHandler
 	BroadCastTxFn func(txs []*ethtypes.Transaction) error
 	BlockGasLimit uint64 // Block gas limit from consensus parameters
@@ -70,7 +73,7 @@ type EVMMempoolConfig struct {
 // of pools and verification functions, with sensible defaults created if not provided.
 func NewEVMMempool(ctx func(height int64, prove bool) (sdk.Context, error), vmKeeper VMKeeperI, feeMarketKeeper FeeMarketKeeperI, txConfig client.TxConfig, clientCtx client.Context, config *EVMMempoolConfig) *EVMMempool {
 	var txPool *txpool.TxPool
-	var cosmosPool mempool.ExtMempool
+	var cosmosPool sdkmempool.ExtMempool
 	var anteHandler sdk.AnteHandler
 
 	bondDenom := evmtypes.GetEVMCoinDenom()
@@ -172,7 +175,7 @@ func (m *EVMMempool) GetTxPool() *txpool.TxPool {
 
 // Insert adds a transaction to the appropriate mempool (EVM or Cosmos).
 // EVM transactions are routed to the EVM transaction pool, while all other
-// transactions are inserted into the Cosmos mempool. The method assumes
+// transactions are inserted into the Cosmos sdkmempool. The method assumes
 // transactions have already passed CheckTx validation.
 func (m *EVMMempool) Insert(goCtx context.Context, tx sdk.Tx) error {
 	m.mtx.Lock()
@@ -233,7 +236,7 @@ func (m *EVMMempool) InsertInvalidNonce(txBytes []byte) error {
 // Select returns a unified iterator over both EVM and Cosmos transactions.
 // The iterator prioritizes transactions based on their fees and manages proper
 // sequencing. The i parameter contains transaction hashes to exclude from selection.
-func (m *EVMMempool) Select(goCtx context.Context, i [][]byte) mempool.Iterator {
+func (m *EVMMempool) Select(goCtx context.Context, i [][]byte) sdkmempool.Iterator {
 	m.mtx.Lock()
 	defer m.mtx.Unlock()
 
@@ -251,7 +254,7 @@ func (m *EVMMempool) CountTx() int {
 	return m.cosmosPool.CountTx() + pending
 }
 
-// Remove removes a transaction from the appropriate mempool.
+// Remove removes a transaction from the appropriate sdkmempool.
 // For EVM transactions, removal is typically handled automatically by the pool
 // based on nonce progression. Cosmos transactions are removed from the Cosmos pool.
 func (m *EVMMempool) Remove(tx sdk.Tx) error {
@@ -310,7 +313,7 @@ func (m *EVMMempool) SelectBy(goCtx context.Context, i [][]byte, f func(sdk.Tx) 
 
 	evmIterator, cosmosIterator := m.getIterators(goCtx, i)
 
-	var combinedIterator = NewEVMMempoolIterator(evmIterator, cosmosIterator, m.txConfig, m.bondDenom, m.blockchain.Config().ChainID)
+	combinedIterator := NewEVMMempoolIterator(evmIterator, cosmosIterator, m.txConfig, m.bondDenom, m.blockchain.Config().ChainID)
 
 	for combinedIterator != nil && f(combinedIterator.Tx()) {
 		combinedIterator = combinedIterator.Next()

@@ -1,15 +1,18 @@
 package mempool
 
 import (
-	"github.com/cosmos/cosmos-sdk/client"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/types/mempool"
+	"math/big"
+
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/holiman/uint256"
+
 	"github.com/cosmos/evm/mempool/miner"
 	"github.com/cosmos/evm/mempool/txpool"
 	msgtypes "github.com/cosmos/evm/x/vm/types"
-	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/holiman/uint256"
-	"math/big"
+
+	"github.com/cosmos/cosmos-sdk/client"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/mempool"
 )
 
 var _ mempool.Iterator = &EVMMempoolIterator{}
@@ -35,7 +38,7 @@ type EVMMempoolIterator struct {
 // It combines iterators from both transaction pools and selects transactions based on fee priority.
 // Returns nil if both iterators are empty or nil. The bondDenom parameter specifies the native
 // token denomination for fee comparisons, and chainId is used for EVM transaction conversion.
-func NewEVMMempoolIterator(evmIterator *miner.TransactionsByPriceAndNonce, cosmosIterator mempool.Iterator, txConfig client.TxConfig, bondDenom string, chainId *big.Int) mempool.Iterator {
+func NewEVMMempoolIterator(evmIterator *miner.TransactionsByPriceAndNonce, cosmosIterator mempool.Iterator, txConfig client.TxConfig, bondDenom string, chainID *big.Int) mempool.Iterator {
 	// Check if we have any transactions at all
 	hasEVM := evmIterator != nil && !evmIterator.Empty()
 	hasCosmos := cosmosIterator != nil && cosmosIterator.Tx() != nil
@@ -49,7 +52,7 @@ func NewEVMMempoolIterator(evmIterator *miner.TransactionsByPriceAndNonce, cosmo
 		cosmosIterator: cosmosIterator,
 		txConfig:       txConfig,
 		bondDenom:      bondDenom,
-		chainID:        chainId,
+		chainID:        chainID,
 	}
 }
 
@@ -210,7 +213,6 @@ func (i *EVMMempoolIterator) Tx() sdk.Tx {
 		}
 		// Fall back to cosmos if EVM fails
 		return nextCosmosTx
-	} else {
-		return nextCosmosTx
 	}
+	return nextCosmosTx
 }

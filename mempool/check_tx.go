@@ -2,7 +2,9 @@ package mempool
 
 import (
 	"errors"
+
 	abci "github.com/cometbft/cometbft/abci/types"
+
 	"github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
@@ -28,8 +30,8 @@ func NewCheckTxHandler(mempool *EVMMempool) types.CheckTxHandler {
 		}
 
 		return &abci.ResponseCheckTx{
-			GasWanted: int64(gInfo.GasWanted),
-			GasUsed:   int64(gInfo.GasUsed),
+			GasWanted: int64(gInfo.GasWanted), // #nosec G115 -- this is copied from the Cosmos SDK
+			GasUsed:   int64(gInfo.GasUsed),   // #nosec G115 -- this is copied from the Cosmos SDK
 			Log:       result.Log,
 			Data:      result.Data,
 			Events:    types.MarkEventsToIndex(result.Events, nil),
