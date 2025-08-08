@@ -146,7 +146,7 @@ func (b *Backend) GetTransactionReceipt(hash common.Hash) (map[string]interface{
 	b.Logger.Debug("eth_getTransactionReceipt", "hash", hexTx)
 
 	// Retry logic for transaction lookup with exponential backoff
-	maxRetries := 3
+	maxRetries := 10
 	baseDelay := 50 * time.Millisecond
 
 	var res *types.TxResult
