@@ -9,10 +9,6 @@ contract SimpleSendsScript is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address deployer = vm.addr(deployerPrivateKey);
 
-        console.log("Starting simple ETH transfers...");
-        console.log("Sender:", deployer);
-        console.log("Sender balance:", deployer.balance);
-
         // Create some recipient addresses
         address[8] memory recipients = [
                 0x1111111111111111111111111111111111111111,
@@ -35,11 +31,5 @@ contract SimpleSendsScript is Script {
         }
 
         vm.stopBroadcast();
-
-        console.log("\n=== Transfer Summary ===");
-        console.log("Total transfers: 10");
-        console.log("Amount per transfer: 1 wei");
-        console.log("Total sent: 10 wei");
-        console.log("Remaining balance:", deployer.balance);
     }
 }
