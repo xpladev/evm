@@ -173,8 +173,6 @@ if [[ $overwrite == "y" || $overwrite == "Y" ]]; then
 		sed -i 's/timeout_broadcast_tx_commit = "10s"/timeout_broadcast_tx_commit = "5s"/g' "$CONFIG_TOML"
 	fi
 
-  sed -i '' 's/timeout_commit = "5s"/timeout_commit = "1s"/g' "$CONFIG"
-
 	# enable prometheus metrics and all APIs for dev node
 	if [[ "$OSTYPE" == "darwin"* ]]; then
 		sed -i '' 's/prometheus = false/prometheus = true/' "$CONFIG_TOML"
