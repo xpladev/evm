@@ -53,11 +53,6 @@ func (s *MempoolIntegrationTestSuite) TestMempoolInsert() {
 		{
 			name: "EVM transaction success",
 			setupTx: func() sdk.Tx {
-				// Use existing prefunded account
-				key := s.keyring.GetKey(0)
-				fromAddr := common.BytesToAddress(key.AccAddr.Bytes())
-				fmt.Printf("DEBUG: Using prefunded account: %s\n", fromAddr.Hex())
-
 				tx, err := s.createEVMTransaction(big.NewInt(1000000000))
 				s.Require().NoError(err)
 				return tx
@@ -71,49 +66,13 @@ func (s *MempoolIntegrationTestSuite) TestMempoolInsert() {
 		{
 			name: "EVM transaction with contract interaction",
 			setupTx: func() sdk.Tx {
-				// Use existing prefunded account
 				key := s.keyring.GetKey(0)
-				fromAddr := common.BytesToAddress(key.AccAddr.Bytes())
-				fmt.Printf("DEBUG: Using prefunded account: %s\n", fromAddr.Hex())
-
-				// Create EVM transaction with contract data
-				privKey := key.Priv
-
-				// Contract address (dummy)
-				contractAddr := common.HexToAddress("0x1234567890123456789012345678901234567890")
-
-				// Contract interaction data (dummy)
 				data := []byte{0x60, 0x00, 0x52, 0x60, 0x20, 0x60, 0x00, 0xf3} // Simple contract deployment
 
-				ethTx := ethtypes.NewTx(&ethtypes.LegacyTx{
-					Nonce:    0,
-					To:       &contractAddr,
-					Value:    big.NewInt(0),
-					Gas:      100000,
-					GasPrice: big.NewInt(1000000000),
-					Data:     data,
-				})
-
-				// Convert to ECDSA private key for signing
-				ethPrivKey, ok := privKey.(*ethsecp256k1.PrivKey)
-				s.Require().True(ok, "expected ethsecp256k1.PrivKey")
-
-				ecdsaPrivKey, err := ethPrivKey.ToECDSA()
+				// Use the contract deployment helper
+				tx, err := s.createEVMContractDeployment(key, big.NewInt(1000000000), data)
 				s.Require().NoError(err)
-
-				signer := ethtypes.HomesteadSigner{}
-				signedTx, err := ethtypes.SignTx(ethTx, signer, ecdsaPrivKey)
-				s.Require().NoError(err)
-
-				msgEthTx := &evmtypes.MsgEthereumTx{}
-				err = msgEthTx.FromEthereumTx(signedTx)
-				s.Require().NoError(err)
-
-				txBuilder := s.network.App.GetTxConfig().NewTxBuilder()
-				err = txBuilder.SetMsgs(msgEthTx)
-				s.Require().NoError(err)
-
-				return txBuilder.GetTx()
+				return tx
 			},
 			wantError: false,
 			verifyFunc: func(t *testing.T) {
@@ -133,7 +92,7 @@ func (s *MempoolIntegrationTestSuite) TestMempoolInsert() {
 			verifyFunc:    func(t *testing.T) {},
 		},
 		{
-			name: "multiple EVM messages should fail",
+			name: "multiple EVM messages in one transaction should fail",
 			setupTx: func() sdk.Tx {
 				// Create an EVM transaction with multiple messages
 				txBuilder := s.network.App.GetTxConfig().NewTxBuilder()
@@ -245,11 +204,6 @@ func (s *MempoolIntegrationTestSuite) TestMempoolRemove() {
 		{
 			name: "remove EVM transaction success",
 			setupTx: func() sdk.Tx {
-				// Use existing prefunded account
-				key := s.keyring.GetKey(0)
-				fromAddr := common.BytesToAddress(key.AccAddr.Bytes())
-				fmt.Printf("DEBUG: Using prefunded account: %s\n", fromAddr.Hex())
-
 				tx, err := s.createEVMTransaction(big.NewInt(1000000000))
 				s.Require().NoError(err)
 				return tx
@@ -353,11 +307,6 @@ func (s *MempoolIntegrationTestSuite) TestMempoolSelect() {
 		{
 			name: "single EVM transaction",
 			setupTxs: func() {
-				// Use existing prefunded account
-				key := s.keyring.GetKey(0)
-				fromAddr := common.BytesToAddress(key.AccAddr.Bytes())
-				fmt.Printf("DEBUG: Using prefunded account: %s\n", fromAddr.Hex())
-
 				evmTx, err := s.createEVMTransaction(big.NewInt(1000000000))
 				s.Require().NoError(err)
 				mempool := s.network.App.GetMempool()
@@ -440,11 +389,6 @@ func (s *MempoolIntegrationTestSuite) TestMempoolIterator() {
 		{
 			name: "single EVM transaction iteration",
 			setupTxs: func() {
-				// Use existing prefunded account
-				key := s.keyring.GetKey(0)
-				fromAddr := common.BytesToAddress(key.AccAddr.Bytes())
-				fmt.Printf("DEBUG: Using prefunded account: %s\n", fromAddr.Hex())
-
 				evmTx, err := s.createEVMTransaction(big.NewInt(1000000000))
 				s.Require().NoError(err)
 				mempool := s.network.App.GetMempool()
@@ -491,11 +435,6 @@ func (s *MempoolIntegrationTestSuite) TestMempoolIterator() {
 		{
 			name: "mixed EVM and cosmos transactions iteration",
 			setupTxs: func() {
-				// Use existing prefunded account
-				key := s.keyring.GetKey(0)
-				fromAddr := common.BytesToAddress(key.AccAddr.Bytes())
-				fmt.Printf("DEBUG: Using prefunded account: %s\n", fromAddr.Hex())
-
 				mempool := s.network.App.GetMempool()
 
 				// Add EVM transaction
@@ -547,11 +486,6 @@ func (s *MempoolIntegrationTestSuite) TestTransactionOrdering() {
 		{
 			name: "mixed EVM and cosmos transaction ordering",
 			setupTxs: func() {
-				// Use existing prefunded account
-				key := s.keyring.GetKey(0)
-				fromAddr := common.BytesToAddress(key.AccAddr.Bytes())
-				fmt.Printf("DEBUG: Using prefunded account: %s\n", fromAddr.Hex())
-
 				// Create EVM transaction with high fee
 				highFeeEVMTx, err := s.createEVMTransaction(big.NewInt(5000000000)) // 5 gwei
 				s.Require().NoError(err)
@@ -593,11 +527,6 @@ func (s *MempoolIntegrationTestSuite) TestTransactionOrdering() {
 		{
 			name: "EVM-only transaction ordering",
 			setupTxs: func() {
-				// Use existing prefunded account
-				key := s.keyring.GetKey(0)
-				fromAddr := common.BytesToAddress(key.AccAddr.Bytes())
-				fmt.Printf("DEBUG: Using prefunded account: %s\n", fromAddr.Hex())
-
 				// Create first EVM transaction with low fee
 				lowFeeEVMTx, err := s.createEVMTransaction(big.NewInt(1000000000)) // 1 gwei
 				s.Require().NoError(err)
@@ -707,11 +636,6 @@ func (s *MempoolIntegrationTestSuite) TestSelectBy() {
 		{
 			name: "single EVM transaction - terminates properly",
 			setupTxs: func() {
-				// Use existing prefunded account
-				key := s.keyring.GetKey(0)
-				fromAddr := common.BytesToAddress(key.AccAddr.Bytes())
-				fmt.Printf("DEBUG: Using prefunded account: %s\n", fromAddr.Hex())
-
 				evmTx, err := s.createEVMTransaction(big.NewInt(1000000000))
 				s.Require().NoError(err)
 				mempool := s.network.App.GetMempool()
@@ -758,11 +682,6 @@ func (s *MempoolIntegrationTestSuite) TestSelectBy() {
 		{
 			name: "filter EVM transactions by gas price",
 			setupTxs: func() {
-				// Use existing prefunded account
-				key := s.keyring.GetKey(0)
-				fromAddr := common.BytesToAddress(key.AccAddr.Bytes())
-				fmt.Printf("DEBUG: Using prefunded account: %s\n", fromAddr.Hex())
-
 				mempool := s.network.App.GetMempool()
 
 				// Add EVM transactions with different gas prices using different keys to avoid nonce conflicts
@@ -772,38 +691,9 @@ func (s *MempoolIntegrationTestSuite) TestSelectBy() {
 					fromAddr := common.BytesToAddress(key.AccAddr.Bytes())
 					fmt.Printf("DEBUG: Using prefunded account %d: %s\n", keyIndex, fromAddr.Hex())
 
-					// Create EVM transaction with custom key
-					privKey := key.Priv
-					to := common.HexToAddress("0x1234567890123456789012345678901234567890")
-					ethTx := ethtypes.NewTx(&ethtypes.LegacyTx{
-						Nonce:    uint64(i), // Use different nonce for each transaction
-						To:       &to,
-						Value:    big.NewInt(1000),
-						Gas:      21000,
-						GasPrice: big.NewInt(int64(i) * 1000000000),
-						Data:     nil,
-					})
-
-					// Convert to ECDSA private key for signing
-					ethPrivKey, ok := privKey.(*ethsecp256k1.PrivKey)
-					s.Require().True(ok, "expected ethsecp256k1.PrivKey")
-
-					ecdsaPrivKey, err := ethPrivKey.ToECDSA()
+					// Use the helper method with specific nonce
+					evmTx, err := s.createEVMTransactionWithNonce(key, big.NewInt(int64(i)*1000000000), uint64(i))
 					s.Require().NoError(err)
-
-					signer := ethtypes.HomesteadSigner{}
-					signedTx, err := ethtypes.SignTx(ethTx, signer, ecdsaPrivKey)
-					s.Require().NoError(err)
-
-					msgEthTx := &evmtypes.MsgEthereumTx{}
-					err = msgEthTx.FromEthereumTx(signedTx)
-					s.Require().NoError(err)
-
-					txBuilder := s.network.App.GetTxConfig().NewTxBuilder()
-					err = txBuilder.SetMsgs(msgEthTx)
-					s.Require().NoError(err)
-
-					evmTx := txBuilder.GetTx()
 					err = mempool.Insert(s.network.GetContext(), evmTx)
 					s.Require().NoError(err)
 				}
@@ -904,11 +794,6 @@ func (s *MempoolIntegrationTestSuite) TestEVMTransactionComprehensive() {
 		{
 			name: "EVM transaction with high gas price",
 			setupTx: func() sdk.Tx {
-				// Use existing prefunded account
-				key := s.keyring.GetKey(0)
-				fromAddr := common.BytesToAddress(key.AccAddr.Bytes())
-				fmt.Printf("DEBUG: Using prefunded account: %s\n", fromAddr.Hex())
-
 				tx, err := s.createEVMTransaction(big.NewInt(10000000000)) // 10 gwei
 				s.Require().NoError(err)
 				return tx
@@ -922,11 +807,6 @@ func (s *MempoolIntegrationTestSuite) TestEVMTransactionComprehensive() {
 		{
 			name: "EVM transaction with low gas price",
 			setupTx: func() sdk.Tx {
-				// Use different prefunded account to avoid nonce conflicts
-				key := s.keyring.GetKey(1)
-				fromAddr := common.BytesToAddress(key.AccAddr.Bytes())
-				fmt.Printf("DEBUG: Using prefunded account: %s\n", fromAddr.Hex())
-
 				tx, err := s.createEVMTransaction(big.NewInt(100000000)) // 0.1 gwei
 				s.Require().NoError(err)
 				return tx
@@ -942,44 +822,12 @@ func (s *MempoolIntegrationTestSuite) TestEVMTransactionComprehensive() {
 			setupTx: func() sdk.Tx {
 				// Use different prefunded account to avoid nonce conflicts
 				key := s.keyring.GetKey(2)
-				fromAddr := common.BytesToAddress(key.AccAddr.Bytes())
-				fmt.Printf("DEBUG: Using prefunded account: %s\n", fromAddr.Hex())
-
-				// Create EVM transaction with contract deployment data
-				privKey := key.Priv
-
-				// Contract deployment data (simple contract)
 				data := []byte{0x60, 0x00, 0x52, 0x60, 0x20, 0x60, 0x00, 0xf3} // Simple contract deployment
 
-				ethTx := ethtypes.NewTx(&ethtypes.LegacyTx{
-					Nonce:    0,
-					To:       nil, // nil for contract deployment
-					Value:    big.NewInt(0),
-					Gas:      100000,
-					GasPrice: big.NewInt(1000000000),
-					Data:     data,
-				})
-
-				// Convert to ECDSA private key for signing
-				ethPrivKey, ok := privKey.(*ethsecp256k1.PrivKey)
-				s.Require().True(ok, "expected ethsecp256k1.PrivKey")
-
-				ecdsaPrivKey, err := ethPrivKey.ToECDSA()
+				// Use the contract deployment helper
+				tx, err := s.createEVMContractDeployment(key, big.NewInt(1000000000), data)
 				s.Require().NoError(err)
-
-				signer := ethtypes.HomesteadSigner{}
-				signedTx, err := ethtypes.SignTx(ethTx, signer, ecdsaPrivKey)
-				s.Require().NoError(err)
-
-				msgEthTx := &evmtypes.MsgEthereumTx{}
-				err = msgEthTx.FromEthereumTx(signedTx)
-				s.Require().NoError(err)
-
-				txBuilder := s.network.App.GetTxConfig().NewTxBuilder()
-				err = txBuilder.SetMsgs(msgEthTx)
-				s.Require().NoError(err)
-
-				return txBuilder.GetTx()
+				return tx
 			},
 			wantError: false,
 			verifyFunc: func(t *testing.T) {
@@ -992,42 +840,12 @@ func (s *MempoolIntegrationTestSuite) TestEVMTransactionComprehensive() {
 			setupTx: func() sdk.Tx {
 				// Use key 0 again since this is a separate test (SetupTest resets state)
 				key := s.keyring.GetKey(0)
-				fromAddr := common.BytesToAddress(key.AccAddr.Bytes())
-				fmt.Printf("DEBUG: Using prefunded account: %s\n", fromAddr.Hex())
-
-				// Create EVM transaction with value transfer
-				privKey := key.Priv
-
 				to := common.HexToAddress("0x1234567890123456789012345678901234567890")
-				ethTx := ethtypes.NewTx(&ethtypes.LegacyTx{
-					Nonce:    0,
-					To:       &to,
-					Value:    big.NewInt(1000000000000000000), // 1 ETH
-					Gas:      21000,
-					GasPrice: big.NewInt(1000000000),
-					Data:     nil,
-				})
 
-				// Convert to ECDSA private key for signing
-				ethPrivKey, ok := privKey.(*ethsecp256k1.PrivKey)
-				s.Require().True(ok, "expected ethsecp256k1.PrivKey")
-
-				ecdsaPrivKey, err := ethPrivKey.ToECDSA()
+				// Use the value transfer helper
+				tx, err := s.createEVMValueTransfer(key, big.NewInt(1000000000), big.NewInt(1000000000000000000), to)
 				s.Require().NoError(err)
-
-				signer := ethtypes.HomesteadSigner{}
-				signedTx, err := ethtypes.SignTx(ethTx, signer, ecdsaPrivKey)
-				s.Require().NoError(err)
-
-				msgEthTx := &evmtypes.MsgEthereumTx{}
-				err = msgEthTx.FromEthereumTx(signedTx)
-				s.Require().NoError(err)
-
-				txBuilder := s.network.App.GetTxConfig().NewTxBuilder()
-				err = txBuilder.SetMsgs(msgEthTx)
-				s.Require().NoError(err)
-
-				return txBuilder.GetTx()
+				return tx
 			},
 			wantError: false,
 			verifyFunc: func(t *testing.T) {
@@ -1063,6 +881,314 @@ func (s *MempoolIntegrationTestSuite) TestEVMTransactionComprehensive() {
 			fmt.Printf("DEBUG: Completed test case: %s\n", tc.name)
 		})
 		fmt.Printf("DEBUG: TestEVMTransactionComprehensive - Completed test case %d/%d: %s\n", i+1, len(testCases), tc.name)
+	}
+}
+
+// TestNonceGappedEVMTransactions tests the behavior of nonce-gapped EVM transactions
+// and the transition from queued to pending when gaps are filled
+func (s *MempoolIntegrationTestSuite) TestNonceGappedEVMTransactions() {
+	fmt.Printf("DEBUG: Starting TestNonceGappedEVMTransactions\n")
+
+	testCases := []struct {
+		name       string
+		setupTxs   func() ([]sdk.Tx, []uint64) // Returns transactions and their expected nonces
+		verifyFunc func(t *testing.T, mempool mempool.Mempool)
+	}{
+		{
+			name: "insert transactions with nonce gaps",
+			setupTxs: func() ([]sdk.Tx, []uint64) {
+				key := s.keyring.GetKey(0)
+				var txs []sdk.Tx
+				var nonces []uint64
+
+				// Insert transactions with gaps: nonces 0, 2, 4, 6 (missing 1, 3, 5)
+				for i := 0; i <= 6; i += 2 {
+					tx, err := s.createEVMTransactionWithNonce(key, big.NewInt(1000000000), uint64(i))
+					s.Require().NoError(err)
+					txs = append(txs, tx)
+					nonces = append(nonces, uint64(i))
+				}
+
+				return txs, nonces
+			},
+			verifyFunc: func(t *testing.T, mempool mempool.Mempool) {
+				// Only nonce 0 should be pending (the first consecutive transaction)
+				// nonces 2, 4, 6 should be queued
+				count := mempool.CountTx()
+				require.Equal(t, 1, count, "Only nonce 0 should be pending, others should be queued")
+			},
+		},
+		{
+			name: "fill nonce gap and verify pending count increases",
+			setupTxs: func() ([]sdk.Tx, []uint64) {
+				key := s.keyring.GetKey(0)
+				var txs []sdk.Tx
+				var nonces []uint64
+
+				// First, insert transactions with gaps: nonces 0, 2, 4
+				for i := 0; i <= 4; i += 2 {
+					tx, err := s.createEVMTransactionWithNonce(key, big.NewInt(1000000000), uint64(i))
+					s.Require().NoError(err)
+					txs = append(txs, tx)
+					nonces = append(nonces, uint64(i))
+				}
+
+				// Then fill the gap by inserting nonce 1
+				tx, err := s.createEVMTransactionWithNonce(key, big.NewInt(1000000000), 1)
+				s.Require().NoError(err)
+				txs = append(txs, tx)
+				nonces = append(nonces, 1)
+
+				return txs, nonces
+			},
+			verifyFunc: func(t *testing.T, mempool mempool.Mempool) {
+				// After filling nonce 1, transactions 0, 1, 2 should be pending
+				// nonce 4 should still be queued
+				count := mempool.CountTx()
+				require.Equal(t, 3, count, "After filling gap, nonces 0, 1, 2 should be pending")
+			},
+		},
+		{
+			name: "fill multiple nonce gaps",
+			setupTxs: func() ([]sdk.Tx, []uint64) {
+				key := s.keyring.GetKey(0)
+				var txs []sdk.Tx
+				var nonces []uint64
+
+				// Insert transactions with multiple gaps: nonces 0, 3, 6, 9
+				for i := 0; i <= 9; i += 3 {
+					tx, err := s.createEVMTransactionWithNonce(key, big.NewInt(1000000000), uint64(i))
+					s.Require().NoError(err)
+					txs = append(txs, tx)
+					nonces = append(nonces, uint64(i))
+				}
+
+				// Fill gaps by inserting nonces 1, 2, 4, 5, 7, 8
+				for i := 1; i <= 8; i++ {
+					if i%3 != 0 { // Skip nonces that are already inserted
+						tx, err := s.createEVMTransactionWithNonce(key, big.NewInt(1000000000), uint64(i))
+						s.Require().NoError(err)
+						txs = append(txs, tx)
+						nonces = append(nonces, uint64(i))
+					}
+				}
+
+				return txs, nonces
+			},
+			verifyFunc: func(t *testing.T, mempool mempool.Mempool) {
+				// After filling all gaps, all transactions should be pending
+				count := mempool.CountTx()
+				require.Equal(t, 10, count, "After filling all gaps, all 10 transactions should be pending")
+			},
+		},
+		{
+			name: "test different accounts with nonce gaps",
+			setupTxs: func() ([]sdk.Tx, []uint64) {
+				var txs []sdk.Tx
+				var nonces []uint64
+
+				// Use different keys for different accounts
+				key1 := s.keyring.GetKey(0)
+				key2 := s.keyring.GetKey(1)
+
+				// Account 1: nonces 0, 2 (gap at 1)
+				for i := 0; i <= 2; i += 2 {
+					tx, err := s.createEVMTransactionWithNonce(key1, big.NewInt(1000000000), uint64(i))
+					s.Require().NoError(err)
+					txs = append(txs, tx)
+					nonces = append(nonces, uint64(i))
+				}
+
+				// Account 2: nonces 0, 3 (gaps at 1, 2)
+				for i := 0; i <= 3; i += 3 {
+					tx, err := s.createEVMTransactionWithNonce(key2, big.NewInt(1000000000), uint64(i))
+					s.Require().NoError(err)
+					txs = append(txs, tx)
+					nonces = append(nonces, uint64(i))
+				}
+
+				return txs, nonces
+			},
+			verifyFunc: func(t *testing.T, mempool mempool.Mempool) {
+				// Account 1: nonce 0 pending, nonce 2 queued
+				// Account 2: nonce 0 pending, nonce 3 queued
+				// Total: 2 pending transactions
+				count := mempool.CountTx()
+				require.Equal(t, 2, count, "Only nonce 0 from each account should be pending")
+			},
+		},
+		{
+			name: "test replacement transactions with higher gas price",
+			setupTxs: func() ([]sdk.Tx, []uint64) {
+				key := s.keyring.GetKey(0)
+				var txs []sdk.Tx
+				var nonces []uint64
+
+				// Insert transaction with nonce 0 and low gas price
+				tx1, err := s.createEVMTransactionWithNonce(key, big.NewInt(1000000000), 0)
+				s.Require().NoError(err)
+				txs = append(txs, tx1)
+				nonces = append(nonces, 0)
+
+				// Insert transaction with nonce 1
+				tx2, err := s.createEVMTransactionWithNonce(key, big.NewInt(1000000000), 1)
+				s.Require().NoError(err)
+				txs = append(txs, tx2)
+				nonces = append(nonces, 1)
+
+				// Replace nonce 0 transaction with higher gas price
+				tx3, err := s.createEVMTransactionWithNonce(key, big.NewInt(2000000000), 0)
+				s.Require().NoError(err)
+				txs = append(txs, tx3)
+				nonces = append(nonces, 0)
+
+				return txs, nonces
+			},
+			verifyFunc: func(t *testing.T, mempool mempool.Mempool) {
+				// After replacement, both nonces 0 and 1 should be pending
+				count := mempool.CountTx()
+				require.Equal(t, 2, count, "After replacement, both transactions should be pending")
+			},
+		},
+		{
+			name: "track count changes when filling nonce gaps",
+			setupTxs: func() ([]sdk.Tx, []uint64) {
+				key := s.keyring.GetKey(0)
+				var txs []sdk.Tx
+				var nonces []uint64
+
+				// Insert transactions with gaps: nonces 0, 3, 6, 9
+				for i := 0; i <= 9; i += 3 {
+					tx, err := s.createEVMTransactionWithNonce(key, big.NewInt(1000000000), uint64(i))
+					s.Require().NoError(err)
+					txs = append(txs, tx)
+					nonces = append(nonces, uint64(i))
+				}
+
+				// Fill gaps by inserting nonces 1, 2, 4, 5, 7, 8
+				for i := 1; i <= 8; i++ {
+					if i%3 != 0 { // Skip nonces that are already inserted
+						tx, err := s.createEVMTransactionWithNonce(key, big.NewInt(1000000000), uint64(i))
+						s.Require().NoError(err)
+						txs = append(txs, tx)
+						nonces = append(nonces, uint64(i))
+					}
+				}
+
+				return txs, nonces
+			},
+			verifyFunc: func(t *testing.T, mempool mempool.Mempool) {
+				// After filling all gaps, all transactions should be pending
+				count := mempool.CountTx()
+				require.Equal(t, 10, count, "After filling all gaps, all 10 transactions should be pending")
+			},
+		},
+		{
+			name: "verify queued to pending transition with count tracking",
+			setupTxs: func() ([]sdk.Tx, []uint64) {
+				key := s.keyring.GetKey(0)
+				var txs []sdk.Tx
+				var nonces []uint64
+
+				// Insert transactions with gaps: nonces 0, 2, 4, 6, 8
+				for i := 0; i <= 8; i += 2 {
+					tx, err := s.createEVMTransactionWithNonce(key, big.NewInt(1000000000), uint64(i))
+					s.Require().NoError(err)
+					txs = append(txs, tx)
+					nonces = append(nonces, uint64(i))
+				}
+
+				// Fill gaps by inserting nonces 1, 3, 5, 7
+				for i := 1; i <= 7; i += 2 {
+					tx, err := s.createEVMTransactionWithNonce(key, big.NewInt(1000000000), uint64(i))
+					s.Require().NoError(err)
+					txs = append(txs, tx)
+					nonces = append(nonces, uint64(i))
+				}
+
+				return txs, nonces
+			},
+			verifyFunc: func(t *testing.T, mempool mempool.Mempool) {
+				// After filling all gaps, all transactions should be pending
+				count := mempool.CountTx()
+				require.Equal(t, 9, count, "After filling all gaps, all 9 transactions should be pending")
+			},
+		},
+		{
+			name: "test count behavior when removing transactions",
+			setupTxs: func() ([]sdk.Tx, []uint64) {
+				key := s.keyring.GetKey(0)
+				var txs []sdk.Tx
+				var nonces []uint64
+
+				// Insert transactions with gaps: nonces 0, 1, 3, 4, 6, 7
+				for i := 0; i <= 7; i++ {
+					if i != 2 && i != 5 { // Skip nonces 2 and 5 to create gaps
+						tx, err := s.createEVMTransactionWithNonce(key, big.NewInt(1000000000), uint64(i))
+						s.Require().NoError(err)
+						txs = append(txs, tx)
+						nonces = append(nonces, uint64(i))
+					}
+				}
+
+				return txs, nonces
+			},
+			verifyFunc: func(t *testing.T, mempool mempool.Mempool) {
+				// Initially: nonces 0, 1 should be pending, nonces 3, 4, 6, 7 should be queued
+				initialCount := mempool.CountTx()
+				require.Equal(t, 2, initialCount, "Initially only nonces 0, 1 should be pending")
+
+				// Remove nonce 1 transaction
+				key := s.keyring.GetKey(0)
+				tx1, err := s.createEVMTransactionWithNonce(key, big.NewInt(1000000000), 1)
+				s.Require().NoError(err)
+				err = mempool.Remove(tx1)
+				s.Require().NoError(err)
+
+				// After removal: only nonce 0 should be pending
+				countAfterRemoval := mempool.CountTx()
+				require.Equal(t, 1, countAfterRemoval, "After removing nonce 1, only nonce 0 should be pending")
+
+				// Fill gap by inserting nonce 2
+				tx2, err := s.createEVMTransactionWithNonce(key, big.NewInt(1000000000), 2)
+				s.Require().NoError(err)
+				err = mempool.Insert(s.network.GetContext(), tx2)
+				s.Require().NoError(err)
+
+				// After filling gap: only nonce 0 should be pending (nonce 2 and subsequent are queued due to gap at nonce 1)
+				countAfterFilling := mempool.CountTx()
+				require.Equal(t, 1, countAfterFilling, "After filling gap, only nonce 0 should be pending due to gap at nonce 1")
+			},
+		},
+	}
+
+	for i, tc := range testCases {
+		fmt.Printf("DEBUG: TestNonceGappedEVMTransactions - Starting test case %d/%d: %s\n", i+1, len(testCases), tc.name)
+		s.Run(tc.name, func() {
+			fmt.Printf("DEBUG: Running test case: %s\n", tc.name)
+			// Reset test setup to ensure clean state
+			s.SetupTest()
+			fmt.Printf("DEBUG: SetupTest completed for: %s\n", tc.name)
+
+			txs, nonces := tc.setupTxs()
+			mempool := s.network.App.GetMempool()
+
+			// Insert transactions and track count changes
+			initialCount := mempool.CountTx()
+			fmt.Printf("DEBUG: Initial mempool count: %d\n", initialCount)
+
+			for i, tx := range txs {
+				err := mempool.Insert(s.network.GetContext(), tx)
+				s.Require().NoError(err)
+
+				currentCount := mempool.CountTx()
+				fmt.Printf("DEBUG: After inserting nonce %d: count = %d\n", nonces[i], currentCount)
+			}
+
+			tc.verifyFunc(s.T(), mempool)
+			fmt.Printf("DEBUG: Completed test case: %s\n", tc.name)
+		})
+		fmt.Printf("DEBUG: TestNonceGappedEVMTransactions - Completed test case %d/%d: %s\n", i+1, len(testCases), tc.name)
 	}
 }
 
@@ -1103,12 +1229,10 @@ func (s *MempoolIntegrationTestSuite) createCosmosTransaction(feeDenom string, f
 	return txBuilder.GetTx()
 }
 
-// createEVMTransaction creates an EVM transaction using prefunded accounts
-func (s *MempoolIntegrationTestSuite) createEVMTransaction(gasPrice *big.Int) (sdk.Tx, error) {
+// createEVMTransaction creates an EVM transaction using the provided key
+func (s *MempoolIntegrationTestSuite) createEVMTransactionWithKey(key keyring.Key, gasPrice *big.Int) (sdk.Tx, error) {
 	fmt.Printf("DEBUG: Creating EVM transaction with gas price: %s\n", gasPrice.String())
 
-	// Use the first prefunded account from the keyring
-	key := s.keyring.GetKey(0)
 	privKey := key.Priv
 
 	// Convert Cosmos address to EVM address
@@ -1118,6 +1242,169 @@ func (s *MempoolIntegrationTestSuite) createEVMTransaction(gasPrice *big.Int) (s
 	to := common.HexToAddress("0x1234567890123456789012345678901234567890")
 	ethTx := ethtypes.NewTx(&ethtypes.LegacyTx{
 		Nonce:    0,
+		To:       &to,
+		Value:    big.NewInt(1000),
+		Gas:      21000,
+		GasPrice: gasPrice,
+		Data:     nil,
+	})
+
+	// Convert to ECDSA private key for signing
+	ethPrivKey, ok := privKey.(*ethsecp256k1.PrivKey)
+	if !ok {
+		return nil, fmt.Errorf("expected ethsecp256k1.PrivKey, got %T", privKey)
+	}
+
+	ecdsaPrivKey, err := ethPrivKey.ToECDSA()
+	if err != nil {
+		return nil, err
+	}
+
+	signer := ethtypes.HomesteadSigner{}
+	signedTx, err := ethtypes.SignTx(ethTx, signer, ecdsaPrivKey)
+	if err != nil {
+		return nil, err
+	}
+
+	msgEthTx := &evmtypes.MsgEthereumTx{}
+	err = msgEthTx.FromEthereumTx(signedTx)
+	if err != nil {
+		return nil, err
+	}
+
+	txBuilder := s.network.App.GetTxConfig().NewTxBuilder()
+	err = txBuilder.SetMsgs(msgEthTx)
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Printf("DEBUG: Created EVM transaction successfully\n")
+	return txBuilder.GetTx(), nil
+}
+
+// createEVMTransaction creates an EVM transaction using the first key (for backward compatibility)
+func (s *MempoolIntegrationTestSuite) createEVMTransaction(gasPrice *big.Int) (sdk.Tx, error) {
+	key := s.keyring.GetKey(0)
+	return s.createEVMTransactionWithKey(key, gasPrice)
+}
+
+// createEVMContractDeployment creates an EVM transaction for contract deployment
+func (s *MempoolIntegrationTestSuite) createEVMContractDeployment(key keyring.Key, gasPrice *big.Int, data []byte) (sdk.Tx, error) {
+	fmt.Printf("DEBUG: Creating EVM contract deployment transaction with gas price: %s\n", gasPrice.String())
+
+	privKey := key.Priv
+
+	// Convert Cosmos address to EVM address
+	fromAddr := common.BytesToAddress(key.AccAddr.Bytes())
+	fmt.Printf("DEBUG: Using prefunded account: %s\n", fromAddr.Hex())
+
+	ethTx := ethtypes.NewTx(&ethtypes.LegacyTx{
+		Nonce:    0,
+		To:       nil, // nil for contract deployment
+		Value:    big.NewInt(0),
+		Gas:      100000,
+		GasPrice: gasPrice,
+		Data:     data,
+	})
+
+	// Convert to ECDSA private key for signing
+	ethPrivKey, ok := privKey.(*ethsecp256k1.PrivKey)
+	if !ok {
+		return nil, fmt.Errorf("expected ethsecp256k1.PrivKey, got %T", privKey)
+	}
+
+	ecdsaPrivKey, err := ethPrivKey.ToECDSA()
+	if err != nil {
+		return nil, err
+	}
+
+	signer := ethtypes.HomesteadSigner{}
+	signedTx, err := ethtypes.SignTx(ethTx, signer, ecdsaPrivKey)
+	if err != nil {
+		return nil, err
+	}
+
+	msgEthTx := &evmtypes.MsgEthereumTx{}
+	err = msgEthTx.FromEthereumTx(signedTx)
+	if err != nil {
+		return nil, err
+	}
+
+	txBuilder := s.network.App.GetTxConfig().NewTxBuilder()
+	err = txBuilder.SetMsgs(msgEthTx)
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Printf("DEBUG: Created EVM contract deployment transaction successfully\n")
+	return txBuilder.GetTx(), nil
+}
+
+// createEVMValueTransfer creates an EVM transaction for value transfer
+func (s *MempoolIntegrationTestSuite) createEVMValueTransfer(key keyring.Key, gasPrice *big.Int, value *big.Int, to common.Address) (sdk.Tx, error) {
+	fmt.Printf("DEBUG: Creating EVM value transfer transaction with gas price: %s\n", gasPrice.String())
+
+	privKey := key.Priv
+
+	// Convert Cosmos address to EVM address
+	fromAddr := common.BytesToAddress(key.AccAddr.Bytes())
+	fmt.Printf("DEBUG: Using prefunded account: %s\n", fromAddr.Hex())
+
+	ethTx := ethtypes.NewTx(&ethtypes.LegacyTx{
+		Nonce:    0,
+		To:       &to,
+		Value:    value,
+		Gas:      21000,
+		GasPrice: gasPrice,
+		Data:     nil,
+	})
+
+	// Convert to ECDSA private key for signing
+	ethPrivKey, ok := privKey.(*ethsecp256k1.PrivKey)
+	if !ok {
+		return nil, fmt.Errorf("expected ethsecp256k1.PrivKey, got %T", privKey)
+	}
+
+	ecdsaPrivKey, err := ethPrivKey.ToECDSA()
+	if err != nil {
+		return nil, err
+	}
+
+	signer := ethtypes.HomesteadSigner{}
+	signedTx, err := ethtypes.SignTx(ethTx, signer, ecdsaPrivKey)
+	if err != nil {
+		return nil, err
+	}
+
+	msgEthTx := &evmtypes.MsgEthereumTx{}
+	err = msgEthTx.FromEthereumTx(signedTx)
+	if err != nil {
+		return nil, err
+	}
+
+	txBuilder := s.network.App.GetTxConfig().NewTxBuilder()
+	err = txBuilder.SetMsgs(msgEthTx)
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Printf("DEBUG: Created EVM value transfer transaction successfully\n")
+	return txBuilder.GetTx(), nil
+}
+
+// createEVMTransactionWithNonce creates an EVM transaction with a specific nonce
+func (s *MempoolIntegrationTestSuite) createEVMTransactionWithNonce(key keyring.Key, gasPrice *big.Int, nonce uint64) (sdk.Tx, error) {
+	fmt.Printf("DEBUG: Creating EVM transaction with gas price: %s and nonce: %d\n", gasPrice.String(), nonce)
+
+	privKey := key.Priv
+
+	// Convert Cosmos address to EVM address
+	fromAddr := common.BytesToAddress(key.AccAddr.Bytes())
+	fmt.Printf("DEBUG: Using prefunded account: %s\n", fromAddr.Hex())
+
+	to := common.HexToAddress("0x1234567890123456789012345678901234567890")
+	ethTx := ethtypes.NewTx(&ethtypes.LegacyTx{
+		Nonce:    nonce,
 		To:       &to,
 		Value:    big.NewInt(1000),
 		Gas:      21000,
