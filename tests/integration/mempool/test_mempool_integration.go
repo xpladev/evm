@@ -499,7 +499,7 @@ func (s *IntegrationTestSuite) TestTransactionOrdering() {
 			},
 		},
 		{
-			name: "EVM-only transaction ordering",
+			name: "EVM-only transaction replacement",
 			setupTxs: func() {
 				// Create first EVM transaction with low fee
 				lowFeeEVMTx, err := s.createEVMTransaction(big.NewInt(1000000000)) // 1 gwei
@@ -521,16 +521,56 @@ func (s *IntegrationTestSuite) TestTransactionOrdering() {
 				// First transaction should be high fee
 				tx1 := iterator.Tx()
 				s.Require().NotNil(tx1)
-				if ethMsg, ok := tx1.GetMsgs()[0].(*evmtypes.MsgEthereumTx); ok {
-					ethTx := ethMsg.AsTransaction()
-					s.Require().Equal(big.NewInt(5000000000), ethTx.GasPrice())
-				} else {
-					s.T().Fatal("Expected first transaction to be high fee EVM transaction")
-				}
+				ethMsg, ok := tx1.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
+				s.Require().True(ok)
+				ethTx := ethMsg.AsTransaction()
+				s.Require().Equal(big.NewInt(5000000000), ethTx.GasPrice())
+				iterator = iterator.Next()
+				s.Require().Nil(iterator) // transaction with same nonce got replaced by higher fee
 			},
 		},
 		{
-			name: "cosmos-only transaction ordering",
+			name: "EVM-only transaction replacement",
+			setupTxs: func() {
+				key := s.keyring.GetKey(0)
+				// Create first EVM transaction with low fee
+				lowFeeEVMTx, err := s.createEVMTransactionWithNonce(key, big.NewInt(1000000000), 1) // 1 gwei
+				s.Require().NoError(err)
+
+				// Create second EVM transaction with high fee
+				highFeeEVMTx, err := s.createEVMTransactionWithNonce(key, big.NewInt(5000000000), 0) // 5 gwei
+				s.Require().NoError(err)
+
+				mempool := s.network.App.GetMempool()
+
+				// Insert low fee transaction first
+				err = mempool.Insert(s.network.GetContext(), lowFeeEVMTx)
+				s.Require().NoError(err)
+				err = mempool.Insert(s.network.GetContext(), highFeeEVMTx)
+				s.Require().NoError(err)
+			},
+			verifyFunc: func(iterator mempool.Iterator) {
+				// First transaction should be high fee
+				tx1 := iterator.Tx()
+				s.Require().NotNil(tx1)
+				ethMsg, ok := tx1.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
+				s.Require().True(ok)
+				ethTx := ethMsg.AsTransaction()
+				s.Require().Equal(big.NewInt(5000000000), ethTx.GasPrice())
+				iterator = iterator.Next()
+				s.Require().NotNil(iterator)
+				tx2 := iterator.Tx()
+				s.Require().NotNil(tx2)
+				ethMsg, ok = tx2.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
+				s.Require().True(ok)
+				ethTx = ethMsg.AsTransaction()
+				s.Require().Equal(big.NewInt(1000000000), ethTx.GasPrice())
+				iterator = iterator.Next()
+				s.Require().Nil(iterator)
+			},
+		},
+		{
+			name: "cosmos-only transaction replacement",
 			setupTxs: func() {
 				highFeeTx := s.createCosmosSendTransaction(5000000000)   // 5 gwei
 				lowFeeTx := s.createCosmosSendTransaction(1000000000)    // 1 gwei
@@ -550,15 +590,9 @@ func (s *IntegrationTestSuite) TestTransactionOrdering() {
 				// Should get first transaction from cosmos pool
 				tx1 := iterator.Tx()
 				s.Require().NotNil(tx1)
-				s.Require().Equal(tx1.(sdk.FeeTx).GetFee(), big.NewInt(5000000000))
+				s.Require().Equal(tx1.(sdk.FeeTx).GetFee().AmountOf("wei").Uint64(), big.NewInt(5000000000).Uint64())
 				iterator = iterator.Next()
-				tx2 := iterator.Tx()
-				s.Require().NotNil(tx2)
-				s.Require().Equal(tx1.(sdk.FeeTx).GetFee(), big.NewInt(3000000000))
-				iterator = iterator.Next()
-				tx3 := iterator.Tx()
-				s.Require().NotNil(tx3)
-				s.Require().Equal(tx3.(sdk.FeeTx).GetFee(), big.NewInt(1000000000))
+				s.Require().Nil(iterator)
 			},
 		},
 	}
