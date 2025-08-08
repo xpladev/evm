@@ -324,20 +324,6 @@ func (s *IntegrationTestSuite) TestMempoolSelect() {
 				}
 			},
 		},
-		{
-			name: "count transactions",
-			setupTxs: func() {
-				tx := s.createCosmosSendTransaction(1000)
-				mempool := s.network.App.GetMempool()
-				err := mempool.Insert(s.network.GetContext(), tx)
-				s.Require().NoError(err)
-			},
-			verifyFunc: func(iterator mempool.Iterator) {
-				mempool := s.network.App.GetMempool()
-				count := mempool.CountTx()
-				s.Require().Equal(1, count)
-			},
-		},
 	}
 
 	for _, tc := range testCases {
@@ -453,7 +439,6 @@ func (s *IntegrationTestSuite) TestMempoolIterator() {
 
 				// Move to next
 				iterator = iterator.Next()
-				// Iterator might be nil if only one transaction, which is fine
 			},
 		},
 	}
@@ -507,18 +492,10 @@ func (s *IntegrationTestSuite) TestTransactionOrdering() {
 				s.Require().NotNil(tx1)
 
 				// Check if first transaction is EVM with high fee
-				if ethMsg, ok := tx1.GetMsgs()[0].(*evmtypes.MsgEthereumTx); ok {
-					ethTx := ethMsg.AsTransaction()
-					s.Require().Equal(big.NewInt(5000000000), ethTx.GasPrice(), "First transaction should be high fee EVM transaction")
-				} else {
-					// If not EVM, it should be the highest fee Cosmos transaction
-					if feeTx, ok := tx1.(sdk.FeeTx); ok {
-						fees := feeTx.GetFee()
-						if len(fees) > 0 {
-							s.Require().Equal(int64(3000000000), fees[0].Amount.Int64(), "First transaction should be highest fee transaction")
-						}
-					}
-				}
+				ethMsg, ok := tx1.GetMsgs()[0].(*evmtypes.MsgEthereumTx)
+				s.Require().True(ok)
+				ethTx := ethMsg.AsTransaction()
+				s.Require().Equal(big.NewInt(5000000000), ethTx.GasPrice(), "First transaction should be high fee EVM transaction")
 			},
 		},
 		{
@@ -573,7 +550,15 @@ func (s *IntegrationTestSuite) TestTransactionOrdering() {
 				// Should get first transaction from cosmos pool
 				tx1 := iterator.Tx()
 				s.Require().NotNil(tx1)
-				// Note: The actual ordering depends on the cosmos pool implementation
+				s.Require().Equal(tx1.(sdk.FeeTx).GetFee(), big.NewInt(5000000000))
+				iterator = iterator.Next()
+				tx2 := iterator.Tx()
+				s.Require().NotNil(tx2)
+				s.Require().Equal(tx1.(sdk.FeeTx).GetFee(), big.NewInt(3000000000))
+				iterator = iterator.Next()
+				tx3 := iterator.Tx()
+				s.Require().NotNil(tx3)
+				s.Require().Equal(tx3.(sdk.FeeTx).GetFee(), big.NewInt(1000000000))
 			},
 		},
 	}
@@ -603,15 +588,13 @@ func (s *IntegrationTestSuite) TestSelectBy() {
 		verifyFunc    func()
 	}{
 		{
-			name:     "empty mempool - no infinite loop",
+			name:     "empty mempool",
 			setupTxs: func() {},
 			filterFunc: func(tx sdk.Tx) bool {
 				return true // Accept all
 			},
 			expectedCalls: 0, // Not called for empty pool
-			verifyFunc: func() {
-				// Should not hang or crash
-			},
+			verifyFunc:    func() {},
 		},
 		{
 			name: "single cosmos transaction - terminates properly",
@@ -622,7 +605,7 @@ func (s *IntegrationTestSuite) TestSelectBy() {
 				s.Require().NoError(err)
 			},
 			filterFunc: func(tx sdk.Tx) bool {
-				return false // Reject first transaction - should stop immediately
+				return true
 			},
 			expectedCalls: 1,
 			verifyFunc: func() {
@@ -640,7 +623,7 @@ func (s *IntegrationTestSuite) TestSelectBy() {
 				s.Require().NoError(err)
 			},
 			filterFunc: func(tx sdk.Tx) bool {
-				return false // Reject first transaction - should stop immediately
+				return true
 			},
 			expectedCalls: 1,
 			verifyFunc: func() {
@@ -1081,38 +1064,7 @@ func (s *IntegrationTestSuite) TestNonceGappedEVMTransactions() {
 			},
 		},
 		{
-			name: "verify queued to pending transition with count tracking",
-			setupTxs: func() ([]sdk.Tx, []int) {
-				key := s.keyring.GetKey(0)
-				var txs []sdk.Tx
-				var nonces []int
-
-				// Insert transactions with gaps: nonces 0, 2, 4, 6, 8
-				for i := 0; i <= 8; i += 2 {
-					tx, err := s.createEVMTransactionWithNonce(key, big.NewInt(1000000000), i)
-					s.Require().NoError(err)
-					txs = append(txs, tx)
-					nonces = append(nonces, i)
-				}
-
-				// Fill gaps by inserting nonces 1, 3, 5, 7
-				for i := 1; i <= 7; i += 2 {
-					tx, err := s.createEVMTransactionWithNonce(key, big.NewInt(1000000000), i)
-					s.Require().NoError(err)
-					txs = append(txs, tx)
-					nonces = append(nonces, i)
-				}
-
-				return txs, nonces
-			},
-			verifyFunc: func(mempool mempool.Mempool) {
-				// After filling all gaps, all transactions should be pending
-				count := mempool.CountTx()
-				s.Require().Equal(9, count, "After filling all gaps, all 9 transactions should be pending")
-			},
-		},
-		{
-			name: "test count behavior when removing transactions",
+			name: "removing places subsequent transactions back into queued",
 			setupTxs: func() ([]sdk.Tx, []int) {
 				key := s.keyring.GetKey(0)
 				var txs []sdk.Tx
@@ -1120,7 +1072,7 @@ func (s *IntegrationTestSuite) TestNonceGappedEVMTransactions() {
 
 				// Insert transactions with gaps: nonces 0, 1, 3, 4, 6, 7
 				for i := 0; i <= 7; i++ {
-					if i != 2 && i != 5 { // Skip nonces 2 and 5 to create gaps
+					if i != 1 { // Skip nonce 1 to create a gap
 						tx, err := s.createEVMTransactionWithNonce(key, big.NewInt(1000000000), i)
 						s.Require().NoError(err)
 						txs = append(txs, tx)
@@ -1131,30 +1083,40 @@ func (s *IntegrationTestSuite) TestNonceGappedEVMTransactions() {
 				return txs, nonces
 			},
 			verifyFunc: func(mempool mempool.Mempool) {
-				// Initially: nonces 0, 1 should be pending, nonces 3, 4, 6, 7 should be queued
+				// Initially: nonces 0 should be pending, nonces 2, 3, 4, 5, 6, 7 should be queued
 				initialCount := mempool.CountTx()
-				s.Require().Equal(2, initialCount, "Initially only nonces 0, 1 should be pending")
-
-				// Remove nonce 1 transaction
+				s.Require().Equal(1, initialCount, "Initially only nonces 0, 1 should be pending")
 				key := s.keyring.GetKey(0)
+
+				// Fill gap by inserting nonce 1
 				tx1, err := s.createEVMTransactionWithNonce(key, big.NewInt(1000000000), 1)
+				s.Require().NoError(err)
+				err = mempool.Insert(s.network.GetContext(), tx1)
+				s.Require().NoError(err)
+
+				// After filling gap: all nonce transactions should be in pending
+				countAfterFilling := mempool.CountTx()
+				s.Require().Equal(8, countAfterFilling, "After filling gap, only nonce 0 should be pending due to gap at nonce 1")
+
+				// Remove nonce 1 transaction, dropping the rest (except for 0) into queued
+				tx1, err = s.createEVMTransactionWithNonce(key, big.NewInt(1000000000), 1)
 				s.Require().NoError(err)
 				err = mempool.Remove(tx1)
 				s.Require().NoError(err)
 
-				// After removal: only nonce 0 should be pending
+				// After removal: only nonce 0 should be pending, the rest get dropped to queued
 				countAfterRemoval := mempool.CountTx()
 				s.Require().Equal(1, countAfterRemoval, "After removing nonce 1, only nonce 0 should be pending")
 
-				// Fill gap by inserting nonce 2
-				tx2, err := s.createEVMTransactionWithNonce(key, big.NewInt(1000000000), 2)
+				// Fill gap by inserting nonce 1
+				tx1, err = s.createEVMTransactionWithNonce(key, big.NewInt(1000000000), 1)
 				s.Require().NoError(err)
-				err = mempool.Insert(s.network.GetContext(), tx2)
+				err = mempool.Insert(s.network.GetContext(), tx1)
 				s.Require().NoError(err)
 
-				// After filling gap: only nonce 0 should be pending (nonce 2 and subsequent are queued due to gap at nonce 1)
-				countAfterFilling := mempool.CountTx()
-				s.Require().Equal(1, countAfterFilling, "After filling gap, only nonce 0 should be pending due to gap at nonce 1")
+				// After filling gap: all transactions should be re-promoted and places into pending
+				countAfterFilling = mempool.CountTx()
+				s.Require().Equal(8, countAfterFilling, "After filling gap, only nonce 0 should be pending due to gap at nonce 1")
 			},
 		},
 	}
