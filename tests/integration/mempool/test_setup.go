@@ -1,6 +1,8 @@
 package mempool
 
 import (
+	"time"
+
 	"github.com/stretchr/testify/suite"
 
 	sdkmath "cosmossdk.io/math"
@@ -56,6 +58,19 @@ func (s *MempoolIntegrationTestSuite) SetupTestWithChainID(chainID testconstants
 
 	err := nw.NextBlock()
 	s.Require().NoError(err)
+	
+	// The mempool is designed to start at block 2 with proper headers and StateDB.
+	// When tests are not cached or run together, the mempool can start at block 0 
+	// with nil headers and StateDB, causing validation failures.
+	// This ensures we advance to block 2 where all mempool dependencies are ready.
+	err = nw.NextBlock()
+	s.Require().NoError(err)
+	
+	// Wait for mempool async reset goroutines to complete.
+	// NextBlock() triggers chain head events that start async goroutines to reset
+	// the mempool state. Without this wait, tests can start before the reset completes,
+	// causing race conditions with stale mempool state.
+	time.Sleep(100 * time.Millisecond)
 
 	s.network = nw
 	s.factory = tf
@@ -91,7 +106,7 @@ func (s *MempoolIntegrationTestSuite) TestBasicSetup() {
 	s.Require().NotNil(key0, "key 0 should exist")
 	s.Require().NotNil(key1, "key 1 should exist")
 
-	s.Require().Equal(s.network.GetContext().BlockHeight(), int64(2))
+	s.Require().Equal(s.network.GetContext().BlockHeight(), int64(3))
 
 	// Test that accounts have initial balances
 	bal0 := s.GetAllBalances(key0.AccAddr)
