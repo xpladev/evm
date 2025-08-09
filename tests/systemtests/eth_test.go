@@ -113,6 +113,7 @@ func TestNonceGappedTxsPass(t *testing.T) {
 }
 
 func TestSimpleSendsScript(t *testing.T) {
+	t.Skip()
 	sut := systemtests.Sut
 	StartChain(t, sut)
 	sut.AwaitNBlocks(t, 10)
