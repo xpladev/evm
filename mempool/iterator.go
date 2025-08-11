@@ -60,8 +60,10 @@ func NewEVMMempoolIterator(evmIterator *miner.TransactionsByPriceAndNonce, cosmo
 // Returns true if the EVM transaction should be selected, false if Cosmos transaction should be used.
 // EVM transactions are preferred when Cosmos transactions lack fees or use non-bondDenom denominations.
 func (i *EVMMempoolIterator) shouldUseEVM() bool {
-	var nextEVMTx *txpool.LazyTransaction
-	var evmFee *uint256.Int
+	var (
+		nextEVMTx *txpool.LazyTransaction
+		evmFee    *uint256.Int
+	)
 	if i.evmIterator != nil {
 		nextEVMTx, evmFee = i.evmIterator.Peek()
 	}
