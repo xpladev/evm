@@ -97,7 +97,7 @@ func NewEVMMempool(getCtxCallback func(height int64, prove bool) (sdk.Context, e
 
 	// Default txPool
 	if txPool == nil {
-		blockchain = NewBlockchain(getCtxCallback, vmKeeper, feeMarketKeeper, config.BlockGasLimit)
+		blockchain = newBlockchain(getCtxCallback, vmKeeper, feeMarketKeeper, config.BlockGasLimit)
 		legacyPool := legacypool.New(legacypool.DefaultConfig, blockchain)
 
 		// Set up broadcast function using clientCtx

@@ -41,10 +41,10 @@ type Blockchain struct {
 	previousHeaderHash common.Hash
 }
 
-// NewBlockchain creates a new Blockchain instance that bridges Cosmos SDK state with Ethereum mempools.
+// newBlockchain creates a new Blockchain instance that bridges Cosmos SDK state with Ethereum mempools.
 // The getCtxCallback function provides access to Cosmos SDK contexts at different heights, vmKeeper manages EVM state,
 // and feeMarketKeeper handles fee market operations like base fee calculations.
-func NewBlockchain(ctx func(height int64, prove bool) (sdk.Context, error), vmKeeper VMKeeperI, feeMarketKeeper FeeMarketKeeperI, blockGasLimit uint64) *Blockchain {
+func newBlockchain(ctx func(height int64, prove bool) (sdk.Context, error), vmKeeper VMKeeperI, feeMarketKeeper FeeMarketKeeperI, blockGasLimit uint64) *Blockchain {
 	return &Blockchain{
 		getCtxCallback:  ctx,
 		vmKeeper:        vmKeeper,
