@@ -117,6 +117,13 @@ func NewEVMMempool(getCtxCallback func(height int64, prove bool) (sdk.Context, e
 		txPool = txPoolInit
 	}
 
+	if len(txPool.Subpools) != 1 {
+		panic("tx pool should contain one subpool")
+	}
+	if _, ok := txPool.Subpools[0].(*legacypool.LegacyPool); !ok {
+		panic("tx pool should contain only legacypool")
+	}
+
 	// Default Cosmos Mempool
 	cosmosPool = config.CosmosPool
 	if cosmosPool == nil {
@@ -139,13 +146,6 @@ func NewEVMMempool(getCtxCallback func(height int64, prove bool) (sdk.Context, e
 			MinValue: math.ZeroInt(),
 		}
 		cosmosPool = sdkmempool.NewPriorityMempool(priorityConfig)
-	}
-
-	if len(txPool.Subpools) != 1 {
-		panic("tx pool should contain one subpool")
-	}
-	if _, ok := txPool.Subpools[0].(*legacypool.LegacyPool); !ok {
-		panic("tx pool should contain only legacypool")
 	}
 
 	return &EVMMempool{
