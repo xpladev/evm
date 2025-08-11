@@ -7,12 +7,12 @@ To regenerate the mocks, run the following commands at the root of this reposito
 
 ```bash
 # update the currently used version
-COSMOS_VERSION="v0.50.9-evmos"
+COSMOS_VERSION="v0.53.4"
 CUR_DIR="$(pwd)"
 TMP_DIR="/tmp/tmp-sdk-mocks-$(date +%s)"
 
 echo "Cloning Cosmos SDK $COSMOS_VERSION into $TMP_DIR..." &&
-git clone --depth 1 --branch "$COSMOS_VERSION" https://github.com/evmos/cosmos-sdk.git "$TMP_DIR" &&
+git clone --depth 1 --branch "$COSMOS_VERSION" https://github.com/cosmos/cosmos-sdk.git "$TMP_DIR" &&
 cd "$TMP_DIR" &&
 
 # Go into bank module and generate mock

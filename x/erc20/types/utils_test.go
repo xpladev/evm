@@ -189,7 +189,7 @@ func TestEqualMetadata(t *testing.T) {
 					{
 						Denom:    "Uatom",
 						Exponent: 12,
-						Aliases:  []string{"micro evmos"},
+						Aliases:  []string{"micro atom"},
 					},
 					{
 						Denom:    "atom",

@@ -104,7 +104,7 @@ func TestGetAccAddressFromBech32(t *testing.T) {
 		},
 		{
 			"invalid bech32 address",
-			"evmos",
+			"cosmos",
 			"",
 			true,
 		},
@@ -115,7 +115,7 @@ func TestGetAccAddressFromBech32(t *testing.T) {
 			true,
 		},
 		{
-			"evmos address",
+			"cosmos address",
 			"cosmos1qql8ag4cluz6r4dz28p3w00dnc9w8ueulg2gmc",
 			"cosmos1qql8ag4cluz6r4dz28p3w00dnc9w8ueulg2gmc",
 			false,
