@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"net/http"
 
@@ -24,12 +25,12 @@ func StartJSONRPC(
 	srvCtx *server.Context,
 	clientCtx client.Context,
 	g *errgroup.Group,
-	tmRPCAddr, tmEndpoint string,
+	cmtRPCAddr, cmtEndpoint string,
 	config *serverconfig.Config,
 	indexer cosmosevmtypes.EVMTxIndexer,
 ) (*http.Server, error) {
 	logger := srvCtx.Logger.With("module", "geth")
-	tmWsClient := ConnectTmWS(tmRPCAddr, tmEndpoint, logger)
+	cmtWsClient := ConnectCmtWS(cmtRPCAddr, cmtEndpoint, logger)
 
 	// Set Geth's global logger to use this handler
 	handler := &CustomSlogHandler{logger: logger}
@@ -41,7 +42,7 @@ func StartJSONRPC(
 	allowUnprotectedTxs := config.JSONRPC.AllowUnprotectedTxs
 	rpcAPIArr := config.JSONRPC.API
 
-	apis := rpc.GetRPCAPIs(srvCtx, clientCtx, tmWsClient, allowUnprotectedTxs, indexer, rpcAPIArr)
+	apis := rpc.GetRPCAPIs(srvCtx, clientCtx, cmtWsClient, allowUnprotectedTxs, indexer, rpcAPIArr)
 
 	for _, api := range apis {
 		if err := rpcServer.RegisterName(api.Namespace, api.Service); err != nil {
@@ -97,7 +98,7 @@ func StartJSONRPC(
 			return nil
 
 		case err := <-errCh:
-			if err == http.ErrServerClosed {
+			if errors.Is(err, http.ErrServerClosed) {
 				close(httpSrvDone)
 				return nil
 			}
@@ -110,8 +111,8 @@ func StartJSONRPC(
 	srvCtx.Logger.Info("Starting JSON WebSocket server", "address", config.JSONRPC.WsAddress)
 
 	// allocate separate WS connection to CometBFT
-	tmWsClient = ConnectTmWS(tmRPCAddr, tmEndpoint, logger)
-	wsSrv := rpc.NewWebsocketsServer(clientCtx, logger, tmWsClient, config)
+	cmtWsClient = ConnectCmtWS(cmtRPCAddr, cmtEndpoint, logger)
+	wsSrv := rpc.NewWebsocketsServer(clientCtx, logger, cmtWsClient, config)
 	wsSrv.Start()
 	return httpSrv, nil
 }

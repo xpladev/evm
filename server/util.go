@@ -60,32 +60,32 @@ func AddCommands(
 	)
 }
 
-// ConnectTmWS connects to a Tendermint WebSocket (WS) server.
+// ConnectCmtWS connects to a CometBFT WebSocket (WS) server.
 // Parameters:
-// - tmRPCAddr: The RPC address of the Tendermint server.
-// - tmEndpoint: The WebSocket endpoint on the Tendermint server.
-// - logger: A logger instance used to log debug and error messages.
-func ConnectTmWS(tmRPCAddr, tmEndpoint string, logger log.Logger) *rpcclient.WSClient {
-	tmWsClient, err := rpcclient.NewWS(tmRPCAddr, tmEndpoint,
+// - cmtRPCAddr: The RPC address of the CometBFT server.
+// - cmtEndpoint: The WebSocket endpoint on the Tendermint server.
+// - logger: A logger instance used to log debug and CometBFT messages.
+func ConnectCmtWS(cmtRPCAddr, cmtEndpoint string, logger log.Logger) *rpcclient.WSClient {
+	tmWsClient, err := rpcclient.NewWS(cmtRPCAddr, cmtEndpoint,
 		rpcclient.MaxReconnectAttempts(256),
 		rpcclient.ReadWait(120*time.Second),
 		rpcclient.WriteWait(120*time.Second),
 		rpcclient.PingPeriod(50*time.Second),
 		rpcclient.OnReconnect(func() {
-			logger.Debug("EVM RPC reconnects to Tendermint WS", "address", tmRPCAddr+tmEndpoint)
+			logger.Debug("EVM RPC reconnects to CometBFT WS", "address", cmtRPCAddr+cmtEndpoint)
 		}),
 	)
 
 	if err != nil {
 		logger.Error(
-			"Tendermint WS client could not be created",
-			"address", tmRPCAddr+tmEndpoint,
+			"CometBFT WS client could not be created",
+			"address", cmtRPCAddr+cmtEndpoint,
 			"error", err,
 		)
 	} else if err := tmWsClient.OnStart(); err != nil {
 		logger.Error(
-			"Tendermint WS client could not start",
-			"address", tmRPCAddr+tmEndpoint,
+			"CometBFT WS client could not start",
+			"address", cmtRPCAddr+cmtEndpoint,
 			"error", err,
 		)
 	}
