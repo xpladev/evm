@@ -42,7 +42,9 @@ type MsgEthereumTx struct {
 	// size is the encoded storage size of the transaction (DEPRECATED)
 	Size_ float64 `protobuf:"fixed64,2,opt,name=size,proto3" json:"-"`
 	// hash of the transaction in hex format
-	Hash           string `protobuf:"bytes,3,opt,name=hash,proto3" json:"hash,omitempty" rlp:"-"`
+	Hash string `protobuf:"bytes,3,opt,name=hash,proto3" json:"hash,omitempty" rlp:"-"`
+	// deprecated_from is the deprecated from field using a string - now users
+	// should use the "from" field which uses bytes
 	DeprecatedFrom string `protobuf:"bytes,4,opt,name=deprecated_from,json=deprecatedFrom,proto3" json:"deprecated_from,omitempty"` // Deprecated: Do not use.
 	// from is the bytes of ethereum signer address. This address value is checked
 	// against the address derived from the signature (V, R, S) using the
@@ -300,7 +302,7 @@ var xxx_messageInfo_ExtensionOptionsEthereumTx proto.InternalMessageInfo
 // MsgEthereumTxResponse defines the Msg/EthereumTx response type.
 type MsgEthereumTxResponse struct {
 	// hash of the ethereum transaction in hex format. This hash differs from the
-	// Tendermint sha256 hash of the transaction bytes. See
+	// CometBFT sha256 hash of the transaction bytes. See
 	// https://github.com/tendermint/tendermint/issues/6539 for reference
 	Hash string `protobuf:"bytes,1,opt,name=hash,proto3" json:"hash,omitempty"`
 	// logs contains the transaction hash and the proto-compatible ethereum

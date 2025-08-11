@@ -46,6 +46,8 @@ message MsgEthereumTx {
   // hash of the transaction in hex format
   string hash = 3
       [ (gogoproto.moretags) = "rlp:\"-\"", (amino.dont_omitempty) = true ];
+  // deprecated_from is the deprecated from field using a string - now users
+  // should use the "from" field which uses bytes
   string deprecated_from = 4 [ deprecated = true ];
   // from is the bytes of ethereum signer address. This address value is checked
   // against the address derived from the signature (V, R, S) using the
@@ -183,7 +185,7 @@ message MsgEthereumTxResponse {
   option (gogoproto.goproto_getters) = false;
 
   // hash of the ethereum transaction in hex format. This hash differs from the
-  // Tendermint sha256 hash of the transaction bytes. See
+  // CometBFT sha256 hash of the transaction bytes. See
   // https://github.com/tendermint/tendermint/issues/6539 for reference
   string hash = 1;
   // logs contains the transaction hash and the proto-compatible ethereum
