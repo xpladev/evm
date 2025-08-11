@@ -89,7 +89,7 @@ func (i *EVMMempoolIterator) Tx() sdk.Tx {
 	nextCosmosTx, _ := i.getNextCosmosTx()
 
 	// Return the preferred transaction based on fee priority
-	return i.getPreferredTransaction(nextEVMTx, nextCosmosTx)
+	return i.getPreferredTransaction(nextEVMTx, nextCosmosTx) 
 }
 
 // =============================================================================
