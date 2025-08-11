@@ -8,13 +8,14 @@ import (
 	mock "github.com/stretchr/testify/mock"
 
 	abci "github.com/cometbft/cometbft/abci/types"
-	cmtrpctypes "github.com/cometbft/cometbft/rpc/core/types"
+	tmrpctypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/cometbft/cometbft/types"
 
 	dbm "github.com/cosmos/cosmos-db"
 	"github.com/cosmos/evm/crypto/ethsecp256k1"
 	"github.com/cosmos/evm/indexer"
 	"github.com/cosmos/evm/rpc/backend/mocks"
+	rpctypes "github.com/cosmos/evm/rpc/types"
 	evmtypes "github.com/cosmos/evm/x/vm/types"
 
 	"cosmossdk.io/log"
@@ -215,15 +216,15 @@ func (s *TestSuite) TestTraceBlock() {
 	emptyBlock.ChainID = ChainID.ChainID
 	filledBlock := types.MakeBlock(1, []types.Tx{bz}, nil, nil)
 	filledBlock.ChainID = ChainID.ChainID
-	resBlockEmpty := cmtrpctypes.ResultBlock{Block: emptyBlock, BlockID: emptyBlock.LastBlockID}
-	resBlockFilled := cmtrpctypes.ResultBlock{Block: filledBlock, BlockID: filledBlock.LastBlockID}
+	resBlockEmpty := tmrpctypes.ResultBlock{Block: emptyBlock, BlockID: emptyBlock.LastBlockID}
+	resBlockFilled := tmrpctypes.ResultBlock{Block: filledBlock, BlockID: filledBlock.LastBlockID}
 
 	testCases := []struct {
 		name            string
 		registerMock    func()
 		expTraceResults []*evmtypes.TxTraceResult
-		resBlock        *cmtrpctypes.ResultBlock
-		config          *evmtypes.TraceConfig
+		resBlock        *tmrpctypes.ResultBlock
+		config          *rpctypes.TraceConfig
 		expPass         bool
 	}{
 		{
@@ -231,7 +232,7 @@ func (s *TestSuite) TestTraceBlock() {
 			func() {},
 			[]*evmtypes.TxTraceResult{},
 			&resBlockEmpty,
-			&evmtypes.TraceConfig{},
+			&rpctypes.TraceConfig{},
 			true,
 		},
 		{
@@ -246,18 +247,18 @@ func (s *TestSuite) TestTraceBlock() {
 			},
 			[]*evmtypes.TxTraceResult{},
 			&resBlockFilled,
-			&evmtypes.TraceConfig{},
+			&rpctypes.TraceConfig{},
 			false,
 		},
 		{
-			"fail - CometBlockResultByNumber returns error",
+			"fail - TendermintBlockResultByNumber returns error",
 			func() {
 				client := s.backend.ClientCtx.Client.(*mocks.Client)
 				RegisterBlockResultsError(client, 1)
 			},
 			nil,
 			&resBlockFilled,
-			&evmtypes.TraceConfig{},
+			&rpctypes.TraceConfig{},
 			true,
 		},
 		{
@@ -277,7 +278,7 @@ func (s *TestSuite) TestTraceBlock() {
 			},
 			[]*evmtypes.TxTraceResult{{Result: "trace1"}, {Result: "trace2"}},
 			&resBlockFilled,
-			&evmtypes.TraceConfig{},
+			&rpctypes.TraceConfig{},
 			true,
 		},
 	}

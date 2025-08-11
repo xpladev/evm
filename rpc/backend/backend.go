@@ -14,8 +14,8 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/signer/core/apitypes"
 
-	cmtrpcclient "github.com/cometbft/cometbft/rpc/client"
-	cmtrpctypes "github.com/cometbft/cometbft/rpc/core/types"
+	tmrpcclient "github.com/cometbft/cometbft/rpc/client"
+	tmrpctypes "github.com/cometbft/cometbft/rpc/core/types"
 
 	rpctypes "github.com/cosmos/evm/rpc/types"
 	"github.com/cosmos/evm/server/config"
@@ -66,17 +66,17 @@ type EVMBackend interface {
 	GetBlockByHash(hash common.Hash, fullTx bool) (map[string]interface{}, error)
 	GetBlockTransactionCountByHash(hash common.Hash) *hexutil.Uint
 	GetBlockTransactionCountByNumber(blockNum rpctypes.BlockNumber) *hexutil.Uint
-	CometBlockByNumber(blockNum rpctypes.BlockNumber) (*cmtrpctypes.ResultBlock, error)
-	CometBlockByHash(blockHash common.Hash) (*cmtrpctypes.ResultBlock, error)
+	CometBlockByNumber(blockNum rpctypes.BlockNumber) (*tmrpctypes.ResultBlock, error)
+	CometBlockByHash(blockHash common.Hash) (*tmrpctypes.ResultBlock, error)
 	BlockNumberFromComet(blockNrOrHash rpctypes.BlockNumberOrHash) (rpctypes.BlockNumber, error)
 	BlockNumberFromCometByHash(blockHash common.Hash) (*big.Int, error)
-	EthMsgsFromCometBlock(block *cmtrpctypes.ResultBlock, blockRes *cmtrpctypes.ResultBlockResults) []*evmtypes.MsgEthereumTx
-	BlockBloom(blockRes *cmtrpctypes.ResultBlockResults) (ethtypes.Bloom, error)
+	EthMsgsFromCometBlock(block *tmrpctypes.ResultBlock, blockRes *tmrpctypes.ResultBlockResults) []*evmtypes.MsgEthereumTx
+	BlockBloom(blockRes *tmrpctypes.ResultBlockResults) (ethtypes.Bloom, error)
 	HeaderByNumber(blockNum rpctypes.BlockNumber) (*ethtypes.Header, error)
 	HeaderByHash(blockHash common.Hash) (*ethtypes.Header, error)
-	RPCBlockFromCometBlock(resBlock *cmtrpctypes.ResultBlock, blockRes *cmtrpctypes.ResultBlockResults, fullTx bool) (map[string]interface{}, error)
+	RPCBlockFromCometBlock(resBlock *tmrpctypes.ResultBlock, blockRes *tmrpctypes.ResultBlockResults, fullTx bool) (map[string]interface{}, error)
 	EthBlockByNumber(blockNum rpctypes.BlockNumber) (*ethtypes.Block, error)
-	EthBlockFromCometBlock(resBlock *cmtrpctypes.ResultBlock, blockRes *cmtrpctypes.ResultBlockResults) (*ethtypes.Block, error)
+	EthBlockFromCometBlock(resBlock *tmrpctypes.ResultBlock, blockRes *tmrpctypes.ResultBlockResults) (*ethtypes.Block, error)
 	GetBlockReceipts(blockNrOrHash rpctypes.BlockNumberOrHash) ([]map[string]interface{}, error)
 
 	// Account Info
@@ -90,7 +90,7 @@ type EVMBackend interface {
 	ChainID() (*hexutil.Big, error)
 	ChainConfig() *params.ChainConfig
 	GlobalMinGasPrice() (*big.Int, error)
-	BaseFee(blockRes *cmtrpctypes.ResultBlockResults) (*big.Int, error)
+	BaseFee(blockRes *tmrpctypes.ResultBlockResults) (*big.Int, error)
 	CurrentHeader() (*ethtypes.Header, error)
 	PendingTransactions() ([]*sdk.Tx, error)
 	GetCoinbase() (sdk.AccAddress, error)
@@ -101,7 +101,7 @@ type EVMBackend interface {
 	GetTransactionByHash(txHash common.Hash) (*rpctypes.RPCTransaction, error)
 	GetTxByEthHash(txHash common.Hash) (*cosmosevmtypes.TxResult, error)
 	GetTxByTxIndex(height int64, txIndex uint) (*cosmosevmtypes.TxResult, error)
-	GetTransactionByBlockAndIndex(block *cmtrpctypes.ResultBlock, idx hexutil.Uint) (*rpctypes.RPCTransaction, error)
+	GetTransactionByBlockAndIndex(block *tmrpctypes.ResultBlock, idx hexutil.Uint) (*rpctypes.RPCTransaction, error)
 	GetTransactionReceipt(hash common.Hash) (map[string]interface{}, error)
 	GetTransactionLogs(hash common.Hash) ([]*ethtypes.Log, error)
 	GetTransactionByBlockHashAndIndex(hash common.Hash, idx hexutil.Uint) (*rpctypes.RPCTransaction, error)
@@ -127,30 +127,30 @@ type EVMBackend interface {
 	Status() (map[string]hexutil.Uint, error)
 
 	// Tracing
-	TraceTransaction(hash common.Hash, config *evmtypes.TraceConfig) (interface{}, error)
-	TraceBlock(height rpctypes.BlockNumber, config *evmtypes.TraceConfig, block *cmtrpctypes.ResultBlock) ([]*evmtypes.TxTraceResult, error)
+	TraceTransaction(hash common.Hash, config *rpctypes.TraceConfig) (interface{}, error)
+	TraceBlock(height rpctypes.BlockNumber, config *rpctypes.TraceConfig, block *tmrpctypes.ResultBlock) ([]*evmtypes.TxTraceResult, error)
 }
 
 var _ BackendI = (*Backend)(nil)
 
 // ProcessBlocker is a function type that processes a block and its associated data
-// for fee history calculation. It takes a CometBFT block, its corresponding
+// for fee history calculation. It takes a Tendermint block, its corresponding
 // Ethereum block representation, reward percentiles for fee estimation,
 // block results, and a target fee history entry to populate.
 //
 // Parameters:
-//   - cometBlock: The raw CometBFT block data
+//   - tendermintBlock: The raw Tendermint block data
 //   - ethBlock: The Ethereum-formatted block representation
 //   - rewardPercentiles: Percentiles used for fee reward calculation
-//   - cometBlockResult: Block execution results from CometBFT
+//   - tendermintBlockResult: Block execution results from Tendermint
 //   - targetOneFeeHistory: The fee history entry to be populated
 //
 // Returns an error if block processing fails.
 type ProcessBlocker func(
-	cometBlock *cmtrpctypes.ResultBlock,
+	tendermintBlock *tmrpctypes.ResultBlock,
 	ethBlock *map[string]interface{},
 	rewardPercentiles []float64,
-	cometBlockResult *cmtrpctypes.ResultBlockResults,
+	tendermintBlockResult *tmrpctypes.ResultBlockResults,
 	targetOneFeeHistory *rpctypes.OneFeeHistory,
 ) error
 
@@ -158,7 +158,7 @@ type ProcessBlocker func(
 type Backend struct {
 	Ctx                 context.Context
 	ClientCtx           client.Context
-	RPCClient           cmtrpcclient.SignClient
+	RPCClient           tmrpcclient.SignClient
 	QueryClient         *rpctypes.QueryClient // gRPC query client
 	Logger              log.Logger
 	EvmChainID          *big.Int
@@ -185,9 +185,9 @@ func NewBackend(
 		panic(err)
 	}
 
-	rpcClient, ok := clientCtx.Client.(cmtrpcclient.SignClient)
+	rpcClient, ok := clientCtx.Client.(tmrpcclient.SignClient)
 	if !ok {
-		panic(fmt.Sprintf("invalid rpc client, expected: cmtrpcclient.SignClient, got: %T", clientCtx.Client))
+		panic(fmt.Sprintf("invalid rpc client, expected: tmrpcclient.SignClient, got: %T", clientCtx.Client))
 	}
 
 	b := &Backend{
