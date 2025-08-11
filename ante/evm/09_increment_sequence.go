@@ -26,12 +26,12 @@ func IncrementNonce(
 		if txNonce > accountNonce {
 			return errorsmod.Wrapf(
 				mempool.ErrNonceGap,
-				"tx accountNonce: %d, account accountNonce: %d", txNonce, accountNonce,
+				"tx nonce: %d, account accountNonce: %d", txNonce, accountNonce,
 			)
 		}
 		return errorsmod.Wrapf(
 			errortypes.ErrInvalidSequence,
-			"invalid accountNonce; got %d, expected %d", txNonce, accountNonce,
+			"invalid nonce; got %d, expected %d", txNonce, accountNonce,
 		)
 	}
 
@@ -39,7 +39,7 @@ func IncrementNonce(
 	if accountNonce == math.MaxUint64 {
 		return errorsmod.Wrap(
 			errortypes.ErrInvalidSequence,
-			"accountNonce overflow: increment beyond 2^64-1 violates EIP-2681",
+			"nonce overflow: increment beyond 2^64-1 violates EIP-2681",
 		)
 	}
 
