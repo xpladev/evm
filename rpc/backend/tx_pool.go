@@ -13,6 +13,8 @@ import (
 	"github.com/cosmos/evm/rpc/types"
 )
 
+// The code style for this API is based off of the Go-Ethereum implementation:
+
 // Content returns the transactions contained within the transaction pool.
 func (b *Backend) Content() (map[string]map[string]map[string]*types.RPCTransaction, error) {
 	content := map[string]map[string]map[string]*types.RPCTransaction{
@@ -80,7 +82,7 @@ func (b *Backend) ContentFrom(addr common.Address) (map[string]map[string]*types
 	pending, queue := evmMempool.GetTxPool().ContentFrom(addr)
 
 	// Build the pending transactions
-	dump := make(map[string]*types.RPCTransaction, len(pending))
+	dump := make(map[string]*types.RPCTransaction, len(pending)) // variable name comes from go-ethereum: https://github.com/ethereum/go-ethereum/blob/0dacfef8ac42e7be5db26c2956f2b238ba7c75e8/internal/ethapi/api.go#L221
 	for _, tx := range pending {
 		rpcTx, err := b.convertToRPCTransaction(tx, addr)
 		if err != nil {
@@ -92,7 +94,7 @@ func (b *Backend) ContentFrom(addr common.Address) (map[string]map[string]*types
 	content["pending"] = dump
 
 	// Build the queued transactions
-	dump = make(map[string]*types.RPCTransaction, len(queue))
+	dump = make(map[string]*types.RPCTransaction, len(queue)) // variable name comes from go-ethereum: https://github.com/ethereum/go-ethereum/blob/0dacfef8ac42e7be5db26c2956f2b238ba7c75e8/internal/ethapi/api.go#L221
 	for _, tx := range queue {
 		rpcTx, err := b.convertToRPCTransaction(tx, addr)
 		if err != nil {
