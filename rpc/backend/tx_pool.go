@@ -13,13 +13,18 @@ import (
 	"github.com/cosmos/evm/rpc/types"
 )
 
+const (
+	STATUS_PENDING = "pending"
+	STATUS_QUEUED  = "queued"
+)
+
 // The code style for this API is based off of the Go-Ethereum implementation:
 
 // Content returns the transactions contained within the transaction pool.
 func (b *Backend) Content() (map[string]map[string]map[string]*types.RPCTransaction, error) {
 	content := map[string]map[string]map[string]*types.RPCTransaction{
-		"pending": make(map[string]map[string]*types.RPCTransaction),
-		"queued":  make(map[string]map[string]*types.RPCTransaction),
+		STATUS_PENDING: make(map[string]map[string]*types.RPCTransaction),
+		STATUS_QUEUED:  make(map[string]map[string]*types.RPCTransaction),
 	}
 
 	// Get the global mempool instance
@@ -34,8 +39,8 @@ func (b *Backend) Content() (map[string]map[string]map[string]*types.RPCTransact
 	// Convert pending (pending) transactions
 	for addr, txList := range pending {
 		addrStr := addr.Hex()
-		if content["pending"][addrStr] == nil {
-			content["pending"][addrStr] = make(map[string]*types.RPCTransaction)
+		if content[STATUS_PENDING][addrStr] == nil {
+			content[STATUS_PENDING][addrStr] = make(map[string]*types.RPCTransaction)
 		}
 
 		for _, tx := range txList {
@@ -44,15 +49,15 @@ func (b *Backend) Content() (map[string]map[string]map[string]*types.RPCTransact
 				b.Logger.Error("failed to convert transaction to RPC format", "error", err, "hash", tx.Hash())
 				continue
 			}
-			content["pending"][addrStr][strconv.FormatUint(tx.Nonce(), 10)] = rpcTx
+			content[STATUS_PENDING][addrStr][strconv.FormatUint(tx.Nonce(), 10)] = rpcTx
 		}
 	}
 
 	// Convert queued (queued) transactions
 	for addr, txList := range queued {
 		addrStr := addr.Hex()
-		if content["queued"][addrStr] == nil {
-			content["queued"][addrStr] = make(map[string]*types.RPCTransaction)
+		if content[STATUS_QUEUED][addrStr] == nil {
+			content[STATUS_QUEUED][addrStr] = make(map[string]*types.RPCTransaction)
 		}
 
 		for _, tx := range txList {
@@ -61,7 +66,7 @@ func (b *Backend) Content() (map[string]map[string]map[string]*types.RPCTransact
 				b.Logger.Error("failed to convert transaction to RPC format", "error", err, "hash", tx.Hash())
 				continue
 			}
-			content["queued"][addrStr][strconv.FormatUint(tx.Nonce(), 10)] = rpcTx
+			content[STATUS_QUEUED][addrStr][strconv.FormatUint(tx.Nonce(), 10)] = rpcTx
 		}
 	}
 
@@ -91,7 +96,7 @@ func (b *Backend) ContentFrom(addr common.Address) (map[string]map[string]*types
 		}
 		dump[fmt.Sprintf("%d", tx.Nonce())] = rpcTx
 	}
-	content["pending"] = dump
+	content[STATUS_PENDING] = dump
 
 	// Build the queued transactions
 	dump = make(map[string]*types.RPCTransaction, len(queue)) // variable name comes from go-ethereum: https://github.com/ethereum/go-ethereum/blob/0dacfef8ac42e7be5db26c2956f2b238ba7c75e8/internal/ethapi/api.go#L221
@@ -103,7 +108,7 @@ func (b *Backend) ContentFrom(addr common.Address) (map[string]map[string]*types
 		}
 		dump[fmt.Sprintf("%d", tx.Nonce())] = rpcTx
 	}
-	content["queued"] = dump
+	content[STATUS_QUEUED] = dump
 
 	return content, nil
 }
@@ -111,8 +116,8 @@ func (b *Backend) ContentFrom(addr common.Address) (map[string]map[string]*types
 // Inspect returns the content of the transaction pool and flattens it into an easily inspectable list.
 func (b *Backend) Inspect() (map[string]map[string]map[string]string, error) {
 	inspect := map[string]map[string]map[string]string{
-		"pending": make(map[string]map[string]string),
-		"queued":  make(map[string]map[string]string),
+		STATUS_PENDING: make(map[string]map[string]string),
+		STATUS_QUEUED:  make(map[string]map[string]string),
 	}
 
 	// Get the global mempool instance
@@ -140,7 +145,7 @@ func (b *Backend) Inspect() (map[string]map[string]map[string]string, error) {
 		for _, tx := range txs {
 			dump[fmt.Sprintf("%d", tx.Nonce())] = format(tx)
 		}
-		inspect["pending"][account.Hex()] = dump
+		inspect[STATUS_PENDING][account.Hex()] = dump
 	}
 
 	// Flatten the queued transactions
@@ -149,7 +154,7 @@ func (b *Backend) Inspect() (map[string]map[string]map[string]string, error) {
 		for _, tx := range txs {
 			dump[fmt.Sprintf("%d", tx.Nonce())] = format(tx)
 		}
-		inspect["queued"][account.Hex()] = dump
+		inspect[STATUS_QUEUED][account.Hex()] = dump
 	}
 
 	return inspect, nil
@@ -161,15 +166,15 @@ func (b *Backend) Status() (map[string]hexutil.Uint, error) {
 	evmMempool := mempool.GetGlobalEVMMempool()
 	if evmMempool == nil {
 		return map[string]hexutil.Uint{
-			"pending": hexutil.Uint(0),
-			"queued":  hexutil.Uint(0),
+			STATUS_PENDING: hexutil.Uint(0),
+			STATUS_QUEUED:  hexutil.Uint(0),
 		}, nil
 	}
 
 	pending, queued := evmMempool.GetTxPool().Stats()
 	return map[string]hexutil.Uint{
-		"pending": hexutil.Uint(pending), // #nosec G115 -- overflow not a concern for tx counts
-		"queued":  hexutil.Uint(queued),  // #nosec G115 -- overflow not a concern for tx counts
+		STATUS_PENDING: hexutil.Uint(pending), // #nosec G115 -- overflow not a concern for tx counts
+		STATUS_QUEUED:  hexutil.Uint(queued),  // #nosec G115 -- overflow not a concern for tx counts
 	}, nil
 }
 
