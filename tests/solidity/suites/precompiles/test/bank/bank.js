@@ -27,7 +27,7 @@ describe('Bank', function () {
         expect(supply.length).to.be.greaterThan(0);
     });
 
-    it('query supply of WEVMOS', async function () {
+    it('query supply of WATOM', async function () {
         const bank = await hre.ethers.getContractAt(
             'IBank',
             '0x0000000000000000000000000000000000000804'

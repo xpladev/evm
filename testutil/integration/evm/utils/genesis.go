@@ -12,7 +12,7 @@ import (
 )
 
 // CreateGenesisWithTokenPairs creates a genesis that includes
-// the WEVMOS and the provided denoms.
+// the WATOM and the provided denoms.
 // If no denoms provided, creates only one dynamic precompile with the 'xmpl' denom.
 func CreateGenesisWithTokenPairs(keyring testkeyring.Keyring, denoms ...string) network.CustomGenesisState {
 	// Add all keys from the keyring to the genesis accounts as well.
@@ -67,10 +67,10 @@ func CreateGenesisWithTokenPairs(keyring testkeyring.Keyring, denoms ...string) 
 	}
 
 	// STR v2: update the NativePrecompiles and DynamicPrecompiles
-	// with the WEVMOS (default is mainnet) and 'xmpl' tokens in the erc20 params
+	// with the WATOM (default is mainnet) and 'xmpl' tokens in the erc20 params
 	erc20GenesisState := erc20types.DefaultGenesisState()
 	erc20GenesisState.TokenPairs = tokenPairs
-	erc20GenesisState.NativePrecompiles = []string{testconstants.WEVMOSContractMainnet}
+	erc20GenesisState.NativePrecompiles = []string{testconstants.WATOMContractMainnet}
 	erc20GenesisState.DynamicPrecompiles = dynPrecAddr
 
 	// Combine module genesis states
@@ -83,11 +83,11 @@ func CreateGenesisWithTokenPairs(keyring testkeyring.Keyring, denoms ...string) 
 // NewErc20GenesisState returns the default genesis state for the ERC20 module.
 //
 // NOTE: for the example chain implementation we are also adding a default token pair,
-// which is the base denomination of the chain (i.e. the WEVMOS contract).
+// which is the base denomination of the chain (i.e. the WATOM contract).
 func NewErc20GenesisState() *erc20types.GenesisState {
 	erc20GenState := erc20types.DefaultGenesisState()
 	erc20GenState.TokenPairs = testconstants.ExampleTokenPairs
-	erc20GenState.NativePrecompiles = []string{testconstants.WEVMOSContractMainnet}
+	erc20GenState.NativePrecompiles = []string{testconstants.WATOMContractMainnet}
 
 	return erc20GenState
 }

@@ -26,7 +26,7 @@ type PrecompileUnitTestSuite struct {
 	grpcHandler grpc.Handler
 	keyring     keyring.Keyring
 
-	// WEVMOS related fields
+	// WATOM related fields
 	precompile        *werc20.Precompile
 	precompileAddrHex string
 }
@@ -61,7 +61,7 @@ func (s *PrecompileUnitTestSuite) SetupTest(chainID testconstants.ChainID) {
 	s.grpcHandler = grpcHandler
 	s.keyring = keyring
 
-	s.precompileAddrHex = network.GetWEVMOSContractHex(chainID)
+	s.precompileAddrHex = network.GetWATOMContractHex(chainID)
 
 	ctx := integrationNetwork.GetContext()
 

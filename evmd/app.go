@@ -909,7 +909,7 @@ func (app *EVMD) DefaultGenesis() map[string]json.RawMessage {
 	genesis[evmtypes.ModuleName] = app.appCodec.MustMarshalJSON(evmGenState)
 
 	// NOTE: for the example chain implementation we are also adding a default token pair,
-	// which is the base denomination of the chain (i.e. the WEVMOS contract)
+	// which is the base denomination of the chain (i.e. the WATOM contract)
 	erc20GenState := NewErc20GenesisState()
 	genesis[erc20types.ModuleName] = app.appCodec.MustMarshalJSON(erc20GenState)
 

@@ -251,7 +251,7 @@ func TestIntegrationTestSuite(t *testing.T, create network.CreateEvmApp, options
 			passCheck = failCheck.WithExpPass(true)
 
 			erc20Keeper := is.network.App.GetErc20Keeper()
-			available := erc20Keeper.IsNativePrecompileAvailable(is.network.GetContext(), common.HexToAddress(testconstants.WEVMOSContractMainnet))
+			available := erc20Keeper.IsNativePrecompileAvailable(is.network.GetContext(), common.HexToAddress(testconstants.WATOMContractMainnet))
 			Expect(available).To(BeTrue())
 
 			revertContractAddr, err = is.factory.DeployContract(
@@ -261,7 +261,7 @@ func TestIntegrationTestSuite(t *testing.T, create network.CreateEvmApp, options
 					Contract: revertCallerContract,
 					// NOTE: we're passing the precompile address to the constructor because that initiates the contract
 					// to make calls to the correct ERC20 precompile.
-					ConstructorArgs: []interface{}{common.HexToAddress(testconstants.WEVMOSContractMainnet)},
+					ConstructorArgs: []interface{}{common.HexToAddress(testconstants.WATOMContractMainnet)},
 				},
 			)
 			Expect(err).ToNot(HaveOccurred(), "failed to deploy reverter contract")
@@ -426,7 +426,7 @@ func TestIntegrationTestSuite(t *testing.T, create network.CreateEvmApp, options
 				)
 			})
 			When("calling reverter contract", func() {
-				Context("in a direct call to the WEVMOS contract", func() {
+				Context("in a direct call to the WATOM contract", func() {
 					var (
 						args   testutiltypes.CallArgs
 						txArgs evmtypes.EvmTxArgs
@@ -488,7 +488,7 @@ func TestIntegrationTestSuite(t *testing.T, create network.CreateEvmApp, options
 						Expect(senderFinalBalance.Amount).To(Equal(senderInitialBalance.Amount.Sub(denomSpent)))
 					},
 					)
-					DescribeTable("it should revert token transfer from the WEVMOS contract", func(before bool, after bool) {
+					DescribeTable("it should revert token transfer from the WATOM contract", func(before bool, after bool) {
 						sender := is.keyring.GetKey(0)
 						receiver := is.keyring.GetAddr(1)
 						amountToSend := big.NewInt(100)
@@ -535,7 +535,7 @@ func TestIntegrationTestSuite(t *testing.T, create network.CreateEvmApp, options
 						Entry("revert before", true, false),
 						Entry("revert after", false, true),
 					)
-					It("it should send token transfer and send from WEVMOS contract", func() {
+					It("it should send token transfer and send from WATOM contract", func() {
 						sender := is.keyring.GetKey(0)
 						receiver := is.keyring.GetAddr(1)
 						totalToSend := int64(350)
@@ -581,7 +581,7 @@ func TestIntegrationTestSuite(t *testing.T, create network.CreateEvmApp, options
 						Expect(senderFinalBalance.Amount).To(Equal(senderInitialBalance.Amount.Sub(denomSpent)))
 					},
 					)
-					DescribeTable("it should revert token transfer and send from WEVMOS contract", func(before bool, after bool) {
+					DescribeTable("it should revert token transfer and send from WATOM contract", func(before bool, after bool) {
 						sender := is.keyring.GetKey(0)
 						receiver := is.keyring.GetAddr(1)
 						balRes, err := is.handler.GetBalanceFromBank(receiver.Bytes(), is.bondDenom)

@@ -43,13 +43,13 @@ type PrecompileIntegrationTestSuite struct {
 
 	wrappedCoinDenom string
 
-	// WEVMOS related fields
+	// WATOM related fields
 	precompile        *werc20.Precompile
 	precompileAddrHex string
 }
 
 func TestPrecompileIntegrationTestSuite(t *testing.T, create network.CreateEvmApp, options ...network.ConfigOption) {
-	_ = When("a user interact with the WEVMOS precompiled contract", func() {
+	_ = When("a user interact with the WATOM precompiled contract", func() {
 		var (
 			is                                         *PrecompileIntegrationTestSuite
 			passCheck, failCheck                       testutil.LogCheckArgs
@@ -102,7 +102,7 @@ func TestPrecompileIntegrationTestSuite(t *testing.T, create network.CreateEvmAp
 			is.keyring = keyring
 
 			is.wrappedCoinDenom = evmtypes.GetEVMCoinDenom()
-			is.precompileAddrHex = network.GetWEVMOSContractHex(testconstants.ChainID{
+			is.precompileAddrHex = network.GetWATOMContractHex(testconstants.ChainID{
 				ChainID:    is.network.GetChainID(),
 				EVMChainID: is.network.GetEIP155ChainID().Uint64(),
 			})
@@ -111,7 +111,7 @@ func TestPrecompileIntegrationTestSuite(t *testing.T, create network.CreateEvmAp
 
 			// Perform some check before adding the precompile to the suite.
 
-			// Check that WEVMOS is part of the native precompiles.
+			// Check that WATOM is part of the native precompiles.
 			available := is.network.App.GetErc20Keeper().IsNativePrecompileAvailable(is.network.GetContext(), common.HexToAddress(is.precompileAddrHex))
 			Expect(available).To(
 				BeTrue(),
@@ -120,7 +120,7 @@ func TestPrecompileIntegrationTestSuite(t *testing.T, create network.CreateEvmAp
 			_, found := is.network.App.GetBankKeeper().GetDenomMetaData(ctx, evmtypes.GetEVMCoinDenom())
 			Expect(found).To(BeTrue(), "expected native token metadata to be registered")
 
-			// Check that WEVMOS is registered in the token pairs map.
+			// Check that WATOM is registered in the token pairs map.
 			tokenPairID := is.network.App.GetErc20Keeper().GetTokenPairID(ctx, is.wrappedCoinDenom)
 			tokenPair, found := is.network.App.GetErc20Keeper().GetTokenPair(ctx, tokenPairID)
 			Expect(found).To(BeTrue(), "expected wevmos precompile to be registered in the tokens map")
@@ -143,7 +143,7 @@ func TestPrecompileIntegrationTestSuite(t *testing.T, create network.CreateEvmAp
 
 			// Setup of the contract calling into the precompile to tests revert
 			// edge cases and proper handling of snapshots.
-			revertCallerContract, err := testdata.LoadWEVMOS9TestCaller()
+			revertCallerContract, err := testdata.LoadWATOM9TestCaller()
 			Expect(err).ToNot(HaveOccurred(), "failed to load werc20 reverter caller contract")
 
 			txArgs := evmtypes.EvmTxArgs{}
@@ -576,7 +576,7 @@ func TestPrecompileIntegrationTestSuite(t *testing.T, create network.CreateEvmAp
 
 	// Run Ginkgo integration tests
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "WEVMOS precompile test suite")
+	RunSpecs(t, "WATOM precompile test suite")
 }
 
 // checkAndReturnBalance check that the balance of the address is the same in

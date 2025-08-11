@@ -96,7 +96,7 @@ func (s *KeeperTestSuite) TestGetERC20PrecompileInstance() {
 func (s *KeeperTestSuite) TestGetNativePrecompiles() {
 	var ctx sdk.Context
 	testAddr := utiltx.GenerateAddress()
-	defaultWEVMOSAddr := common.HexToAddress(testconstants.WEVMOSContractMainnet)
+	defaultWATOMAddr := common.HexToAddress(testconstants.WATOMContractMainnet)
 
 	testCases := []struct {
 		name     string
@@ -106,12 +106,12 @@ func (s *KeeperTestSuite) TestGetNativePrecompiles() {
 		{
 			"default native precompiles registered",
 			func() {},
-			[]string{defaultWEVMOSAddr.Hex()},
+			[]string{defaultWATOMAddr.Hex()},
 		},
 		{
 			"no native precompiles registered",
 			func() {
-				s.network.App.GetErc20Keeper().DeleteNativePrecompile(ctx, defaultWEVMOSAddr)
+				s.network.App.GetErc20Keeper().DeleteNativePrecompile(ctx, defaultWATOMAddr)
 			},
 			nil,
 		},
@@ -120,7 +120,7 @@ func (s *KeeperTestSuite) TestGetNativePrecompiles() {
 			func() {
 				s.network.App.GetErc20Keeper().SetNativePrecompile(ctx, testAddr)
 			},
-			[]string{defaultWEVMOSAddr.Hex(), testAddr.Hex()},
+			[]string{defaultWATOMAddr.Hex(), testAddr.Hex()},
 		},
 	}
 	for _, tc := range testCases {
@@ -139,7 +139,7 @@ func (s *KeeperTestSuite) TestGetNativePrecompiles() {
 func (s *KeeperTestSuite) TestSetNativePrecompile() {
 	var ctx sdk.Context
 	testAddr := utiltx.GenerateAddress()
-	defaultWEVMOSAddr := common.HexToAddress(testconstants.WEVMOSContractMainnet)
+	defaultWATOMAddr := common.HexToAddress(testconstants.WATOMContractMainnet)
 
 	testCases := []struct {
 		name     string
@@ -151,7 +151,7 @@ func (s *KeeperTestSuite) TestSetNativePrecompile() {
 			"set new native precompile",
 			[]common.Address{testAddr},
 			func() {},
-			[]string{defaultWEVMOSAddr.Hex(), testAddr.Hex()},
+			[]string{defaultWATOMAddr.Hex(), testAddr.Hex()},
 		},
 		{
 			"set duplicate native precompile",
@@ -159,7 +159,7 @@ func (s *KeeperTestSuite) TestSetNativePrecompile() {
 			func() {
 				s.network.App.GetErc20Keeper().SetNativePrecompile(ctx, testAddr)
 			},
-			[]string{defaultWEVMOSAddr.Hex(), testAddr.Hex()},
+			[]string{defaultWATOMAddr.Hex(), testAddr.Hex()},
 		},
 		{
 			"set non-eip55 native precompile variations",
@@ -170,7 +170,7 @@ func (s *KeeperTestSuite) TestSetNativePrecompile() {
 			func() {
 				s.network.App.GetErc20Keeper().SetNativePrecompile(ctx, testAddr)
 			},
-			[]string{defaultWEVMOSAddr.Hex(), testAddr.Hex()},
+			[]string{defaultWATOMAddr.Hex(), testAddr.Hex()},
 		},
 	}
 	for _, tc := range testCases {
@@ -192,7 +192,7 @@ func (s *KeeperTestSuite) TestSetNativePrecompile() {
 func (s *KeeperTestSuite) TestDeleteNativePrecompile() {
 	var ctx sdk.Context
 	testAddr := utiltx.GenerateAddress()
-	defaultWEVMOSAddr := common.HexToAddress(testconstants.WEVMOSContractMainnet)
+	defaultWATOMAddr := common.HexToAddress(testconstants.WATOMContractMainnet)
 	unavailableAddr := common.HexToAddress("unavailable")
 
 	testCases := []struct {
@@ -203,7 +203,7 @@ func (s *KeeperTestSuite) TestDeleteNativePrecompile() {
 	}{
 		{
 			"delete all native precompiles",
-			[]common.Address{defaultWEVMOSAddr, testAddr},
+			[]common.Address{defaultWATOMAddr, testAddr},
 			func() {
 				s.network.App.GetErc20Keeper().SetNativePrecompile(ctx, testAddr)
 			},
@@ -215,11 +215,11 @@ func (s *KeeperTestSuite) TestDeleteNativePrecompile() {
 			func() {
 				s.network.App.GetErc20Keeper().SetNativePrecompile(ctx, testAddr)
 			},
-			[]string{defaultWEVMOSAddr.Hex(), testAddr.Hex()},
+			[]string{defaultWATOMAddr.Hex(), testAddr.Hex()},
 		},
 		{
 			"delete default native precompile",
-			[]common.Address{defaultWEVMOSAddr},
+			[]common.Address{defaultWATOMAddr},
 			func() {
 				s.network.App.GetErc20Keeper().SetNativePrecompile(ctx, testAddr)
 			},
@@ -231,12 +231,12 @@ func (s *KeeperTestSuite) TestDeleteNativePrecompile() {
 			func() {
 				s.network.App.GetErc20Keeper().SetNativePrecompile(ctx, testAddr)
 			},
-			[]string{defaultWEVMOSAddr.Hex()},
+			[]string{defaultWATOMAddr.Hex()},
 		},
 		{
 			"delete with non-eip55 native precompile lower variation",
 			[]common.Address{
-				common.HexToAddress(strings.ToLower(defaultWEVMOSAddr.Hex())),
+				common.HexToAddress(strings.ToLower(defaultWATOMAddr.Hex())),
 			},
 			func() {
 				s.network.App.GetErc20Keeper().SetNativePrecompile(ctx, testAddr)
@@ -246,7 +246,7 @@ func (s *KeeperTestSuite) TestDeleteNativePrecompile() {
 		{
 			"delete with non-eip55 native precompile upper variation",
 			[]common.Address{
-				common.HexToAddress(strings.ToUpper(defaultWEVMOSAddr.Hex())),
+				common.HexToAddress(strings.ToUpper(defaultWATOMAddr.Hex())),
 			},
 			func() {
 				s.network.App.GetErc20Keeper().SetNativePrecompile(ctx, testAddr)
@@ -256,9 +256,9 @@ func (s *KeeperTestSuite) TestDeleteNativePrecompile() {
 		{
 			"delete multiple of same native precompile",
 			[]common.Address{
-				defaultWEVMOSAddr,
-				defaultWEVMOSAddr,
-				defaultWEVMOSAddr,
+				defaultWATOMAddr,
+				defaultWATOMAddr,
+				defaultWATOMAddr,
 			},
 			func() {
 				s.network.App.GetErc20Keeper().SetNativePrecompile(ctx, testAddr)
@@ -285,7 +285,7 @@ func (s *KeeperTestSuite) TestDeleteNativePrecompile() {
 func (s *KeeperTestSuite) TestIsNativePrecompileAvailable() {
 	var ctx sdk.Context
 	testAddr := utiltx.GenerateAddress()
-	defaultWEVMOSAddr := common.HexToAddress(testconstants.WEVMOSContractMainnet)
+	defaultWATOMAddr := common.HexToAddress(testconstants.WATOMContractMainnet)
 	unavailableAddr := common.HexToAddress("unavailable")
 
 	testCases := []struct {
@@ -296,7 +296,7 @@ func (s *KeeperTestSuite) TestIsNativePrecompileAvailable() {
 	}{
 		{
 			"all native precompiles are available",
-			[]common.Address{defaultWEVMOSAddr, testAddr},
+			[]common.Address{defaultWATOMAddr, testAddr},
 			func() {
 				s.network.App.GetErc20Keeper().SetNativePrecompile(ctx, testAddr)
 			},
@@ -304,7 +304,7 @@ func (s *KeeperTestSuite) TestIsNativePrecompileAvailable() {
 		},
 		{
 			"only default native precompile is available",
-			[]common.Address{defaultWEVMOSAddr, testAddr},
+			[]common.Address{defaultWATOMAddr, testAddr},
 			func() {},
 			[]bool{true, false},
 		},

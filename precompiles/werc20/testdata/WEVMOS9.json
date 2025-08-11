@@ -1,7 +1,7 @@
 {
   "_format": "hh-sol-artifact-1",
-  "contractName": "WEVMOS9",
-  "sourceName": "solidity/precompiles/werc20/testdata/WEVMOS9.sol",
+  "contractName": "WATOM9",
+  "sourceName": "solidity/precompiles/werc20/testdata/WATOM9.sol",
   "abi": [
     {
       "constant": true,

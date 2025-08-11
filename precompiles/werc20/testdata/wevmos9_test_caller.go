@@ -5,6 +5,6 @@ import (
 	evmtypes "github.com/cosmos/evm/x/vm/types"
 )
 
-func LoadWEVMOS9TestCaller() (evmtypes.CompiledContract, error) {
-	return contractutils.LoadContractFromJSONFile("WEVMOS9TestCaller.json")
+func LoadWATOM9TestCaller() (evmtypes.CompiledContract, error) {
+	return contractutils.LoadContractFromJSONFile("WATOM9TestCaller.json")
 }
