@@ -65,6 +65,8 @@ var (
 	unsafeStartValidatorFn UnsafeStartValidatorCmdCreator
 )
 
+const TEST_DENOM = "atest"
+
 var (
 	mnemonics = []string{
 		"copper push brief egg scan entry inform record adjust fossil boss egg comic alien upon aspect dry avoid interest fury window hint race symptom",
@@ -386,7 +388,7 @@ func initTestnetFiles(
 		accTokens := sdk.TokensFromConsensusPower(1000, sdk.DefaultPowerReduction)
 		accStakingTokens := sdk.TokensFromConsensusPower(500, sdk.DefaultPowerReduction)
 		coins := sdk.Coins{
-			sdk.NewCoin("atest", accTokens),
+			sdk.NewCoin(TEST_DENOM, accTokens),
 			sdk.NewCoin(sdk.DefaultBondDenom, accStakingTokens),
 		}
 
@@ -464,7 +466,7 @@ func addExtraAccounts(kb keyring.Keyring, algo keyring.SignatureAlgo) ([]banktyp
 	accTokens := sdk.TokensFromConsensusPower(1000, sdk.DefaultPowerReduction)
 	accStakingTokens := sdk.TokensFromConsensusPower(500, sdk.DefaultPowerReduction)
 	coins := sdk.Coins{
-		sdk.NewCoin("atest", accTokens),
+		sdk.NewCoin(TEST_DENOM, accTokens),
 		sdk.NewCoin(sdk.DefaultBondDenom, accStakingTokens),
 	}
 	coins = coins.Sort()
