@@ -76,6 +76,7 @@ func NewEVMMempool(getCtxCallback func(height int64, prove bool) (sdk.Context, e
 		txPool      *txpool.TxPool
 		cosmosPool  sdkmempool.ExtMempool
 		anteHandler sdk.AnteHandler
+		blockchain  *Blockchain
 	)
 
 	bondDenom := evmtypes.GetEVMCoinDenom()
@@ -85,17 +86,14 @@ func NewEVMMempool(getCtxCallback func(height int64, prove bool) (sdk.Context, e
 		panic("config must not be nil")
 	}
 
-	txPool = config.TxPool
-	cosmosPool = config.CosmosPool
 	anteHandler = config.AnteHandler
 
 	if config.BlockGasLimit == 0 {
 		config.BlockGasLimit = 100_000_000
 	}
 
-	var blockchain *Blockchain
-
 	// Default txPool
+	txPool = config.TxPool
 	if txPool == nil {
 		blockchain = newBlockchain(getCtxCallback, vmKeeper, feeMarketKeeper, config.BlockGasLimit)
 		legacyPool := legacypool.New(legacypool.DefaultConfig, blockchain)
@@ -120,6 +118,7 @@ func NewEVMMempool(getCtxCallback func(height int64, prove bool) (sdk.Context, e
 	}
 
 	// Default Cosmos Mempool
+	cosmosPool = config.CosmosPool
 	if cosmosPool == nil {
 		priorityConfig := sdkmempool.PriorityNonceMempoolConfig[math.Int]{}
 		priorityConfig.TxPriority = sdkmempool.TxPriority[math.Int]{
