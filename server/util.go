@@ -63,7 +63,7 @@ func AddCommands(
 // ConnectCmtWS connects to a CometBFT WebSocket (WS) server.
 // Parameters:
 // - cmtRPCAddr: The RPC address of the CometBFT server.
-// - cmtEndpoint: The WebSocket endpoint on the Tendermint server.
+// - cmtEndpoint: The WebSocket endpoint on the CometBFT server.
 // - logger: A logger instance used to log debug and CometBFT messages.
 func ConnectCmtWS(cmtRPCAddr, cmtEndpoint string, logger log.Logger) *rpcclient.WSClient {
 	tmWsClient, err := rpcclient.NewWS(cmtRPCAddr, cmtEndpoint,

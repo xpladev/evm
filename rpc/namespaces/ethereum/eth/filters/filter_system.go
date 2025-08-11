@@ -37,7 +37,7 @@ var (
 )
 
 // EventSystem creates subscriptions, processes events and broadcasts them to the
-// subscription which match the subscription criteria using the Tendermint's RPC client.
+// subscription which match the subscription criteria using the CometBFT's RPC client.
 type EventSystem struct {
 	logger     log.Logger
 	ctx        context.Context
@@ -92,7 +92,7 @@ func (es *EventSystem) WithContext(ctx context.Context) {
 	es.ctx = ctx
 }
 
-// subscribe performs a new event subscription to a given Tendermint event.
+// subscribe performs a new event subscription to a given CometBFT event.
 // The subscription creates a unidirectional receive event channel to receive the ResultEvent.
 func (es *EventSystem) subscribe(sub *Subscription) (*Subscription, pubsub.UnsubscribeFunc, error) {
 	var (
