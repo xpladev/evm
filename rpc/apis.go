@@ -45,7 +45,7 @@ const (
 type APICreator = func(
 	ctx *server.Context,
 	clientCtx client.Context,
-	tendermintWebsocketClient *rpcclient.WSClient,
+	cometWebsocketClient *rpcclient.WSClient,
 	allowUnprotectedTxs bool,
 	indexer types.EVMTxIndexer,
 ) []rpc.API

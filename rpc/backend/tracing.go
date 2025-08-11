@@ -9,8 +9,8 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/pkg/errors"
 
-	tmrpcclient "github.com/cometbft/cometbft/rpc/client"
-	tmrpctypes "github.com/cometbft/cometbft/rpc/core/types"
+	cmtrpcclient "github.com/cometbft/cometbft/rpc/client"
+	cmtrpctypes "github.com/cometbft/cometbft/rpc/core/types"
 
 	rpctypes "github.com/cosmos/evm/rpc/types"
 	evmtypes "github.com/cosmos/evm/x/vm/types"
@@ -33,7 +33,7 @@ func (b *Backend) TraceTransaction(hash common.Hash, config *evmtypes.TraceConfi
 		return nil, errors.New("genesis is not traceable")
 	}
 
-	blk, err := b.TendermintBlockByNumber(rpctypes.BlockNumber(transaction.Height))
+	blk, err := b.CometBlockByNumber(rpctypes.BlockNumber(transaction.Height))
 	if err != nil {
 		b.Logger.Debug("block not found", "height", transaction.Height)
 		return nil, err
@@ -88,7 +88,7 @@ func (b *Backend) TraceTransaction(hash common.Hash, config *evmtypes.TraceConfi
 		return nil, fmt.Errorf("invalid transaction type %T", tx)
 	}
 
-	nc, ok := b.ClientCtx.Client.(tmrpcclient.NetworkClient)
+	nc, ok := b.ClientCtx.Client.(cmtrpcclient.NetworkClient)
 	if !ok {
 		return nil, errors.New("invalid rpc client")
 	}
@@ -140,7 +140,7 @@ func (b *Backend) TraceTransaction(hash common.Hash, config *evmtypes.TraceConfi
 // per transaction, dependent on the requested tracer.
 func (b *Backend) TraceBlock(height rpctypes.BlockNumber,
 	config *evmtypes.TraceConfig,
-	block *tmrpctypes.ResultBlock,
+	block *cmtrpctypes.ResultBlock,
 ) ([]*evmtypes.TxTraceResult, error) {
 	txs := block.Block.Txs
 	txsLength := len(txs)
@@ -150,7 +150,7 @@ func (b *Backend) TraceBlock(height rpctypes.BlockNumber,
 		return []*evmtypes.TxTraceResult{}, nil
 	}
 
-	blockRes, err := b.TendermintBlockResultByNumber(&block.Block.Height)
+	blockRes, err := b.CometBlockResultByNumber(&block.Block.Height)
 	if err != nil {
 		b.Logger.Debug("block result not found", "height", block.Block.Height, "error", err.Error())
 		return nil, nil
@@ -187,7 +187,7 @@ func (b *Backend) TraceBlock(height rpctypes.BlockNumber,
 	}
 	ctxWithHeight := rpctypes.ContextWithHeight(int64(contextHeight))
 
-	nc, ok := b.ClientCtx.Client.(tmrpcclient.NetworkClient)
+	nc, ok := b.ClientCtx.Client.(cmtrpcclient.NetworkClient)
 	if !ok {
 		return nil, errors.New("invalid rpc client")
 	}

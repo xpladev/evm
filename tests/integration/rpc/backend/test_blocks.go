@@ -102,7 +102,7 @@ func (s *TestSuite) TestGetBlockByNumber() {
 		expPass      bool
 	}{
 		{
-			"pass - tendermint block not found",
+			"pass - CometBFT block not found",
 			ethrpc.BlockNumber(1),
 			true,
 			math.NewInt(1).BigInt(),
@@ -247,7 +247,7 @@ func (s *TestSuite) TestGetBlockByHash() {
 		expPass      bool
 	}{
 		{
-			"fail - tendermint failed to get block",
+			"fail - CometBFT failed to get block",
 			common.BytesToHash(block.Hash()),
 			true,
 			math.NewInt(1).BigInt(),
@@ -262,7 +262,7 @@ func (s *TestSuite) TestGetBlockByHash() {
 			false,
 		},
 		{
-			"fail - tendermint blockres not found",
+			"fail - CometBFT blockres not found",
 			common.BytesToHash(block.Hash()),
 			true,
 			math.NewInt(1).BigInt(),
@@ -277,7 +277,7 @@ func (s *TestSuite) TestGetBlockByHash() {
 			false,
 		},
 		{
-			"noop - tendermint failed to fetch block result",
+			"noop - CometBFT failed to fetch block result",
 			common.BytesToHash(block.Hash()),
 			true,
 			math.NewInt(1).BigInt(),
@@ -394,7 +394,7 @@ func (s *TestSuite) TestGetBlockTransactionCountByHash() {
 			false,
 		},
 		{
-			"fail - tendermint client failed to get block result",
+			"fail - CometBFT client failed to get block result",
 			common.BytesToHash(emptyBlock.Hash()),
 			func(hash common.Hash) {
 				height := int64(1)
@@ -530,7 +530,7 @@ func (s *TestSuite) TestGetBlockTransactionCountByNumber() {
 	}
 }
 
-func (s *TestSuite) TestTendermintBlockByNumber() {
+func (s *TestSuite) TestCometBlockByNumber() {
 	var expResultHeader *cmtrpctypes.ResultBlock
 
 	testCases := []struct {
@@ -619,7 +619,7 @@ func (s *TestSuite) TestTendermintBlockByNumber() {
 			s.SetupTest() // reset test and queries
 
 			tc.registerMock(tc.blockNumber)
-			resultBlock, err := s.backend.TendermintBlockByNumber(tc.blockNumber)
+			resultBlock, err := s.backend.CometBlockByNumber(tc.blockNumber)
 
 			if tc.expPass {
 				s.Require().NoError(err)
@@ -637,7 +637,7 @@ func (s *TestSuite) TestTendermintBlockByNumber() {
 	}
 }
 
-func (s *TestSuite) TestTendermintBlockResultByNumber() {
+func (s *TestSuite) TestCometBlockResultByNumber() {
 	var expBlockRes *cmtrpctypes.ResultBlockResults
 
 	testCases := []struct {
@@ -748,7 +748,7 @@ func (s *TestSuite) TestBlockNumberFromTendermint() {
 			}
 
 			tc.registerMock(tc.hash)
-			blockNum, err := s.backend.BlockNumberFromTendermint(blockNrOrHash)
+			blockNum, err := s.backend.BlockNumberFromComet(blockNrOrHash)
 
 			if tc.expPass {
 				s.Require().NoError(err)
@@ -811,7 +811,7 @@ func (s *TestSuite) TestBlockNumberFromTendermintByHash() {
 			s.SetupTest() // reset test and queries
 
 			tc.registerMock(tc.hash)
-			blockNum, err := s.backend.BlockNumberFromTendermintByHash(tc.hash)
+			blockNum, err := s.backend.BlockNumberFromCometByHash(tc.hash)
 			if tc.expPass {
 				expHeight := big.NewInt(resHeader.Header.Height)
 				s.Require().NoError(err)
@@ -1083,7 +1083,7 @@ func (s *TestSuite) TestGetEthBlockFromTendermint() {
 			s.SetupTest() // reset test and queries
 			tc.registerMock(math.NewIntFromBigInt(tc.baseFee), tc.validator, tc.height)
 
-			block, err := s.backend.RPCBlockFromTendermintBlock(tc.resBlock, tc.blockRes, tc.fullTx)
+			block, err := s.backend.RPCBlockFromCometBlock(tc.resBlock, tc.blockRes, tc.fullTx)
 
 			var expBlock map[string]interface{}
 			header := tc.resBlock.Block.Header
@@ -1192,7 +1192,7 @@ func (s *TestSuite) TestEthMsgsFromTendermintBlock() {
 		s.Run(fmt.Sprintf("Case %s", tc.name), func() {
 			s.SetupTest() // reset test and queries
 
-			msgs := s.backend.EthMsgsFromTendermintBlock(tc.resBlock, tc.blockRes)
+			msgs := s.backend.EthMsgsFromCometBlock(tc.resBlock, tc.blockRes)
 			s.Require().Equal(tc.expMsgs, msgs)
 		})
 	}
@@ -1298,7 +1298,7 @@ func (s *TestSuite) TestHeaderByNumber() {
 			header, err := s.backend.HeaderByNumber(tc.blockNumber)
 
 			if tc.expPass {
-				expHeader := ethrpc.EthHeaderFromTendermint(*expResultHeader.Header, ethtypes.Bloom{}, tc.baseFee)
+				expHeader := ethrpc.EthHeaderFromComet(*expResultHeader.Header, ethtypes.Bloom{}, tc.baseFee)
 				s.Require().NoError(err)
 				s.Require().Equal(expHeader, header)
 			} else {
@@ -1409,7 +1409,7 @@ func (s *TestSuite) TestHeaderByHash() {
 			header, err := s.backend.HeaderByHash(tc.hash)
 
 			if tc.expPass {
-				expHeader := ethrpc.EthHeaderFromTendermint(*expResultHeader.Header, ethtypes.Bloom{}, tc.baseFee)
+				expHeader := ethrpc.EthHeaderFromComet(*expResultHeader.Header, ethtypes.Bloom{}, tc.baseFee)
 				s.Require().NoError(err)
 				s.Require().Equal(expHeader, header)
 			} else {
@@ -1469,7 +1469,7 @@ func (s *TestSuite) TestEthBlockByNumber() {
 				RegisterBaseFee(QueryClient, baseFee)
 			},
 			ethtypes.NewBlock(
-				ethrpc.EthHeaderFromTendermint(
+				ethrpc.EthHeaderFromComet(
 					emptyBlock.Header,
 					ethtypes.Bloom{},
 					math.NewInt(1).BigInt(),
@@ -1495,7 +1495,7 @@ func (s *TestSuite) TestEthBlockByNumber() {
 				RegisterBaseFee(QueryClient, baseFee)
 			},
 			ethtypes.NewBlock(
-				ethrpc.EthHeaderFromTendermint(
+				ethrpc.EthHeaderFromComet(
 					emptyBlock.Header,
 					ethtypes.Bloom{},
 					math.NewInt(1).BigInt(),
@@ -1560,7 +1560,7 @@ func (s *TestSuite) TestEthBlockFromTendermintBlock() {
 				RegisterBaseFee(QueryClient, baseFee)
 			},
 			ethtypes.NewBlock(
-				ethrpc.EthHeaderFromTendermint(
+				ethrpc.EthHeaderFromComet(
 					emptyBlock.Header,
 					ethtypes.Bloom{},
 					math.NewInt(1).BigInt(),
@@ -1594,7 +1594,7 @@ func (s *TestSuite) TestEthBlockFromTendermintBlock() {
 				RegisterBaseFee(QueryClient, baseFee)
 			},
 			ethtypes.NewBlock(
-				ethrpc.EthHeaderFromTendermint(
+				ethrpc.EthHeaderFromComet(
 					emptyBlock.Header,
 					ethtypes.Bloom{},
 					math.NewInt(1).BigInt(),
@@ -1611,7 +1611,7 @@ func (s *TestSuite) TestEthBlockFromTendermintBlock() {
 			s.SetupTest() // reset test and queries
 			tc.registerMock(math.NewIntFromBigInt(tc.baseFee), tc.blockRes.Height)
 
-			ethBlock, err := s.backend.EthBlockFromTendermintBlock(tc.resBlock, tc.blockRes)
+			ethBlock, err := s.backend.EthBlockFromCometBlock(tc.resBlock, tc.blockRes)
 
 			if tc.expPass {
 				s.Require().NoError(err)

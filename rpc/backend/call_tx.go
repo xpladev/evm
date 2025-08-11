@@ -298,7 +298,7 @@ func (b *Backend) EstimateGas(args evmtypes.TransactionArgs, blockNrOptional *rp
 		return 0, err
 	}
 
-	header, err := b.TendermintHeaderByNumber(blockNr)
+	header, err := b.CometHeaderByNumber(blockNr)
 	if err != nil {
 		// the error message imitates geth behavior
 		return 0, errors.New("header not found")
@@ -333,7 +333,7 @@ func (b *Backend) DoCall(
 	if err != nil {
 		return nil, err
 	}
-	header, err := b.TendermintHeaderByNumber(blockNr)
+	header, err := b.CometHeaderByNumber(blockNr)
 	if err != nil {
 		// the error message imitates geth behavior
 		return nil, errors.New("header not found")

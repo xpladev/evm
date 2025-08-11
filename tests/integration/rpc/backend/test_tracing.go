@@ -8,7 +8,7 @@ import (
 	mock "github.com/stretchr/testify/mock"
 
 	abci "github.com/cometbft/cometbft/abci/types"
-	tmrpctypes "github.com/cometbft/cometbft/rpc/core/types"
+	cmtrpctypes "github.com/cometbft/cometbft/rpc/core/types"
 	"github.com/cometbft/cometbft/types"
 
 	dbm "github.com/cosmos/cosmos-db"
@@ -215,14 +215,14 @@ func (s *TestSuite) TestTraceBlock() {
 	emptyBlock.ChainID = ChainID.ChainID
 	filledBlock := types.MakeBlock(1, []types.Tx{bz}, nil, nil)
 	filledBlock.ChainID = ChainID.ChainID
-	resBlockEmpty := tmrpctypes.ResultBlock{Block: emptyBlock, BlockID: emptyBlock.LastBlockID}
-	resBlockFilled := tmrpctypes.ResultBlock{Block: filledBlock, BlockID: filledBlock.LastBlockID}
+	resBlockEmpty := cmtrpctypes.ResultBlock{Block: emptyBlock, BlockID: emptyBlock.LastBlockID}
+	resBlockFilled := cmtrpctypes.ResultBlock{Block: filledBlock, BlockID: filledBlock.LastBlockID}
 
 	testCases := []struct {
 		name            string
 		registerMock    func()
 		expTraceResults []*evmtypes.TxTraceResult
-		resBlock        *tmrpctypes.ResultBlock
+		resBlock        *cmtrpctypes.ResultBlock
 		config          *evmtypes.TraceConfig
 		expPass         bool
 	}{
@@ -250,7 +250,7 @@ func (s *TestSuite) TestTraceBlock() {
 			false,
 		},
 		{
-			"fail - TendermintBlockResultByNumber returns error",
+			"fail - CometBlockResultByNumber returns error",
 			func() {
 				client := s.backend.ClientCtx.Client.(*mocks.Client)
 				RegisterBlockResultsError(client, 1)

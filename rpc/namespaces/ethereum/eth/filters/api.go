@@ -45,8 +45,8 @@ type Backend interface {
 	GetBlockByNumber(blockNum types.BlockNumber, fullTx bool) (map[string]interface{}, error)
 	HeaderByNumber(blockNum types.BlockNumber) (*ethtypes.Header, error)
 	HeaderByHash(blockHash common.Hash) (*ethtypes.Header, error)
-	TendermintBlockByHash(hash common.Hash) (*coretypes.ResultBlock, error)
-	TendermintBlockResultByNumber(height *int64) (*coretypes.ResultBlockResults, error)
+	CometBlockByHash(hash common.Hash) (*coretypes.ResultBlock, error)
+	CometBlockResultByNumber(height *int64) (*coretypes.ResultBlockResults, error)
 	GetLogs(blockHash common.Hash) ([][]*ethtypes.Log, error)
 	GetLogsByHeight(*int64) ([][]*ethtypes.Log, error)
 	BlockBloom(blockRes *coretypes.ResultBlockResults) (ethtypes.Bloom, error)
@@ -372,7 +372,7 @@ func (api *PublicFilterAPI) NewHeads(ctx context.Context) (*rpc.Subscription, er
 				baseFee := types.BaseFeeFromEvents(data.ResultFinalizeBlock.Events)
 
 				// TODO: fetch bloom from events
-				header := types.EthHeaderFromTendermint(data.Block.Header, ethtypes.Bloom{}, baseFee)
+				header := types.EthHeaderFromComet(data.Block.Header, ethtypes.Bloom{}, baseFee)
 				_ = notifier.Notify(rpcSub.ID, header) // #nosec G703
 			case <-rpcSub.Err():
 				headersSub.Unsubscribe(api.events)
