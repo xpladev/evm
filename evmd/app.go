@@ -3,9 +3,6 @@ package evmd
 import (
 	"encoding/json"
 	"fmt"
-	sdkmempool "github.com/cosmos/cosmos-sdk/types/mempool"
-	"github.com/cosmos/evm/mempool"
-	evmserver "github.com/cosmos/evm/server"
 	"io"
 	"os"
 
@@ -23,6 +20,8 @@ import (
 	evmconfig "github.com/cosmos/evm/config"
 	evmosencoding "github.com/cosmos/evm/encoding"
 	"github.com/cosmos/evm/evmd/ante"
+	evmmempool "github.com/cosmos/evm/mempool"
+	evmserver "github.com/cosmos/evm/server"
 	srvflags "github.com/cosmos/evm/server/flags"
 	cosmosevmtypes "github.com/cosmos/evm/types"
 	"github.com/cosmos/evm/x/erc20"
@@ -89,6 +88,7 @@ import (
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	testdata_pulsar "github.com/cosmos/cosmos-sdk/testutil/testdata/testpb"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkmempool "github.com/cosmos/cosmos-sdk/types/mempool"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/types/msgservice"
 	signingtypes "github.com/cosmos/cosmos-sdk/types/tx/signing"
@@ -194,7 +194,7 @@ type EVMD struct {
 	EVMKeeper         *evmkeeper.Keeper
 	Erc20Keeper       erc20keeper.Keeper
 	PreciseBankKeeper precisebankkeeper.Keeper
-	EVMMempool        *mempool.EVMMempool
+	EVMMempool        *evmmempool.EVMMempool
 
 	// the module manager
 	ModuleManager      *module.Manager
@@ -233,7 +233,7 @@ func NewExampleApp(
 	// Example:
 	//
 	// bApp := baseapp.NewBaseApp(...)
-	// nonceMempool := mempool.NewSenderNonceMempool()
+	// nonceMempool := evmmempool.NewSenderNonceMempool()
 	// abciPropHandler := NewDefaultProposalHandler(nonceMempool, bApp)
 	//
 	// bApp.SetMempool(nonceMempool)
@@ -440,7 +440,7 @@ func NewExampleApp(
 
 	app.GovKeeper = *govKeeper.SetHooks(
 		govtypes.NewMultiGovHooks(
-		// register the governance hooks
+			// register the governance hooks
 		),
 	)
 
@@ -762,24 +762,24 @@ func NewExampleApp(
 	// If you wish to use the noop mempool, remove this codeblock
 	if evmtypes.GetChainConfig() != nil {
 		// Get the actual block gas limit from consensus parameters
-		mempoolConfig := &mempool.EVMMempoolConfig{
+		mempoolConfig := &evmmempool.EVMMempoolConfig{
 			AnteHandler:   app.GetAnteHandler(),
 			BlockGasLimit: 100_000_000,
 		}
 
-		evmMempool := mempool.NewEVMMempool(app.CreateQueryContext, app.EVMKeeper, app.FeeMarketKeeper, app.txConfig, app.clientCtx, mempoolConfig)
+		evmMempool := evmmempool.NewEVMMempool(app.CreateQueryContext, app.EVMKeeper, app.FeeMarketKeeper, app.txConfig, app.clientCtx, mempoolConfig)
 		app.EVMMempool = evmMempool
 
 		// Set the global mempool for RPC access
-		if err := mempool.SetGlobalEVMMempool(evmMempool); err != nil {
+		if err := evmmempool.SetGlobalEVMMempool(evmMempool); err != nil {
 			panic(err)
 		}
 		app.SetMempool(evmMempool)
-		checkTxHandler := mempool.NewCheckTxHandler(evmMempool)
+		checkTxHandler := evmmempool.NewCheckTxHandler(evmMempool)
 		app.SetCheckTxHandler(checkTxHandler)
 
 		abciProposalHandler := baseapp.NewDefaultProposalHandler(evmMempool, app)
-		abciProposalHandler.SetSignerExtractionAdapter(mempool.NewEthSignerExtractionAdapter(sdkmempool.NewDefaultSignerExtractionAdapter()))
+		abciProposalHandler.SetSignerExtractionAdapter(evmmempool.NewEthSignerExtractionAdapter(sdkmempool.NewDefaultSignerExtractionAdapter()))
 		app.SetPrepareProposal(abciProposalHandler.PrepareProposalHandler())
 	}
 
