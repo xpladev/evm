@@ -3,6 +3,7 @@ package systemtests
 import (
 	"context"
 	"encoding/hex"
+	"fmt"
 	"math/big"
 	"os"
 	"os/exec"
@@ -22,18 +23,29 @@ import (
 	"cosmossdk.io/systemtests"
 )
 
+const (
+	// this PK is derived from the accounts created in testnet.go
+	pk = "0x88cbead91aee890d27bf06e003ade3d4e952427e88f88d31d61d3ef5e5d54305"
+)
+
 func StartChain(t *testing.T, sut *systemtests.SystemUnderTest) {
 	sut.StartChain(t, "--json-rpc.api=eth,txpool,personal,net,debug,web3", "--chain-id", "local-4221", "--api.enable=true")
 }
 
-func TestNonceGappedTxsPass(t *testing.T) {
-	//t.Skip("nonce gaps are not yet supported")
-	sut := systemtests.Sut
-	StartChain(t, sut)
-	sut.AwaitNBlocks(t, 10)
+// cosmos and eth tx with same nonce.
+// tx pool with nonce gapped txs - submit cosmos tx for the gapped txs and first in queue. overlapped txs inbetween pools.
 
-	// this PK is derived from the accounts created in testnet.go
-	pk := "0x88cbead91aee890d27bf06e003ade3d4e952427e88f88d31d61d3ef5e5d54305"
+// todo: 2 very fast txs make sure its replaced across everything..
+// what happens if 2nd tx is not relayed to the proposer fast enough?
+// set 2 vals, one with lots of stake, other v little
+
+func TestPriorityReplacement(t *testing.T) {
+	t.Skip("not yet supported")
+	sut := systemtests.Sut
+	sut.ResetChain(t)
+	StartChain(t, sut)
+
+	sut.AwaitNBlocks(t, 10)
 
 	// get the directory of the counter project to run commands from
 	_, filename, _, _ := runtime.Caller(0)
@@ -59,20 +71,38 @@ func TestNonceGappedTxsPass(t *testing.T) {
 
 	wg := sync.WaitGroup{}
 
-	var gappedRes []byte
 	wg.Add(1)
+	var lowPrioRes []byte
 	go func() {
 		defer wg.Done()
-		var gappedErr error
-		gappedRes, gappedErr = exec.Command(
+		var prioErr error
+		lowPrioRes, prioErr = exec.Command(
 			"cast", "send",
 			contractAddr,
 			"increment()",
 			"--rpc-url", "http://127.0.0.1:8545",
 			"--private-key", pk,
+			"--gas-price", "100000000000",
 			"--nonce", "2",
 		).CombinedOutput()
-		require.NoError(t, gappedErr)
+		require.Error(t, prioErr)
+	}()
+
+	var highPrioRes []byte
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		var prioErr error
+		highPrioRes, prioErr = exec.Command(
+			"cast", "send",
+			contractAddr,
+			"increment()",
+			"--rpc-url", "http://127.0.0.1:8545",
+			"--private-key", pk,
+			"--gas-price", "100000000000000",
+			"--nonce", "2",
+		).CombinedOutput()
+		require.NoError(t, prioErr)
 	}()
 
 	// wait a bit to make sure the tx is submitted and waiting in the txpool.
@@ -90,25 +120,93 @@ func TestNonceGappedTxsPass(t *testing.T) {
 
 	wg.Wait()
 
-	gappedReceipt, err := parseReceipt(string(gappedRes))
+	lowPrioReceipt, err := parseReceipt(string(lowPrioRes))
 	require.NoError(t, err)
+
+	highPrioReceipt, err := parseReceipt(string(highPrioRes))
+	require.NoError(t, err)
+
+	// 1 = success, 0 = failure.
+	require.Equal(t, highPrioReceipt.Status, uint64(1))
+	require.Equal(t, lowPrioReceipt.Status, uint64(0))
+}
+
+// todo: check that the other nodes dont have this tx. check ethtxpool.
+func TestNonceGappedTxsPass(t *testing.T) {
+	t.Skip("nonce gaps are not yet supported")
+	sut := systemtests.Sut
+	sut.ResetChain(t)
+	StartChain(t, sut)
+
+	sut.AwaitNBlocks(t, 10)
+
+	// get the directory of the counter project to run commands from
+	_, filename, _, _ := runtime.Caller(0)
+	testDir := filepath.Dir(filename)
+	counterDir := filepath.Join(testDir, "Counter")
+
+	// deploy the contract
+	cmd := exec.Command(
+		"forge",
+		"create", "src/Counter.sol:Counter",
+		"--rpc-url", "http://127.0.0.1:8545",
+		"--broadcast",
+		"--private-key", pk,
+	)
+	cmd.Dir = counterDir
+	res, err := cmd.CombinedOutput()
+	require.NoError(t, err)
+	require.NotEmpty(t, string(res))
+
+	// get contract address
+	contractAddr := parseContractAddress(string(res))
+	require.NotEmpty(t, contractAddr)
+
+	wg := sync.WaitGroup{}
+
+	outOfOrderNonces := []uint64{4, 2, 5, 3}
+	responses := make([][]byte, len(outOfOrderNonces))
+
+	for i, nonce := range outOfOrderNonces {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			res1, err1 := exec.Command(
+				"cast", "send",
+				contractAddr,
+				"increment()",
+				"--rpc-url", "http://127.0.0.1:8545",
+				"--private-key", pk,
+				"--nonce", fmt.Sprintf("%d", nonce),
+			).CombinedOutput()
+			require.NoError(t, err1, "response: %s", string(res1))
+			responses[i] = res1
+		}()
+	}
+
+	// wait a bit to make sure the tx is submitted and waiting in the txpool.
+	time.Sleep(2 * time.Second)
+
+	res, err = exec.Command(
+		"cast", "send",
+		contractAddr,
+		"increment()",
+		"--rpc-url", "http://127.0.0.1:8545",
+		"--private-key", pk,
+		"--nonce", "1",
+	).CombinedOutput()
+	require.NoError(t, err, "response: %s", string(res))
+
+	wg.Wait()
 
 	receipt, err := parseReceipt(string(res))
 	require.NoError(t, err)
+	require.Equal(t, receipt.Status, uint64(1))
 
-	// Verify that nonce 1 transaction comes before nonce 2 transaction (even though submitted out of order)
-	require.LessOrEqual(t, receipt.BlockNumber.Uint64(), gappedReceipt.BlockNumber.Uint64(), "Nonce 1 should be in same or earlier block than nonce 2")
-
-	// If they're in the same block, verify proper ordering and consecutive indices
-	if receipt.BlockNumber.Cmp(gappedReceipt.BlockNumber) == 0 {
-		require.Less(t, receipt.TransactionIndex, gappedReceipt.TransactionIndex, "Nonce 1 transaction should come before nonce 2 transaction in same block")
-		require.Equal(t, gappedReceipt.TransactionIndex, receipt.TransactionIndex+1, "Transaction indices should be consecutive in same block")
-	} else {
-		// If they're in different blocks, that's also valid - nonce 2 was queued until nonce 1 was processed
-		require.Less(t, receipt.BlockNumber.Uint64(), gappedReceipt.BlockNumber.Uint64(), "Nonce 1 should be in earlier block than nonce 2")
-		// Both should be the first transaction in their respective blocks (index 0)
-		require.Equal(t, uint(0), receipt.TransactionIndex, "Nonce 1 should be first transaction in its block")
-		require.Equal(t, uint(0), gappedReceipt.TransactionIndex, "Nonce 2 should be first transaction in its block")
+	for _, bz := range responses {
+		receipt, err := parseReceipt(string(bz))
+		require.NoError(t, err)
+		require.Equal(t, receipt.Status, uint64(1))
 	}
 }
 
@@ -150,8 +248,8 @@ func TestSimpleSendsScript(t *testing.T) {
 	)
 	cmd.Dir = counterDir
 	cmd.Env = append(cmd.Env, "PRIVATE_KEY="+pk)
-
 	// Set a timeout for the command execution
+
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
 	cmd = exec.CommandContext(ctx, cmd.Path, cmd.Args[1:]...)

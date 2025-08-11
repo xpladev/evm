@@ -168,7 +168,7 @@ func (b *Backend) GetTransactionReceipt(hash common.Hash) (map[string]interface{
 
 	if err != nil {
 		b.Logger.Debug("tx not found after retries", "hash", hexTx, "error", err.Error())
-		return nil, err
+		return nil, nil
 	}
 
 	resBlock, err := b.TendermintBlockByNumber(rpctypes.BlockNumber(res.Height))
