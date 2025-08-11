@@ -72,9 +72,11 @@ type EVMMempoolConfig struct {
 // and configures fee-based prioritization. The config parameter allows customization
 // of pools and verification functions, with sensible defaults created if not provided.
 func NewEVMMempool(getCtxCallback func(height int64, prove bool) (sdk.Context, error), vmKeeper VMKeeperI, feeMarketKeeper FeeMarketKeeperI, txConfig client.TxConfig, clientCtx client.Context, config *EVMMempoolConfig) *EVMMempool {
-	var txPool *txpool.TxPool
-	var cosmosPool sdkmempool.ExtMempool
-	var anteHandler sdk.AnteHandler
+	var (
+		txPool      *txpool.TxPool
+		cosmosPool  sdkmempool.ExtMempool
+		anteHandler sdk.AnteHandler
+	)
 
 	bondDenom := evmtypes.GetEVMCoinDenom()
 	evmDenom := types.ExtendedCoinDenom()
