@@ -2,16 +2,20 @@ package server
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 
+	"github.com/ethereum/go-ethereum/common"
 	ethrpc "github.com/ethereum/go-ethereum/rpc"
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
 	"golang.org/x/sync/errgroup"
 
+	rpcclient "github.com/cometbft/cometbft/rpc/client"
+
 	"github.com/cosmos/evm/rpc"
+	"github.com/cosmos/evm/rpc/stream"
 	serverconfig "github.com/cosmos/evm/server/config"
 	cosmosevmtypes "github.com/cosmos/evm/types"
 
@@ -19,18 +23,29 @@ import (
 	"github.com/cosmos/cosmos-sdk/server"
 )
 
+type AppWithPendingTxStream interface {
+	RegisterPendingTxListener(listener func(common.Hash))
+}
+
 // StartJSONRPC starts the JSON-RPC server
 func StartJSONRPC(
 	ctx context.Context,
 	srvCtx *server.Context,
 	clientCtx client.Context,
 	g *errgroup.Group,
-	cmtRPCAddr, cmtEndpoint string,
 	config *serverconfig.Config,
 	indexer cosmosevmtypes.EVMTxIndexer,
+	app AppWithPendingTxStream,
 ) (*http.Server, error) {
 	logger := srvCtx.Logger.With("module", "geth")
-	cmtWsClient := ConnectCmtWS(cmtRPCAddr, cmtEndpoint, logger)
+
+	evtClient, ok := clientCtx.Client.(rpcclient.EventsClient)
+	if !ok {
+		return nil, fmt.Errorf("client %T does not implement EventsClient", clientCtx.Client)
+	}
+
+	stream := stream.NewRPCStreams(evtClient, logger, clientCtx.TxConfig.TxDecoder())
+	app.RegisterPendingTxListener(stream.ListenPendingTx)
 
 	// Set Geth's global logger to use this handler
 	handler := &CustomSlogHandler{logger: logger}
@@ -42,7 +57,7 @@ func StartJSONRPC(
 	allowUnprotectedTxs := config.JSONRPC.AllowUnprotectedTxs
 	rpcAPIArr := config.JSONRPC.API
 
-	apis := rpc.GetRPCAPIs(srvCtx, clientCtx, cmtWsClient, allowUnprotectedTxs, indexer, rpcAPIArr)
+	apis := rpc.GetRPCAPIs(srvCtx, clientCtx, stream, allowUnprotectedTxs, indexer, rpcAPIArr)
 
 	for _, api := range apis {
 		if err := rpcServer.RegisterName(api.Namespace, api.Service); err != nil {
@@ -98,7 +113,7 @@ func StartJSONRPC(
 			return nil
 
 		case err := <-errCh:
-			if errors.Is(err, http.ErrServerClosed) {
+			if err == http.ErrServerClosed {
 				close(httpSrvDone)
 				return nil
 			}
@@ -110,9 +125,7 @@ func StartJSONRPC(
 
 	srvCtx.Logger.Info("Starting JSON WebSocket server", "address", config.JSONRPC.WsAddress)
 
-	// allocate separate WS connection to CometBFT
-	cmtWsClient = ConnectCmtWS(cmtRPCAddr, cmtEndpoint, logger)
-	wsSrv := rpc.NewWebsocketsServer(clientCtx, logger, cmtWsClient, config)
+	wsSrv := rpc.NewWebsocketsServer(clientCtx, logger, stream, config)
 	wsSrv.Start()
 	return httpSrv, nil
 }

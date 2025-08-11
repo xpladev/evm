@@ -3,7 +3,6 @@ package server
 import (
 	"net"
 	"net/http"
-	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
@@ -11,7 +10,6 @@ import (
 	"golang.org/x/net/netutil"
 
 	tmcmd "github.com/cometbft/cometbft/cmd/cometbft/commands"
-	rpcclient "github.com/cometbft/cometbft/rpc/jsonrpc/client"
 
 	"github.com/cosmos/evm/server/config"
 
@@ -31,7 +29,7 @@ func AddCommands(
 ) {
 	cometbftCmd := &cobra.Command{
 		Use:     "comet",
-		Aliases: []string{"cometbft"},
+		Aliases: []string{"cometbft", "tendermint"},
 		Short:   "CometBFT subcommands",
 	}
 
@@ -58,39 +56,6 @@ func AddCommands(
 		// custom tx indexer command
 		NewIndexTxCmd(),
 	)
-}
-
-// ConnectCmtWS connects to a CometBFT WebSocket (WS) server.
-// Parameters:
-// - cmtRPCAddr: The RPC address of the CometBFT server.
-// - cmtEndpoint: The WebSocket endpoint on the CometBFT server.
-// - logger: A logger instance used to log debug and CometBFT messages.
-func ConnectCmtWS(cmtRPCAddr, cmtEndpoint string, logger log.Logger) *rpcclient.WSClient {
-	tmWsClient, err := rpcclient.NewWS(cmtRPCAddr, cmtEndpoint,
-		rpcclient.MaxReconnectAttempts(256),
-		rpcclient.ReadWait(120*time.Second),
-		rpcclient.WriteWait(120*time.Second),
-		rpcclient.PingPeriod(50*time.Second),
-		rpcclient.OnReconnect(func() {
-			logger.Debug("EVM RPC reconnects to CometBFT WS", "address", cmtRPCAddr+cmtEndpoint)
-		}),
-	)
-
-	if err != nil {
-		logger.Error(
-			"CometBFT WS client could not be created",
-			"address", cmtRPCAddr+cmtEndpoint,
-			"error", err,
-		)
-	} else if err := tmWsClient.OnStart(); err != nil {
-		logger.Error(
-			"CometBFT WS client could not start",
-			"address", cmtRPCAddr+cmtEndpoint,
-			"error", err,
-		)
-	}
-
-	return tmWsClient
 }
 
 // MountGRPCWebServices mounts gRPC-Web services on specific HTTP POST routes.
