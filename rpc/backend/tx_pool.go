@@ -13,7 +13,7 @@ import (
 	"github.com/cosmos/evm/rpc/types"
 )
 
-// Content returns the transactions contained within the transaction pool
+// Content returns the transactions contained within the transaction pool.
 func (b *Backend) Content() (map[string]map[string]map[string]*types.RPCTransaction, error) {
 	content := map[string]map[string]map[string]*types.RPCTransaction{
 		"pending": make(map[string]map[string]*types.RPCTransaction),
@@ -27,10 +27,10 @@ func (b *Backend) Content() (map[string]map[string]map[string]*types.RPCTransact
 	}
 
 	// Get pending (runnable) and queued (blocked) transactions from the mempool
-	runnable, blocked := evmMempool.GetTxPool().Content()
+	pending, queued := evmMempool.GetTxPool().Content()
 
-	// Convert pending (runnable) transactions
-	for addr, txList := range runnable {
+	// Convert pending (pending) transactions
+	for addr, txList := range pending {
 		addrStr := addr.Hex()
 		if content["pending"][addrStr] == nil {
 			content["pending"][addrStr] = make(map[string]*types.RPCTransaction)
@@ -46,8 +46,8 @@ func (b *Backend) Content() (map[string]map[string]map[string]*types.RPCTransact
 		}
 	}
 
-	// Convert queued (blocked) transactions
-	for addr, txList := range blocked {
+	// Convert queued (queued) transactions
+	for addr, txList := range queued {
 		addrStr := addr.Hex()
 		if content["queued"][addrStr] == nil {
 			content["queued"][addrStr] = make(map[string]*types.RPCTransaction)
@@ -120,7 +120,7 @@ func (b *Backend) Inspect() (map[string]map[string]map[string]string, error) {
 	}
 
 	// Get pending (runnable) and queued (blocked) transactions from the mempool
-	runnable, blocked := evmMempool.GetTxPool().Content()
+	pending, queued := evmMempool.GetTxPool().Content()
 
 	// Helper function to format transaction for inspection
 	format := func(tx *ethtypes.Transaction) string {
@@ -133,7 +133,7 @@ func (b *Backend) Inspect() (map[string]map[string]map[string]string, error) {
 	}
 
 	// Flatten the pending transactions
-	for account, txs := range runnable {
+	for account, txs := range pending {
 		dump := make(map[string]string)
 		for _, tx := range txs {
 			dump[fmt.Sprintf("%d", tx.Nonce())] = format(tx)
@@ -142,7 +142,7 @@ func (b *Backend) Inspect() (map[string]map[string]map[string]string, error) {
 	}
 
 	// Flatten the queued transactions
-	for account, txs := range blocked {
+	for account, txs := range queued {
 		dump := make(map[string]string)
 		for _, tx := range txs {
 			dump[fmt.Sprintf("%d", tx.Nonce())] = format(tx)
