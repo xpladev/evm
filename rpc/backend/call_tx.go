@@ -5,9 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"math/big"
-	"strings"
-
+	"github.com/cosmos/evm/mempool"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -15,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"math/big"
 
 	rpctypes "github.com/cosmos/evm/rpc/types"
 	evmtypes "github.com/cosmos/evm/x/vm/types"
@@ -153,7 +152,7 @@ func (b *Backend) SendRawTransaction(data hexutil.Bytes) (common.Hash, error) {
 	}
 	if err != nil {
 		// Check if this is a nonce gap error that was successfully queued
-		if strings.Contains(err.Error(), "tx nonce is higher than account nonce") {
+		if errors.Is(err, mempool.ErrNonceGap) {
 			// Transaction was successfully queued due to nonce gap, return success to client
 			b.Logger.Debug("transaction queued due to nonce gap", "hash", txHash.Hex())
 			return txHash, nil
