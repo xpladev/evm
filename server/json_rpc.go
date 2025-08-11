@@ -109,7 +109,7 @@ func StartJSONRPC(
 
 	srvCtx.Logger.Info("Starting JSON WebSocket server", "address", config.JSONRPC.WsAddress)
 
-	// allocate separate WS connection to Tendermint
+	// allocate separate WS connection to CometBFT
 	tmWsClient = ConnectTmWS(tmRPCAddr, tmEndpoint, logger)
 	wsSrv := rpc.NewWebsocketsServer(clientCtx, logger, tmWsClient, config)
 	wsSrv.Start()
