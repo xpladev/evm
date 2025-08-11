@@ -69,7 +69,7 @@ func (s *PrecompileUnitTestSuite) SetupTest(chainID testconstants.ChainID) {
 	s.Require().NoError(err, "failed to get token denom")
 	tokenPairID := s.network.App.GetErc20Keeper().GetTokenPairID(ctx, tokenDenom)
 	tokenPair, found := s.network.App.GetErc20Keeper().GetTokenPair(ctx, tokenPairID)
-	s.Require().True(found, "expected wevmos precompile to be registered in the tokens map")
+	s.Require().True(found, "expected watom precompile to be registered in the tokens map")
 	s.Require().Equal(s.precompileAddrHex, tokenPair.Erc20Address, "expected a different address of the contract")
 
 	precompile, err := werc20.NewPrecompile(

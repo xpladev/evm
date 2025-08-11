@@ -2111,7 +2111,7 @@ func TestIntegrationTestSuite(t *testing.T, create network.CreateEvmApp, options
 			})
 		})
 
-		When("using Evmos (not wEvmos) in smart contracts", func() {
+		When("using ATOM (not WATOM) in smart contracts", func() {
 			It("should be using straight Evmos for sending funds in smart contracts", func() {
 				Skip("will be addressed in follow-up PR")
 

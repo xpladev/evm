@@ -32,8 +32,8 @@ describe('Bank', function () {
             'IBank',
             '0x0000000000000000000000000000000000000804'
         );
-        const wevmos = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
-        const supply = await bank.getFunction('supplyOf').staticCall(wevmos);
+        const watom = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
+        const supply = await bank.getFunction('supplyOf').staticCall(watom);
         console.log('Native token supply:', supply.toString());
         expect(supply).to.be.a('bigint');
     });

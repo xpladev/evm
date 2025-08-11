@@ -115,7 +115,7 @@ func TestPrecompileIntegrationTestSuite(t *testing.T, create network.CreateEvmAp
 			available := is.network.App.GetErc20Keeper().IsNativePrecompileAvailable(is.network.GetContext(), common.HexToAddress(is.precompileAddrHex))
 			Expect(available).To(
 				BeTrue(),
-				"expected wevmos to be in the native precompiles",
+				"expected watom to be in the native precompiles",
 			)
 			_, found := is.network.App.GetBankKeeper().GetDenomMetaData(ctx, evmtypes.GetEVMCoinDenom())
 			Expect(found).To(BeTrue(), "expected native token metadata to be registered")
@@ -123,7 +123,7 @@ func TestPrecompileIntegrationTestSuite(t *testing.T, create network.CreateEvmAp
 			// Check that WATOM is registered in the token pairs map.
 			tokenPairID := is.network.App.GetErc20Keeper().GetTokenPairID(ctx, is.wrappedCoinDenom)
 			tokenPair, found := is.network.App.GetErc20Keeper().GetTokenPair(ctx, tokenPairID)
-			Expect(found).To(BeTrue(), "expected wevmos precompile to be registered in the tokens map")
+			Expect(found).To(BeTrue(), "expected watom precompile to be registered in the tokens map")
 			Expect(tokenPair.Erc20Address).To(Equal(is.precompileAddrHex))
 
 			precompileAddr := common.HexToAddress(is.precompileAddrHex)

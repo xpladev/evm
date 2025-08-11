@@ -29,6 +29,6 @@ func TestRequireSameWATOMMainnet(t *testing.T) {
 	require.Equal(t,
 		constants.WATOMContractMainnet,
 		config.WATOMContractMainnet,
-		"wevmos contract addresses should be the same across the repo",
+		"watom contract addresses should be the same across the repo",
 	)
 }

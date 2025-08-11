@@ -165,7 +165,7 @@ func (suite *GenesisTestSuite) TestValidateGenesis() {
 			expPass: false,
 		},
 		{
-			name: "invalid genesis - missing wevmos token pair",
+			name: "invalid genesis - missing watom token pair",
 			genState: &types.GenesisState{
 				Params: types.DefaultParams(),
 				TokenPairs: []types.TokenPair{
