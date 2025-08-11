@@ -16,8 +16,8 @@ import (
 	"github.com/cosmos/evm/x/vm/statedb"
 	evmtypes "github.com/cosmos/evm/x/vm/types"
 
-	errors2 "cosmossdk.io/errors"
-	types2 "cosmossdk.io/store/types"
+	sdkerrors "cosmossdk.io/errors"
+	sdktypes "cosmossdk.io/store/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -151,8 +151,8 @@ func (b Blockchain) StateAt(hash common.Hash) (vm.StateDB, error) {
 func (b Blockchain) GetLatestCtx() (sdk.Context, error) {
 	ctx, err := b.getCtxCallback(0, false)
 	if err != nil {
-		return sdk.Context{}, errors2.Wrapf(err, "getting latest context")
+		return sdk.Context{}, sdkerrors.Wrapf(err, "getting latest context")
 	}
-	ctx = ctx.WithBlockGasMeter(types2.NewGasMeter(b.blockGasLimit))
+	ctx = ctx.WithBlockGasMeter(sdktypes.NewGasMeter(b.blockGasLimit))
 	return ctx, nil
 }
