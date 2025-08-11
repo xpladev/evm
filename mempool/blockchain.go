@@ -32,7 +32,7 @@ var (
 // access to block headers, chain configuration, and state databases. This implementation is
 // specifically designed for instant finality chains where reorgs never occur.
 type Blockchain struct {
-	ctx                func(height int64, prove bool) (sdk.Context, error)
+	getCtxCallback     func(height int64, prove bool) (sdk.Context, error)
 	vmKeeper           VMKeeperI
 	feeMarketKeeper    FeeMarketKeeperI
 	chainHeadFeed      *event.Feed
@@ -42,11 +42,11 @@ type Blockchain struct {
 }
 
 // NewBlockchain creates a new Blockchain instance that bridges Cosmos SDK state with Ethereum mempools.
-// The ctx function provides access to Cosmos SDK contexts at different heights, vmKeeper manages EVM state,
+// The getCtxCallback function provides access to Cosmos SDK contexts at different heights, vmKeeper manages EVM state,
 // and feeMarketKeeper handles fee market operations like base fee calculations.
 func NewBlockchain(ctx func(height int64, prove bool) (sdk.Context, error), vmKeeper VMKeeperI, feeMarketKeeper FeeMarketKeeperI, blockGasLimit uint64) *Blockchain {
 	return &Blockchain{
-		ctx:             ctx,
+		getCtxCallback:  ctx,
 		vmKeeper:        vmKeeper,
 		feeMarketKeeper: feeMarketKeeper,
 		chainHeadFeed:   new(event.Feed),
@@ -82,7 +82,7 @@ func (b Blockchain) CurrentBlock() *types.Header {
 		GasLimit:   b.blockGasLimit,
 		GasUsed:    b.feeMarketKeeper.GetBlockGasWanted(ctx),
 		ParentHash: b.previousHeaderHash,
-		Root:       common.BytesToHash(ctx.BlockHeader().AppHash), // we actually don't care that this isn't the ctx header, as long as we properly track roots and parent roots to prevent the reorg from triggering
+		Root:       common.BytesToHash(ctx.BlockHeader().AppHash), // we actually don't care that this isn't the getCtxCallback header, as long as we properly track roots and parent roots to prevent the reorg from triggering
 		Difficulty: big.NewInt(0),                                 // 0 difficulty on PoS
 	}
 
@@ -149,7 +149,7 @@ func (b Blockchain) StateAt(hash common.Hash) (vm.StateDB, error) {
 // GetLatestCtx retrieves the most recent query context from the application.
 // This provides access to the current blockchain state for transaction validation and execution.
 func (b Blockchain) GetLatestCtx() (sdk.Context, error) {
-	ctx, err := b.ctx(0, false)
+	ctx, err := b.getCtxCallback(0, false)
 	if err != nil {
 		return sdk.Context{}, errors2.Wrapf(err, "getting latest context")
 	}

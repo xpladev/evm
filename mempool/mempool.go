@@ -71,7 +71,7 @@ type EVMMempoolConfig struct {
 // It initializes both EVM and Cosmos transaction pools, sets up blockchain interfaces,
 // and configures fee-based prioritization. The config parameter allows customization
 // of pools and verification functions, with sensible defaults created if not provided.
-func NewEVMMempool(ctx func(height int64, prove bool) (sdk.Context, error), vmKeeper VMKeeperI, feeMarketKeeper FeeMarketKeeperI, txConfig client.TxConfig, clientCtx client.Context, config *EVMMempoolConfig) *EVMMempool {
+func NewEVMMempool(getCtxCallback func(height int64, prove bool) (sdk.Context, error), vmKeeper VMKeeperI, feeMarketKeeper FeeMarketKeeperI, txConfig client.TxConfig, clientCtx client.Context, config *EVMMempoolConfig) *EVMMempool {
 	var txPool *txpool.TxPool
 	var cosmosPool sdkmempool.ExtMempool
 	var anteHandler sdk.AnteHandler
@@ -95,7 +95,7 @@ func NewEVMMempool(ctx func(height int64, prove bool) (sdk.Context, error), vmKe
 
 	// Default txPool
 	if txPool == nil {
-		blockchain = NewBlockchain(ctx, vmKeeper, feeMarketKeeper, config.BlockGasLimit)
+		blockchain = NewBlockchain(getCtxCallback, vmKeeper, feeMarketKeeper, config.BlockGasLimit)
 		legacyPool := legacypool.New(legacypool.DefaultConfig, blockchain)
 
 		// Set up broadcast function using clientCtx
