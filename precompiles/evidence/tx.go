@@ -8,8 +8,6 @@ import (
 
 	cmn "github.com/cosmos/evm/precompiles/common"
 
-	evidencekeeper "cosmossdk.io/x/evidence/keeper"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -31,8 +29,7 @@ func (p Precompile) SubmitEvidence(
 		return nil, fmt.Errorf(cmn.ErrRequesterIsNotMsgSender, msgSender.String(), submitterHexAddr.String())
 	}
 
-	msgServer := evidencekeeper.NewMsgServerImpl(p.evidenceKeeper)
-	res, err := msgServer.SubmitEvidence(ctx, msg)
+	res, err := p.evidenceMsgServer.SubmitEvidence(ctx, msg)
 	if err != nil {
 		return nil, err
 	}

@@ -19,6 +19,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	govkeeper "github.com/cosmos/cosmos-sdk/x/gov/keeper"
 	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
 	govv1 "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 )
@@ -130,7 +131,8 @@ func (s *PrecompileTestSuite) SetupTest() {
 	s.network = nw
 
 	if s.precompile, err = gov.NewPrecompile(
-		s.network.App.GovKeeper,
+		govkeeper.NewMsgServerImpl(&s.network.App.GovKeeper),
+		govkeeper.NewQueryServer(&s.network.App.GovKeeper),
 		s.network.App.AppCodec(),
 	); err != nil {
 		panic(err)

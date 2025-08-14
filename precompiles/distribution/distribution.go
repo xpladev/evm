@@ -10,13 +10,11 @@ import (
 	"github.com/ethereum/go-ethereum/core/vm"
 
 	cmn "github.com/cosmos/evm/precompiles/common"
-	evmkeeper "github.com/cosmos/evm/x/vm/keeper"
 	evmtypes "github.com/cosmos/evm/x/vm/types"
 
 	storetypes "cosmossdk.io/store/types"
 
-	distributionkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
-	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
+	distributiontypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 )
 
 var _ vm.PrecompiledContract = &Precompile{}
@@ -29,17 +27,19 @@ var f embed.FS
 // Precompile defines the precompiled contract for distribution.
 type Precompile struct {
 	cmn.Precompile
-	distributionKeeper distributionkeeper.Keeper
-	stakingKeeper      stakingkeeper.Keeper
-	evmKeeper          *evmkeeper.Keeper
+	distributionKeeper    cmn.DistributionKeeper
+	distributionMsgServer distributiontypes.MsgServer
+	distributionQuerier   distributiontypes.QueryServer
+	stakingKeeper         cmn.StakingKeeper
 }
 
 // NewPrecompile creates a new distribution Precompile instance as a
 // PrecompiledContract interface.
 func NewPrecompile(
-	distributionKeeper distributionkeeper.Keeper,
-	stakingKeeper stakingkeeper.Keeper,
-	evmKeeper *evmkeeper.Keeper,
+	distributionKeeper cmn.DistributionKeeper,
+	distributionMsgServer distributiontypes.MsgServer,
+	distributionQuerier distributiontypes.QueryServer,
+	stakingKeeper cmn.StakingKeeper,
 ) (*Precompile, error) {
 	newAbi, err := cmn.LoadABI(f, "abi.json")
 	if err != nil {
@@ -52,9 +52,10 @@ func NewPrecompile(
 			KvGasConfig:          storetypes.KVGasConfig(),
 			TransientKVGasConfig: storetypes.TransientGasConfig(),
 		},
-		stakingKeeper:      stakingKeeper,
-		distributionKeeper: distributionKeeper,
-		evmKeeper:          evmKeeper,
+		stakingKeeper:         stakingKeeper,
+		distributionKeeper:    distributionKeeper,
+		distributionMsgServer: distributionMsgServer,
+		distributionQuerier:   distributionQuerier,
 	}
 
 	// SetAddress defines the address of the distribution compile contract.

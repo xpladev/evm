@@ -12,6 +12,7 @@ import (
 	"github.com/cosmos/evm/testutil/integration/os/network"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	slashingkeeper "github.com/cosmos/cosmos-sdk/x/slashing/keeper"
 )
 
 type PrecompileTestSuite struct {
@@ -51,6 +52,7 @@ func (s *PrecompileTestSuite) SetupTest() {
 
 	if s.precompile, err = slashing.NewPrecompile(
 		s.network.App.SlashingKeeper,
+		slashingkeeper.NewMsgServerImpl(s.network.App.SlashingKeeper),
 	); err != nil {
 		panic(err)
 	}

@@ -10,7 +10,6 @@ import (
 
 	cmn "github.com/cosmos/evm/precompiles/common"
 
-	evidencekeeper "cosmossdk.io/x/evidence/keeper"
 	evidencetypes "cosmossdk.io/x/evidence/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -32,8 +31,7 @@ func (p *Precompile) Evidence(
 		return nil, errors.New(ErrInvalidEvidenceHash)
 	}
 
-	queryServer := evidencekeeper.NewQuerier(&p.evidenceKeeper)
-	res, err := queryServer.Evidence(ctx, &evidencetypes.QueryEvidenceRequest{
+	res, err := p.evidenceQuerier.Evidence(ctx, &evidencetypes.QueryEvidenceRequest{
 		Hash: strings.ToUpper(hex.EncodeToString(evidenceHash)),
 	})
 	if err != nil {
@@ -72,8 +70,7 @@ func (p *Precompile) GetAllEvidence(
 		return nil, fmt.Errorf("invalid page request")
 	}
 
-	queryServer := evidencekeeper.NewQuerier(&p.evidenceKeeper)
-	res, err := queryServer.AllEvidence(ctx, &evidencetypes.QueryAllEvidenceRequest{
+	res, err := p.evidenceQuerier.AllEvidence(ctx, &evidencetypes.QueryAllEvidenceRequest{
 		Pagination: pageRequest,
 	})
 	if err != nil {

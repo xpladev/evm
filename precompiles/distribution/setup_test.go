@@ -16,6 +16,7 @@ import (
 	"cosmossdk.io/math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 )
@@ -107,8 +108,9 @@ func (s *PrecompileTestSuite) SetupTest() {
 	s.network = nw
 	s.precompile, err = distribution.NewPrecompile(
 		s.network.App.DistrKeeper,
+		distrkeeper.NewMsgServerImpl(s.network.App.DistrKeeper),
+		distrkeeper.NewQuerier(s.network.App.DistrKeeper),
 		*s.network.App.StakingKeeper,
-		s.network.App.EVMKeeper,
 	)
 	if err != nil {
 		panic(err)

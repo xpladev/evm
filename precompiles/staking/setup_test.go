@@ -17,6 +17,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 )
 
 type PrecompileTestSuite struct {
@@ -77,6 +78,8 @@ func (s *PrecompileTestSuite) SetupTest() {
 
 	if s.precompile, err = staking.NewPrecompile(
 		*s.network.App.StakingKeeper,
+		stakingkeeper.NewMsgServerImpl(s.network.App.StakingKeeper),
+		stakingkeeper.NewQuerier(s.network.App.StakingKeeper),
 	); err != nil {
 		panic(err)
 	}

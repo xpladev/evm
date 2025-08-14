@@ -14,6 +14,7 @@ import (
 	"github.com/cosmos/evm/testutil/integration/os/network"
 
 	"cosmossdk.io/x/evidence/exported"
+	"cosmossdk.io/x/evidence/keeper"
 	"cosmossdk.io/x/evidence/types"
 )
 
@@ -52,7 +53,8 @@ func (s *PrecompileTestSuite) SetupTest() {
 	s.keyring = keyring
 
 	if s.precompile, err = evidence.NewPrecompile(
-		s.network.App.EvidenceKeeper,
+		keeper.NewMsgServerImpl(s.network.App.EvidenceKeeper),
+		keeper.NewQuerier(&s.network.App.EvidenceKeeper),
 	); err != nil {
 		panic(err)
 	}

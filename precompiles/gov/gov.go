@@ -17,7 +17,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	govkeeper "github.com/cosmos/cosmos-sdk/x/gov/keeper"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 )
 
 var _ vm.PrecompiledContract = &Precompile{}
@@ -30,8 +30,9 @@ var f embed.FS
 // Precompile defines the precompiled contract for gov.
 type Precompile struct {
 	cmn.Precompile
-	govKeeper govkeeper.Keeper
-	codec     codec.Codec
+	govMsgServer govtypes.MsgServer
+	govQuerier   govtypes.QueryServer
+	codec        codec.Codec
 }
 
 // LoadABI loads the gov ABI from the embedded abi.json file
@@ -43,7 +44,8 @@ func LoadABI() (abi.ABI, error) {
 // NewPrecompile creates a new gov Precompile instance as a
 // PrecompiledContract interface.
 func NewPrecompile(
-	govKeeper govkeeper.Keeper,
+	govMsgServer govtypes.MsgServer,
+	govQuerier govtypes.QueryServer,
 	codec codec.Codec,
 ) (*Precompile, error) {
 	abi, err := LoadABI()
@@ -57,8 +59,9 @@ func NewPrecompile(
 			KvGasConfig:          storetypes.KVGasConfig(),
 			TransientKVGasConfig: storetypes.TransientGasConfig(),
 		},
-		govKeeper: govKeeper,
-		codec:     codec,
+		govMsgServer: govMsgServer,
+		govQuerier:   govQuerier,
+		codec:        codec,
 	}
 
 	// SetAddress defines the address of the gov precompiled contract.

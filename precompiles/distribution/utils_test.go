@@ -9,6 +9,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
+	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 )
 
@@ -83,6 +84,8 @@ func (s *PrecompileTestSuite) fundAccountWithBaseDenom(ctx sdk.Context, addr sdk
 func (s *PrecompileTestSuite) getStakingPrecompile() (*staking.Precompile, error) {
 	return staking.NewPrecompile(
 		*s.network.App.StakingKeeper,
+		stakingkeeper.NewMsgServerImpl(s.network.App.StakingKeeper),
+		stakingkeeper.NewQuerier(s.network.App.StakingKeeper),
 	)
 }
 

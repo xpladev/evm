@@ -14,7 +14,7 @@ import (
 
 	"cosmossdk.io/log"
 	storetypes "cosmossdk.io/store/types"
-	evidencekeeper "cosmossdk.io/x/evidence/keeper"
+	evidencetypes "cosmossdk.io/x/evidence/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -29,7 +29,8 @@ var f embed.FS
 // Precompile defines the precompiled contract for evidence.
 type Precompile struct {
 	cmn.Precompile
-	evidenceKeeper evidencekeeper.Keeper
+	evidenceMsgServer evidencetypes.MsgServer
+	evidenceQuerier   evidencetypes.QueryServer
 }
 
 // LoadABI loads the evidence ABI from the embedded abi.json file
@@ -41,7 +42,8 @@ func LoadABI() (abi.ABI, error) {
 // NewPrecompile creates a new evidence Precompile instance as a
 // PrecompiledContract interface.
 func NewPrecompile(
-	evidenceKeeper evidencekeeper.Keeper,
+	evidenceMsgServer evidencetypes.MsgServer,
+	evidenceQuerier evidencetypes.QueryServer,
 ) (*Precompile, error) {
 	abi, err := LoadABI()
 	if err != nil {
@@ -54,7 +56,8 @@ func NewPrecompile(
 			KvGasConfig:          storetypes.KVGasConfig(),
 			TransientKVGasConfig: storetypes.TransientGasConfig(),
 		},
-		evidenceKeeper: evidenceKeeper,
+		evidenceMsgServer: evidenceMsgServer,
+		evidenceQuerier:   evidenceQuerier,
 	}
 
 	// SetAddress defines the address of the evidence precompiled contract.

@@ -15,7 +15,7 @@ import (
 	storetypes "cosmossdk.io/store/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 )
 
 var _ vm.PrecompiledContract = &Precompile{}
@@ -28,7 +28,9 @@ var f embed.FS
 // Precompile defines the precompiled contract for staking.
 type Precompile struct {
 	cmn.Precompile
-	stakingKeeper stakingkeeper.Keeper
+	stakingKeeper    cmn.StakingKeeper
+	stakingMsgServer stakingtypes.MsgServer
+	stakingQuerier   stakingtypes.QueryServer
 }
 
 // LoadABI loads the staking ABI from the embedded abi.json file
@@ -40,7 +42,9 @@ func LoadABI() (abi.ABI, error) {
 // NewPrecompile creates a new staking Precompile instance as a
 // PrecompiledContract interface.
 func NewPrecompile(
-	stakingKeeper stakingkeeper.Keeper,
+	stakingKeeper cmn.StakingKeeper,
+	stakingMsgServer stakingtypes.MsgServer,
+	stakingQuerier stakingtypes.QueryServer,
 ) (*Precompile, error) {
 	abi, err := LoadABI()
 	if err != nil {
@@ -53,7 +57,9 @@ func NewPrecompile(
 			KvGasConfig:          storetypes.KVGasConfig(),
 			TransientKVGasConfig: storetypes.TransientGasConfig(),
 		},
-		stakingKeeper: stakingKeeper,
+		stakingKeeper:    stakingKeeper,
+		stakingMsgServer: stakingMsgServer,
+		stakingQuerier:   stakingQuerier,
 	}
 	// SetAddress defines the address of the staking precompiled contract.
 	p.SetAddress(common.HexToAddress(evmtypes.StakingPrecompileAddress))

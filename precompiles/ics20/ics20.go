@@ -10,14 +10,9 @@ import (
 	"github.com/ethereum/go-ethereum/core/vm"
 
 	cmn "github.com/cosmos/evm/precompiles/common"
-	transferkeeper "github.com/cosmos/evm/x/ibc/transfer/keeper"
-	evmkeeper "github.com/cosmos/evm/x/vm/keeper"
 	evmtypes "github.com/cosmos/evm/x/vm/types"
-	channelkeeper "github.com/cosmos/ibc-go/v10/modules/core/04-channel/keeper"
 
 	storetypes "cosmossdk.io/store/types"
-
-	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 )
 
 // PrecompileAddress of the ICS-20 EVM extension in hex format.
@@ -32,19 +27,15 @@ var f embed.FS
 
 type Precompile struct {
 	cmn.Precompile
-	stakingKeeper  stakingkeeper.Keeper
-	transferKeeper transferkeeper.Keeper
-	channelKeeper  *channelkeeper.Keeper
-	evmKeeper      *evmkeeper.Keeper
+	transferKeeper cmn.TransferKeeper
+	channelKeeper  cmn.ChannelKeeper
 }
 
 // NewPrecompile creates a new ICS-20 Precompile instance as a
 // PrecompiledContract interface.
 func NewPrecompile(
-	stakingKeeper stakingkeeper.Keeper,
-	transferKeeper transferkeeper.Keeper,
-	channelKeeper *channelkeeper.Keeper,
-	evmKeeper *evmkeeper.Keeper,
+	transferKeeper cmn.TransferKeeper,
+	channelKeeper cmn.ChannelKeeper,
 ) (*Precompile, error) {
 	newAbi, err := cmn.LoadABI(f, "abi.json")
 	if err != nil {
@@ -59,8 +50,6 @@ func NewPrecompile(
 		},
 		transferKeeper: transferKeeper,
 		channelKeeper:  channelKeeper,
-		stakingKeeper:  stakingKeeper,
-		evmKeeper:      evmKeeper,
 	}
 
 	// SetAddress defines the address of the ICS-20 compile contract.

@@ -16,7 +16,7 @@ import (
 	storetypes "cosmossdk.io/store/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	slashingkeeper "github.com/cosmos/cosmos-sdk/x/slashing/keeper"
+	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 )
 
 var _ vm.PrecompiledContract = &Precompile{}
@@ -29,7 +29,8 @@ var f embed.FS
 // Precompile defines the precompiled contract for slashing.
 type Precompile struct {
 	cmn.Precompile
-	slashingKeeper slashingkeeper.Keeper
+	slashingKeeper    cmn.SlashingKeeper
+	slashingMsgServer slashingtypes.MsgServer
 }
 
 // LoadABI loads the slashing ABI from the embedded abi.json file
@@ -41,7 +42,8 @@ func LoadABI() (abi.ABI, error) {
 // NewPrecompile creates a new slashing Precompile instance as a
 // PrecompiledContract interface.
 func NewPrecompile(
-	slashingKeeper slashingkeeper.Keeper,
+	slashingKeeper cmn.SlashingKeeper,
+	slashingMsgServer slashingtypes.MsgServer,
 ) (*Precompile, error) {
 	abi, err := LoadABI()
 	if err != nil {
@@ -54,7 +56,8 @@ func NewPrecompile(
 			KvGasConfig:          storetypes.KVGasConfig(),
 			TransientKVGasConfig: storetypes.TransientGasConfig(),
 		},
-		slashingKeeper: slashingKeeper,
+		slashingKeeper:    slashingKeeper,
+		slashingMsgServer: slashingMsgServer,
 	}
 
 	// SetAddress defines the address of the slashing precompiled contract.
