@@ -2,14 +2,19 @@
 
 CHAINID="${CHAIN_ID:-9001}"
 MONIKER="localtestnet"
+# Remember to change to other types of keyring like 'file' in-case exposing to outside world,
+# otherwise your balance will be wiped quickly
+# The keyring test does not require private key to steal tokens from you
 KEYRING="test"
 KEYALGO="eth_secp256k1"
 
 LOGLEVEL="info"
+# Set dedicated home directory for the evmd instance
 CHAINDIR="$HOME/.evmd"
 
 BASEFEE=10000000
 
+# Path variables
 CONFIG_TOML=$CHAINDIR/config/config.toml
 APP_TOML=$CHAINDIR/config/app.toml
 GENESIS=$CHAINDIR/config/genesis.json
@@ -21,6 +26,7 @@ command -v jq >/dev/null 2>&1 || {
   exit 1
 }
 
+# used to exit on first error (any non-zero exit code)
 set -e
 
 # ------------- Flags -------------
@@ -86,13 +92,15 @@ done
 
 if [[ $install == true ]]; then
   if [[ $BUILD_FOR_DEBUG == true ]]; then
+    # for remote debugging the optimization should be disabled and the debug info should not be stripped
     make install COSMOS_BUILD_OPTIONS=nooptimization,nostrip
   else
     make install
   fi
 fi
 
-# Prompt if -y was not passed to original invocation
+# User prompt if neither -y nor -n was passed as a flag
+# and an existing local node configuration is found.
 if [[ $overwrite = "" ]]; then
   if [ -d "$CHAINDIR" ]; then
     printf "\nAn existing folder at '%s' was found. You can choose to delete this folder and start a new local node with new keys from genesis. When declined, the existing local node is started. \n" "$CHAINDIR"
