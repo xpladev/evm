@@ -34,7 +34,8 @@ install=true
 overwrite=""
 BUILD_FOR_DEBUG=false
 ADDITIONAL_USERS=0
-MNEMONIC_FILE=""   # default later to $CHAINDIR/mnemonics.yaml
+MNEMONIC_FILE=""      # output file (defaults later to $CHAINDIR/mnemonics.yaml)
+MNEMONICS_INPUT=""    # input yaml to prefill dev keys
 
 usage() {
   cat <<EOF
@@ -47,6 +48,7 @@ Options:
   --remote-debugging       Build with nooptimization,nostrip
   --additional-users N     Create N extra users: dev4, dev5, ...
   --mnemonic-file PATH     Where to write mnemonics YAML (default: \$HOME/.evmd/mnemonics.yaml)
+  --mnemonics-input PATH   Read dev mnemonics from a yaml file (key: mnemonics:)
 EOF
 }
 
@@ -81,6 +83,12 @@ while [[ $# -gt 0 ]]; do
       fi
       MNEMONIC_FILE="$2"; shift 2
       ;;
+    --mnemonics-input)
+      if [[ -z "${2:-}" || "$2" =~ ^- ]]; then
+        echo "Error: --mnemonics-input requires a path."; usage; exit 1
+      fi
+      MNEMONICS_INPUT="$2"; shift 2
+      ;;
     -h|--help)
       usage; exit 0
       ;;
@@ -111,7 +119,29 @@ if [[ $overwrite = "" ]]; then
   fi
 fi
 
-# ---------- YAML writer ----------
+# ---------- YAML reader ----------
+# reads a simple yaml with:
+# mnemonics:
+#   - "phrase here"
+#   - another phrase
+read_mnemonics_yaml() {
+  local file="$1"
+  awk '
+    BEGIN { inlist=0 }
+    /^[[:space:]]*mnemonics:[[:space:]]*$/ { inlist=1; next }
+    inlist && /^[[:space:]]*-[[:space:]]*/ {
+      line=$0
+      sub(/^[[:space:]]*-[[:space:]]*/, "", line)
+      gsub(/^"[[:space:]]*|[[:space:]]*"$/, "", line)
+      gsub(/^'\''[[:space:]]*|[[:space:]]*'\''$/, "", line)
+      print line
+      next
+    }
+    inlist && NF==0 { next }
+  ' "$file"
+}
+
+# ---------- yaml writer ----------
 write_mnemonics_yaml() {
   local file_path="$1"; shift
   local -a mns=("$@")
@@ -143,12 +173,7 @@ if [[ $overwrite == "y" || $overwrite == "Y" ]]; then
   VAL_MNEMONIC="gesture inject test cycle original hollow east ridge hen combine junk child bacon zero hope comfort vacuum milk pitch cage oppose unhappy lunar seat"
   echo "$VAL_MNEMONIC" | evmd keys add "$VAL_KEY" --recover --keyring-backend "$KEYRING" --algo "$KEYALGO" --home "$CHAINDIR"
 
-  # ---------------- Default dev keys ----------------
-  USER1_KEY="dev0"
-  USER2_KEY="dev1"
-  USER3_KEY="dev2"
-  USER4_KEY="dev3"
-
+  # ---------------- dev mnemonics source ----------------
   default_mnemonics=(
     "copper push brief egg scan entry inform record adjust fossil boss egg comic alien upon aspect dry avoid interest fury window hint race symptom" # dev0
     "maximum display century economy unlock van census kite error heart snow filter midnight usage egg venture cash kick motor survey drastic edge muffin visual" # dev1
@@ -156,12 +181,34 @@ if [[ $overwrite == "y" || $overwrite == "Y" ]]; then
     "doll midnight silk carpet brush boring pluck office gown inquiry duck chief aim exit gain never tennis crime fragile ship cloud surface exotic patch" # dev3
   )
 
-  # Import default dev keys
-  echo "${default_mnemonics[0]}" | evmd keys add "$USER1_KEY" --recover --keyring-backend "$KEYRING" --algo "$KEYALGO" --home "$CHAINDIR"
-  echo "${default_mnemonics[1]}" | evmd keys add "$USER2_KEY" --recover --keyring-backend "$KEYRING" --algo "$KEYALGO" --home "$CHAINDIR"
-  echo "${default_mnemonics[2]}" | evmd keys add "$USER3_KEY" --recover --keyring-backend "$KEYRING" --algo "$KEYALGO" --home "$CHAINDIR"
-  echo "${default_mnemonics[3]}" | evmd keys add "$USER4_KEY" --recover --keyring-backend "$KEYRING" --algo "$KEYALGO" --home "$CHAINDIR"
+  provided_mnemonics=()
+  if [[ -n "$MNEMONICS_INPUT" ]]; then
+    if [[ ! -f "$MNEMONICS_INPUT" ]]; then
+      echo "mnemonics input file not found: $MNEMONICS_INPUT"; exit 1
+    fi
 
+    tmpfile="$(mktemp -t mnemonics.XXXXXX)"
+    read_mnemonics_yaml "$MNEMONICS_INPUT" > "$tmpfile"
+
+    while IFS= read -r line; do
+      [[ -z "$line" ]] && continue
+      provided_mnemonics+=( "$line" )
+    done < "$tmpfile"
+    rm -f "$tmpfile"
+
+    if [[ ${#provided_mnemonics[@]} -eq 0 ]]; then
+      echo "no mnemonics found in $MNEMONICS_INPUT (expected a list under 'mnemonics:')"; exit 1
+    fi
+  fi
+
+  # choose base list: prefer provided over defaults
+  if [[ ${#provided_mnemonics[@]} -gt 0 ]]; then
+    dev_mnemonics=("${provided_mnemonics[@]}")
+  else
+    dev_mnemonics=("${default_mnemonics[@]}")
+  fi
+
+  # init chain w/ validator mnemonic
   echo "$VAL_MNEMONIC" | evmd init $MONIKER -o --chain-id "$CHAINID" --home "$CHAINDIR" --recover
 
   # ---------- Genesis customizations ----------
@@ -226,36 +273,40 @@ if [[ $overwrite == "y" || $overwrite == "Y" ]]; then
   sed -i.bak 's/pruning-keep-recent = "0"/pruning-keep-recent = "100"/g' "$APP_TOML"
   sed -i.bak 's/pruning-interval = "0"/pruning-interval = "10"/g' "$APP_TOML"
 
-  # Allocate genesis accounts for validator and default users
-  evmd genesis add-genesis-account "$VAL_KEY"   100000000000000000000000000atest --keyring-backend "$KEYRING" --home "$CHAINDIR"
-  add_genesis_funds "$USER1_KEY"
-  add_genesis_funds "$USER2_KEY"
-  add_genesis_funds "$USER3_KEY"
-  add_genesis_funds "$USER4_KEY"
+  # fund validator (devs already funded in the loop)
+  evmd genesis add-genesis-account "$VAL_KEY" 100000000000000000000000000atest --keyring-backend "$KEYRING" --home "$CHAINDIR"
 
-  # --------- Generate additional users if requested ---------
-  # final_mnemonics starts with defaults; we append generated ones next
-  final_mnemonics=("${default_mnemonics[@]}")
+  # --------- maybe generate additional users ---------
+  # start with provided/default list
+  final_mnemonics=("${dev_mnemonics[@]}")
 
+  # default output path if not set
   if [[ -z "$MNEMONIC_FILE" ]]; then
     MNEMONIC_FILE="$CHAINDIR/mnemonics.yaml"
   fi
 
   if [[ "$ADDITIONAL_USERS" -gt 0 ]]; then
-    START_INDEX=4  # dev0..dev3 already exist
+    start_index=${#dev_mnemonics[@]}   # continue after last provided/default entry
     for ((i=0; i<ADDITIONAL_USERS; i++)); do
-      DEV_INDEX=$((START_INDEX + i))
-      KEYNAME="dev${DEV_INDEX}"
+      idx=$((start_index + i))
+      keyname="dev${idx}"
 
-		MNEMONIC_OUTPUT=$(evmd keys add "$KEYNAME" --keyring-backend "$KEYRING" --algo "$KEYALGO" --home "$CHAINDIR" 2>&1)
-		USER_MNEMONIC=$(echo "$MNEMONIC_OUTPUT" | grep -E '^[a-z]+ [a-z]+ [a-z]+ [a-z]+ [a-z]+ [a-z]+ [a-z]+ [a-z]+ [a-z]+ [a-z]+ [a-z]+ [a-z]+' | tail -1)
-    if [[ -z "$USER_MNEMONIC" ]]; then
-      echo "Failed to capture mnemonic for $KEYNAME"; exit 1
-    fi
+      # create key and capture mnemonic
+      mnemonic_out="$(evmd keys add "$keyname" --keyring-backend "$KEYRING" --algo "$KEYALGO" --home "$CHAINDIR" 2>&1)"
+      # try to grab a line that looks like a seed phrase (>=12 words), else last line
+      user_mnemonic="$(echo "$mnemonic_out" | grep -E '([[:alpha:]]+[[:space:]]+){11,}[[:alpha:]]+$' | tail -1)"
+      if [[ -z "$user_mnemonic" ]]; then
+        user_mnemonic="$(echo "$mnemonic_out" | tail -n 1)"
+      fi
+      user_mnemonic="$(echo "$user_mnemonic" | tr -d '\r')"
 
-      final_mnemonics+=("$USER_MNEMONIC")
-      add_genesis_funds "$KEYNAME"
-      echo "Created $KEYNAME"
+      if [[ -z "$user_mnemonic" ]]; then
+        echo "failed to capture mnemonic for $keyname"; exit 1
+      fi
+
+      final_mnemonics+=("$user_mnemonic")
+      add_genesis_funds "$keyname"
+      echo "created $keyname"
     done
   fi
 
@@ -264,12 +315,14 @@ if [[ $overwrite == "y" || $overwrite == "Y" ]]; then
   evmd genesis collect-gentxs --home "$CHAINDIR"
   evmd genesis validate-genesis --home "$CHAINDIR"
 
-  # --------- Write YAML with mnemonics (defaults + generated) ---------
-  write_mnemonics_yaml "$MNEMONIC_FILE" "${final_mnemonics[@]}"
+  # --------- Write YAML with mnemonics if the user specified more ---------
+  if [[ "$ADDITIONAL_USERS" -gt 0 ]]; then
+    write_mnemonics_yaml "$MNEMONIC_FILE" "${final_mnemonics[@]}"
+  fi
 
-	if [[ $1 == "pending" ]]; then
-		echo "pending mode is on, please wait for the first block committed."
-	fi
+  if [[ $1 == "pending" ]]; then
+    echo "pending mode is on, please wait for the first block committed."
+  fi
 fi
 
 # Start the node
