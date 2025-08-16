@@ -98,6 +98,12 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+if [[ -n "$MNEMONICS_INPUT" && "$ADDITIONAL_USERS" -gt 0 ]]; then
+  echo "Error: --mnemonics-input and --additional-users cannot be used together."
+  echo "Use --mnemonics-input to provide all dev account mnemonics, or use --additional-users to generate extra accounts."
+  exit 1
+fi
+
 if [[ $install == true ]]; then
   if [[ $BUILD_FOR_DEBUG == true ]]; then
     # for remote debugging the optimization should be disabled and the debug info should not be stripped
@@ -203,8 +209,10 @@ if [[ $overwrite == "y" || $overwrite == "Y" ]]; then
 
   # choose base list: prefer provided over defaults
   if [[ ${#provided_mnemonics[@]} -gt 0 ]]; then
+    echo "using provided mnemonics"
     dev_mnemonics=("${provided_mnemonics[@]}")
   else
+    echo "using default mnemonics"
     dev_mnemonics=("${default_mnemonics[@]}")
   fi
 
@@ -284,6 +292,21 @@ if [[ $overwrite == "y" || $overwrite == "Y" ]]; then
   if [[ -z "$MNEMONIC_FILE" ]]; then
     MNEMONIC_FILE="$CHAINDIR/mnemonics.yaml"
   fi
+
+  # Process all dev mnemonics (provided or default)
+  for ((i=0; i<${#dev_mnemonics[@]}; i++)); do
+
+    keyname="dev${i}"
+    mnemonic="${dev_mnemonics[i]}"
+
+    echo "adding key for $keyname"
+
+    # Add key to keyring using the mnemonic
+    echo "$mnemonic" | evmd keys add "$keyname" --recover --keyring-backend "$KEYRING" --algo "$KEYALGO" --home "$CHAINDIR"
+
+    # Fund the account in genesis
+    add_genesis_funds "$keyname"
+  done
 
   if [[ "$ADDITIONAL_USERS" -gt 0 ]]; then
     start_index=${#dev_mnemonics[@]}   # continue after last provided/default entry
