@@ -15,19 +15,19 @@ import (
 // It derives the ERC-20 address from the token denomination and registers the
 // EVM extension as an active dynamic precompile.
 //
-// CONTRACT: This must ONLY be called if there is no existing token pair for the given denom.
+// CONTRACT: This must ONLY be called if there is no existing token mapping for the given denom.
 func (k Keeper) RegisterERC20Extension(ctx sdk.Context, denom string) (*types.TokenMapping, error) {
-	pair, err := k.CreateNewTokenMapping(ctx, denom)
+	mapping, err := k.CreateNewTokenMapping(ctx, denom)
 	if err != nil {
 		return nil, err
 	}
 
 	// Add to existing EVM extensions
-	if err := k.EnableDynamicPrecompile(ctx, pair.GetERC20Contract()); err != nil {
+	if err := k.EnableDynamicPrecompile(ctx, mapping.GetERC20Contract()); err != nil {
 		return nil, err
 	}
 
-	return &pair, err
+	return &mapping, err
 }
 
 // RegisterERC20CodeHash sets the codehash for the erc20 precompile account

@@ -61,7 +61,7 @@ func (k Keeper) DeleteAllowance(
 }
 
 // UnsafeSetAllowance sets the allowance of the given owner and spender with validation.
-// It allows setting allowance for disabled token pairs.
+// It allows setting allowance for disabled token mappings.
 // This should only be used in InitGenesis.
 func (k Keeper) UnsafeSetAllowance(
 	ctx sdk.Context,
@@ -79,19 +79,19 @@ func (k Keeper) setAllowance(
 	owner common.Address,
 	spender common.Address,
 	value *big.Int,
-	allowDisabledTokenPair bool,
+	allowDisabledTokenMapping bool,
 ) error {
-	// validate existence of token pair
-	tokenPairID := k.GetERC20Map(ctx, erc20)
-	tokenPair, found := k.GetTokenMapping(ctx, tokenPairID)
+	// validate existence of token mapping
+	mappingID := k.GetERC20Map(ctx, erc20)
+	mapping, found := k.GetTokenMapping(ctx, mappingID)
 	if !found {
 		return errorsmod.Wrapf(
-			types.ErrTokenMappingNotFound, "token pair for address '%s' not registered", erc20,
+			types.ErrTokenMappingNotFound, "token mapping for address '%s' not registered", erc20,
 		)
 	}
-	if !allowDisabledTokenPair && !tokenPair.Enabled {
+	if !allowDisabledTokenMapping && !mapping.Enabled {
 		return errorsmod.Wrapf(
-			types.ErrERC20TokenMappingDisabled, "token pair for address '%s' is disabled", erc20,
+			types.ErrERC20TokenMappingDisabled, "token mapping for address '%s' is disabled", erc20,
 		)
 	}
 

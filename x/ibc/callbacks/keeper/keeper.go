@@ -90,7 +90,7 @@ func (k ContractKeeper) IBCSendPacketCallback(
 //   - Invalid callback data
 //   - Address validation failures
 //   - Contract validation failures (non-existent or no code)
-//   - Token pair registration errors
+//   - Token mapping registration errors
 //   - EVM execution errors
 //   - Gas limit exceeded errors
 //   - Token transfer validation failures
@@ -164,7 +164,7 @@ func (k ContractKeeper) IBCReceivePacketCallback(
 		return errorsmod.Wrapf(types.ErrContractHasNoCode, "provided contract address is not a contract: %s", contractAddr)
 	}
 
-	// Check if the token pair exists and get the ERC20 contract address
+	// Check if the token mapping exists and get the ERC20 contract address
 	// for the native ERC20 or the precompile.
 	// This call fails if the token does not exist or is not registered.
 	token := transfertypes.Token{
@@ -176,7 +176,7 @@ func (k ContractKeeper) IBCReceivePacketCallback(
 	tokenMappingID := k.erc20Keeper.GetTokenMappingID(ctx, coin.Denom)
 	tokenMapping, found := k.erc20Keeper.GetTokenMapping(ctx, tokenMappingID)
 	if !found {
-		return errorsmod.Wrapf(types.ErrTokenPairNotFound, "token pair for denom %s not found", data.Token.Denom.IBCDenom())
+		return errorsmod.Wrapf(types.ErrTokenMappingNotFound, "token mapping for denom %s not found", data.Token.Denom.IBCDenom())
 	}
 	amountInt, ok := math.NewIntFromString(data.Token.Amount)
 	if !ok {

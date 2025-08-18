@@ -16,13 +16,13 @@ import (
 
 func (s *KeeperTestSuite) TestGetERC20PrecompileInstance() {
 	var (
-		ctx        sdk.Context
-		tokenPairs []types.TokenMapping
+		ctx           sdk.Context
+		tokenMappings []types.TokenMapping
 	)
 	newTokenHexAddr := "0x205CF44075E77A3543abC690437F3b2819bc450a"         //nolint:gosec
 	nonExistendTokenHexAddr := "0x8FA78CEB7F04118Ec6d06AaC37Ca854691d8e963" //nolint:gosec
 	newTokenDenom := "test"
-	tokenPair := types.NewTokenMapping(common.HexToAddress(newTokenHexAddr), newTokenDenom, types.OWNER_MODULE)
+	tokenMapping := types.NewTokenMapping(common.HexToAddress(newTokenHexAddr), newTokenDenom, types.OWNER_MODULE)
 
 	testCases := []struct {
 		name          string
@@ -45,7 +45,7 @@ func (s *KeeperTestSuite) TestGetERC20PrecompileInstance() {
 			"",
 		},
 		{
-			"fail - precompile on params, but token pair doesn't exist",
+			"fail - precompile on params, but token mapping doesn't exist",
 			func() {
 				err := s.network.App.GetErc20Keeper().EnableNativePrecompile(ctx, common.HexToAddress(newTokenHexAddr))
 				s.Require().NoError(err)
@@ -58,12 +58,12 @@ func (s *KeeperTestSuite) TestGetERC20PrecompileInstance() {
 			"precompiled contract not initialized",
 		},
 		{
-			"success - precompile on params, and token pair exist",
+			"success - precompile on params, and token mapping exist",
 			func() {
-				err := s.network.App.GetErc20Keeper().EnableNativePrecompile(ctx, common.HexToAddress(tokenPair.Erc20Address))
+				err := s.network.App.GetErc20Keeper().EnableNativePrecompile(ctx, common.HexToAddress(tokenMapping.Erc20Address))
 				s.Require().NoError(err)
 			},
-			common.HexToAddress(tokenPair.Erc20Address),
+			common.HexToAddress(tokenMapping.Erc20Address),
 			true,
 			false,
 			"",
@@ -74,12 +74,12 @@ func (s *KeeperTestSuite) TestGetERC20PrecompileInstance() {
 			s.SetupTest()
 			ctx = s.network.GetContext()
 
-			err := s.network.App.GetErc20Keeper().SetToken(ctx, tokenPair)
+			err := s.network.App.GetErc20Keeper().SetToken(ctx, tokenMapping)
 			s.Require().NoError(err)
-			tokenPairs = s.network.App.GetErc20Keeper().GetTokenMappings(ctx)
-			s.Require().True(len(tokenPairs) > 1,
-				"expected more than 1 token pair to be set; got %d",
-				len(tokenPairs),
+			tokenMappings = s.network.App.GetErc20Keeper().GetTokenMappings(ctx)
+			s.Require().True(len(tokenMappings) > 1,
+				"expected more than 1 token mapping to be set; got %d",
+				len(tokenMappings),
 			)
 
 			tc.paramsFun()

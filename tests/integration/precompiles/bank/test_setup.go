@@ -46,7 +46,7 @@ func (s *PrecompileTestSuite) SetupTest() sdk.Context {
 	s.tokenDenom = xmplDenom
 
 	keyring := testkeyring.New(2)
-	genesis := utils.CreateGenesisWithTokenPairs(keyring)
+	genesis := utils.CreateGenesisWithTokenMappings(keyring)
 	unitNetwork := network.NewUnitTestNetwork(
 		s.create,
 		network.WithPreFundedAccounts(keyring.GetAllAccAddrs()...),

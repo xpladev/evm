@@ -107,7 +107,7 @@ func (p Precompile) TotalSupply(
 
 // SupplyOf returns the total supply of a given registered erc20 token
 // from the x/bank module. If the ERC20 token doesn't have a registered
-// TokenPair, the method returns a supply of zero.
+// TokenMapping, the method returns a supply of zero.
 // The amount returned with this query has the original decimals precision
 // stored in the x/bank.
 func (p Precompile) SupplyOf(

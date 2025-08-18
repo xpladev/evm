@@ -67,12 +67,12 @@ func (k Keeper) TokenMapping(c context.Context, req *types.QueryTokenMappingRequ
 	id := k.GetTokenMappingID(ctx, req.Token)
 
 	if len(id) == 0 {
-		return nil, status.Errorf(codes.NotFound, "token pair with token '%s'", req.Token)
+		return nil, status.Errorf(codes.NotFound, "token mapping with token '%s'", req.Token)
 	}
 
 	mapping, found := k.GetTokenMapping(ctx, id)
 	if !found {
-		return nil, status.Errorf(codes.NotFound, "token pair with token '%s'", req.Token)
+		return nil, status.Errorf(codes.NotFound, "token mapping with token '%s'", req.Token)
 	}
 
 	return &types.QueryTokenMappingResponse{TokenMapping: mapping}, nil

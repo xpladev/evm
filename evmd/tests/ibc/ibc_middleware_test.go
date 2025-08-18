@@ -546,7 +546,7 @@ func (suite *MiddlewareTestSuite) TestOnRecvPacket() {
 				voucherCoin := evmApp.BankKeeper.GetBalance(ctxA, receiver, voucherDenom)
 				suite.Require().Equal(sendAmt.String(), voucherCoin.Amount.String())
 
-				// Make sure token pair is registered
+				// Make sure token mapping is registered
 				singleTokenRepresentation, err := types.NewTokenMappingSTRv2(voucherDenom)
 				suite.Require().NoError(err)
 				tokenMapping, found := evmApp.Erc20Keeper.GetTokenMapping(ctxA, singleTokenRepresentation.GetID())

@@ -62,7 +62,7 @@ func (is *IntegrationTestSuite) SetupTest() {
 	// with the protocol via genesis and/or a transaction
 	is.tokenDenom = xmplDenom
 	keyring := keyring.New(2)
-	genesis := utils.CreateGenesisWithTokenPairs(keyring)
+	genesis := utils.CreateGenesisWithTokenMappings(keyring)
 
 	options := []network.ConfigOption{
 		network.WithPreFundedAccounts(keyring.GetAllAccAddrs()...),

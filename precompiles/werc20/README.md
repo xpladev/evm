@@ -168,7 +168,7 @@ wrappedAddress.transfer(1 ether); // Automatically deposits
 
 ## Integration Notes
 
-- The WERC20 precompile address is determined by the token pair configuration
+- The WERC20 precompile address is determined by the token mapping configuration
 - Compatible with any protocol expecting ERC20 tokens
 - Maintains full native token functionality
 - Gas costs are comparable to standard ERC20 operations

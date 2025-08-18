@@ -30,8 +30,8 @@ func InitGenesis(
 		panic("the erc20 module account has not been set")
 	}
 
-	for _, pair := range data.TokenMappings {
-		err := k.SetToken(ctx, pair)
+	for _, mapping := range data.TokenMappings {
+		err := k.SetToken(ctx, mapping)
 		if err != nil {
 			return
 		}

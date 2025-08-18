@@ -73,31 +73,31 @@ func generateBankGenesisMetadata() []banktypes.Metadata {
 // updateErc20GenesisStateForChainID modify the default genesis state for the
 // erc20 module on the testing suite depending on the chainID.
 func updateErc20GenesisStateForChainID(chainID testconstants.ChainID, erc20GenesisState erc20types.GenesisState) erc20types.GenesisState {
-	erc20GenesisState.TokenMappings = updateErc20TokenPairs(chainID, erc20GenesisState.TokenMappings)
+	erc20GenesisState.TokenMappings = updateErc20TokenMappings(chainID, erc20GenesisState.TokenMappings)
 
 	return erc20GenesisState
 }
 
-// updateErc20TokenPairs modifies the erc20 token pairs to use the correct
+// updateErc20TokenMappings modifies the erc20 token mappings to use the correct
 // WEVMOS depending on ChainID
-func updateErc20TokenPairs(chainID testconstants.ChainID, tokenPairs []erc20types.TokenMapping) []erc20types.TokenMapping {
+func updateErc20TokenMappings(chainID testconstants.ChainID, tokenMappings []erc20types.TokenMapping) []erc20types.TokenMapping {
 	testnetAddress := GetWEVMOSContractHex(chainID)
 	coinInfo := testconstants.ExampleChainCoinInfo[chainID]
 
 	mainnetAddress := GetWEVMOSContractHex(testconstants.ExampleChainID)
 
-	updatedTokenPairs := make([]erc20types.TokenMapping, len(tokenPairs))
-	for i, tokenPair := range tokenPairs {
-		if tokenPair.Erc20Address == mainnetAddress {
-			updatedTokenPairs[i] = erc20types.TokenMapping{
+	updatedTokenMappings := make([]erc20types.TokenMapping, len(tokenMappings))
+	for i, tokenMapping := range tokenMappings {
+		if tokenMapping.Erc20Address == mainnetAddress {
+			updatedTokenMappings[i] = erc20types.TokenMapping{
 				Erc20Address:  testnetAddress,
 				Denom:         coinInfo.Denom,
-				Enabled:       tokenPair.Enabled,
-				ContractOwner: tokenPair.ContractOwner,
+				Enabled:       tokenMapping.Enabled,
+				ContractOwner: tokenMapping.ContractOwner,
 			}
 		} else {
-			updatedTokenPairs[i] = tokenPair
+			updatedTokenMappings[i] = tokenMapping
 		}
 	}
-	return updatedTokenPairs
+	return updatedTokenMappings
 }

@@ -12,7 +12,7 @@ import (
 
 // MintingEnabled checks that:
 //   - the global parameter for erc20 conversion is enabled
-//   - minting is enabled for the given (erc20,coin) token pair
+//   - minting is enabled for the given (erc20,coin) token mapping
 //   - recipient address is not on the blocked list
 //   - bank module transfers are enabled for the Cosmos coin
 func (k Keeper) MintingEnabled(
@@ -33,14 +33,14 @@ func (k Keeper) MintingEnabled(
 		)
 	}
 
-	pair, found := k.GetTokenMapping(ctx, id)
+	mapping, found := k.GetTokenMapping(ctx, id)
 	if !found {
 		return types.TokenMapping{}, errorsmod.Wrapf(
 			types.ErrTokenMappingNotFound, "token '%s' not registered", token,
 		)
 	}
 
-	if !pair.Enabled {
+	if !mapping.Enabled {
 		return types.TokenMapping{}, errorsmod.Wrapf(
 			types.ErrERC20TokenMappingDisabled, "minting token '%s' is not enabled by governance", token,
 		)
@@ -53,7 +53,7 @@ func (k Keeper) MintingEnabled(
 	}
 
 	// NOTE: ignore amount as only denom is checked on IsSendEnabledCoin
-	coin := sdk.Coin{Denom: pair.Denom}
+	coin := sdk.Coin{Denom: mapping.Denom}
 
 	// check if minting to a recipient address other than the sender is enabled
 	// for for the given coin denom
@@ -63,5 +63,5 @@ func (k Keeper) MintingEnabled(
 		)
 	}
 
-	return pair, nil
+	return mapping, nil
 }

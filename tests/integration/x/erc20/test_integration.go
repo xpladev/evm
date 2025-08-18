@@ -72,7 +72,7 @@ func TestPrecompileIntegrationTestSuite(t *testing.T, create network.CreateEvmAp
 			s.SetupTest()
 		})
 
-		Describe("Submitting a token pair proposal through governance", func() {
+		Describe("Submitting a token mapping proposal through governance", func() {
 			Context("with deployed contracts", func() {
 				BeforeEach(func() {
 					var err error
@@ -96,7 +96,7 @@ func TestPrecompileIntegrationTestSuite(t *testing.T, create network.CreateEvmAp
 						Expect(err).To(BeNil())
 					})
 
-					It("should create a token pair owned by the contract deployer", func() {
+					It("should create a token mapping owned by the contract deployer", func() {
 						qc := s.network.GetERC20Client()
 
 						res, err := qc.TokenMappings(s.network.GetContext(), &types.QueryTokenMappingsRequest{})

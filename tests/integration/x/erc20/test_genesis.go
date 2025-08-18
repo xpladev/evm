@@ -65,7 +65,7 @@ func (s *GenesisTestSuite) TestERC20InitGenesis() {
 			),
 		},
 		{
-			name: "custom genesis with allowances and enabled token pair",
+			name: "custom genesis with allowances and enabled token mapping",
 			genesisState: types.NewGenesisState(
 				types.DefaultParams(),
 				[]types.TokenMapping{
@@ -87,7 +87,7 @@ func (s *GenesisTestSuite) TestERC20InitGenesis() {
 			),
 		},
 		{
-			name: "custom genesis with allowances and disabled token pair",
+			name: "custom genesis with allowances and disabled token mapping",
 			genesisState: types.NewGenesisState(
 				types.DefaultParams(),
 				[]types.TokenMapping{
@@ -205,9 +205,9 @@ func (s *GenesisTestSuite) TestErc20ExportGenesis() {
 			params := s.network.App.GetErc20Keeper().GetParams(s.network.GetContext())
 			s.Require().Equal(genesisExported.Params, params)
 
-			tokenPairs := s.network.App.GetErc20Keeper().GetTokenMappings(s.network.GetContext())
-			if len(tokenPairs) > 0 {
-				s.Require().Equal(genesisExported.TokenMappings, tokenPairs)
+			tokenMappings := s.network.App.GetErc20Keeper().GetTokenMappings(s.network.GetContext())
+			if len(tokenMappings) > 0 {
+				s.Require().Equal(genesisExported.TokenMappings, tokenMappings)
 			} else {
 				s.Require().Len(genesisExported.TokenMappings, 0)
 			}

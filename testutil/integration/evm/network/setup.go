@@ -477,7 +477,7 @@ func setDefaultErc20GenesisState(cosmosEVMApp evm.EvmApp, evmChainID uint64, gen
 // newErc20GenesisState returns the default genesis state for the ERC20 module.
 // This is a duplicate of the function in utils to avoid an import cycle
 //
-// NOTE: for the example chain implementation we are also adding a default token pair,
+// NOTE: for the example chain implementation we are also adding a default token mapping,
 // which is the base denomination of the chain (i.e. the WEVMOS contract).
 func newErc20GenesisState() *erc20types.GenesisState {
 	erc20GenState := erc20types.DefaultGenesisState()

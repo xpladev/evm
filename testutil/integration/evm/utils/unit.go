@@ -25,7 +25,7 @@ const (
 // RegisterEvmosERC20Coins uses the UnitNetwork to register the evmos token as an
 // ERC20 token. The function performs all the required steps for the registration
 // like registering the denom in the transfer keeper and minting the token
-// with the bank. Returns the TokenPair or an error.
+// with the bank. Returns the TokenMapping or an error.
 func RegisterEvmosERC20Coins(
 	network network.UnitTestNetwork,
 	tokenReceiver sdk.AccAddress,
@@ -65,18 +65,18 @@ func RegisterEvmosERC20Coins(
 	}
 
 	cosmosEVMDenomID := network.App.GetErc20Keeper().GetDenomMap(network.GetContext(), bondDenom)
-	tokenPair, ok := network.App.GetErc20Keeper().GetTokenMapping(network.GetContext(), cosmosEVMDenomID)
+	tokenMapping, ok := network.App.GetErc20Keeper().GetTokenMapping(network.GetContext(), cosmosEVMDenomID)
 	if !ok {
-		return erc20types.TokenMapping{}, fmt.Errorf("expected evmos erc20 token pair")
+		return erc20types.TokenMapping{}, fmt.Errorf("expected evmos erc20 token mapping")
 	}
 
-	return tokenPair, nil
+	return tokenMapping, nil
 }
 
 // RegisterIBCERC20Coins uses the UnitNetwork to register the denom as an
 // ERC20 token. The function performs all the required steps for the registration
 // like registering the denom in the transfer keeper and minting the token
-// with the bank. Returns the TokenPair or an error.
+// with the bank. Returns the TokenMapping or an error.
 //
 // TODO: why is this not yet used
 func RegisterIBCERC20Coins(
@@ -134,10 +134,10 @@ func RegisterIBCERC20Coins(
 		network.GetContext(),
 		denom.IBCDenom(),
 	)
-	tokenPair, ok := network.App.GetErc20Keeper().GetTokenMapping(network.GetContext(), ibcDenomID)
+	tokenMapping, ok := network.App.GetErc20Keeper().GetTokenMapping(network.GetContext(), ibcDenomID)
 	if !ok {
-		return erc20types.TokenMapping{}, fmt.Errorf("expected %s erc20 token pair", ibcDenom)
+		return erc20types.TokenMapping{}, fmt.Errorf("expected %s erc20 token mapping", ibcDenom)
 	}
 
-	return tokenPair, nil
+	return tokenMapping, nil
 }

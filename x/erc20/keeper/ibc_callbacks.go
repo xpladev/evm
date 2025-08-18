@@ -90,13 +90,13 @@ func (k Keeper) OnRecvPacket(
 		return ack
 	}
 
-	pairID := k.GetTokenMappingID(ctx, coin.Denom)
-	pair, found := k.GetTokenMapping(ctx, pairID)
+	mappingID := k.GetTokenMappingID(ctx, coin.Denom)
+	mapping, found := k.GetTokenMapping(ctx, mappingID)
 	switch {
-	// Case 1. token pair is not registered and is an IBC Coin
+	// Case 1. token mapping is not registered and is an IBC Coin
 	// by checking the prefix we ensure that only coins not native from this chain are evaluated.
 	case !found && strings.HasPrefix(coin.Denom, "ibc/"):
-		tokenPair, err := k.RegisterERC20Extension(ctx, coin.Denom)
+		tokenMapping, err := k.RegisterERC20Extension(ctx, coin.Denom)
 		if err != nil {
 			return channeltypes.NewErrorAcknowledgement(err)
 		}
@@ -106,21 +106,21 @@ func (k Keeper) OnRecvPacket(
 				sdk.NewEvent(
 					types.EventTypeRegisterERC20Extension,
 					sdk.NewAttribute(types.AttributeCoinSourceChannel, packet.SourceChannel),
-					sdk.NewAttribute(types.AttributeKeyERC20Token, tokenPair.Erc20Address),
-					sdk.NewAttribute(types.AttributeKeyCosmosCoin, tokenPair.Denom),
+					sdk.NewAttribute(types.AttributeKeyERC20Token, tokenMapping.Erc20Address),
+					sdk.NewAttribute(types.AttributeKeyCosmosCoin, tokenMapping.Denom),
 				),
 			},
 		)
 		return ack
 
 	// Case 2. native ERC20 token
-	case found && pair.IsNativeERC20():
-		// Token pair is disabled -> return
-		if !pair.Enabled {
+	case found && mapping.IsNativeERC20():
+		// Token mapping is disabled -> return
+		if !mapping.Enabled {
 			return ack
 		}
 
-		pair, err := k.MintingEnabled(ctx, sender, recipient, coin.Denom)
+		mapping, err := k.MintingEnabled(ctx, sender, recipient, coin.Denom)
 		if err != nil {
 			ctx.EventManager().EmitEvent(
 				sdk.NewEvent("erc20_callback_failure",
@@ -132,7 +132,7 @@ func (k Keeper) OnRecvPacket(
 			return channeltypes.NewErrorAcknowledgement(err)
 		}
 
-		if err := k.ConvertCoinNativeERC20(ctx, pair, coin.Amount, common.BytesToAddress(recipient.Bytes()), recipient); err != nil {
+		if err := k.ConvertCoinNativeERC20(ctx, mapping, coin.Amount, common.BytesToAddress(recipient.Bytes()), recipient); err != nil {
 			return channeltypes.NewErrorAcknowledgement(err)
 		}
 
@@ -158,7 +158,7 @@ func (k Keeper) OnRecvPacket(
 // If the ERC20 conversion fails for whatever reason, such as an attempt to call
 // a self-destructed ERC20 contract or an invalid function, OnAcknowledgementPacket
 // still succeeds, but the user receives the corresponding bank token from the
-// TokenPair instead. A user may then manually re-attempt the conversion.
+// TokenMapping instead. A user may then manually re-attempt the conversion.
 func (k Keeper) OnAcknowledgementPacket(
 	ctx sdk.Context, _ channeltypes.Packet,
 	data transfertypes.FungibleTokenPacketData,
@@ -179,7 +179,7 @@ func (k Keeper) OnAcknowledgementPacket(
 // since the original packet sent was never received and has been timed out.
 // If the ERC20 conversion fails for whatever reason, such as an attempt to call
 // a self-destructed ERC20 contract or an invalid function, OnTimeoutPacket still
-// succeeds, but the user receives the corresponding bank token from the TokenPair
+// succeeds, but the user receives the corresponding bank token from the TokenMapping
 // instead. A user may then manually re-attempt the conversion.
 func (k Keeper) OnTimeoutPacket(ctx sdk.Context, _ channeltypes.Packet, data transfertypes.FungibleTokenPacketData) error {
 	return k.ConvertCoinToERC20FromPacket(ctx, data)
@@ -193,10 +193,10 @@ func (k Keeper) ConvertCoinToERC20FromPacket(ctx sdk.Context, data transfertypes
 		return err
 	}
 
-	pairID := k.GetTokenMappingID(ctx, data.Denom)
-	pair, found := k.GetTokenMapping(ctx, pairID)
+	mappingID := k.GetTokenMappingID(ctx, data.Denom)
+	mapping, found := k.GetTokenMapping(ctx, mappingID)
 	if !found {
-		// no-op, token pair is not registered
+		// no-op, token mapping is not registered
 		return nil
 	}
 
@@ -204,13 +204,13 @@ func (k Keeper) ConvertCoinToERC20FromPacket(ctx sdk.Context, data transfertypes
 
 	switch {
 
-	// Case 1. if pair is native coin -> no-op
-	case pair.IsNativeCoin():
+	// Case 1. if mapping is native coin -> no-op
+	case mapping.IsNativeCoin():
 		// no-op, received coin is a  native coin
 		return nil
 
-	// Case 2. if pair is native ERC20 -> unescrow
-	case pair.IsNativeERC20():
+	// Case 2. if mapping is native ERC20 -> unescrow
+	case mapping.IsNativeERC20():
 		// use a zero gas config to avoid extra costs for the relayers
 		ctx = ctx.
 			WithKVGasConfig(storetypes.GasConfig{}).
@@ -230,7 +230,7 @@ func (k Keeper) ConvertCoinToERC20FromPacket(ctx sdk.Context, data transfertypes
 		}
 
 		// Convert from Coin to ERC20
-		if err := k.ConvertCoinNativeERC20(ctx, pair, coin.Amount, common.BytesToAddress(sender), sender); err != nil {
+		if err := k.ConvertCoinNativeERC20(ctx, mapping, coin.Amount, common.BytesToAddress(sender), sender); err != nil {
 			// We want to record only the failed attempt to reconvert the coins during IBC.
 			defer func() {
 				telemetry.IncrCounter(1, types.ModuleName, "ibc", "error", "total")
@@ -239,8 +239,8 @@ func (k Keeper) ConvertCoinToERC20FromPacket(ctx sdk.Context, data transfertypes
 				sdk.Events{
 					sdk.NewEvent(
 						types.EventTypeFailedConvertERC20,
-						sdk.NewAttribute(types.AttributeCoinSourceChannel, pair.Denom),
-						sdk.NewAttribute(types.AttributeKeyERC20Token, pair.Erc20Address),
+						sdk.NewAttribute(types.AttributeCoinSourceChannel, mapping.Denom),
+						sdk.NewAttribute(types.AttributeKeyERC20Token, mapping.Erc20Address),
 						sdk.NewAttribute("error", err.Error()),
 					),
 				},

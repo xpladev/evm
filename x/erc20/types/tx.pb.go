@@ -38,7 +38,7 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 // coin.
 type MsgConvertERC20 struct {
 	// contract_address of an ERC20 token contract, that is registered in a token
-	// pair
+	// mapping
 	ContractAddress string `protobuf:"bytes,1,opt,name=contract_address,json=contractAddress,proto3" json:"contract_address,omitempty"`
 	// amount of ERC20 tokens to convert
 	Amount cosmossdk_io_math.Int `protobuf:"bytes,2,opt,name=amount,proto3,customtype=cosmossdk.io/math.Int" json:"amount"`
@@ -141,7 +141,7 @@ var xxx_messageInfo_MsgConvertERC20Response proto.InternalMessageInfo
 
 // MsgConvertCoin defines a Msg to convert a native Cosmos coin to a ERC20 token
 type MsgConvertCoin struct {
-	// coin is a Cosmos coin whose denomination is registered in a token pair. The
+	// coin is a Cosmos coin whose denomination is registered in a token mapping. The
 	// coin amount defines the amount of coins to convert.
 	Coin types.Coin `protobuf:"bytes,1,opt,name=coin,proto3" json:"coin"`
 	// receiver is the hex address to receive ERC20 token
@@ -339,9 +339,9 @@ func (m *MsgUpdateParamsResponse) XXX_DiscardUnknown() {
 var xxx_messageInfo_MsgUpdateParamsResponse proto.InternalMessageInfo
 
 // MsgRegisterERC20 is the Msg/RegisterERC20 request type for registering
-// an Erc20 contract token pair.
+// an Erc20 contract token mapping.
 type MsgRegisterERC20 struct {
-	// signer is the address registering the erc20 pairs
+	// signer is the address registering the erc20 mappings
 	Signer string `protobuf:"bytes,1,opt,name=signer,proto3" json:"signer,omitempty"`
 	// erc20addresses is a slice of ERC20 token contract hex addresses
 	Erc20Addresses []string `protobuf:"bytes,2,rep,name=erc20addresses,proto3" json:"erc20addresses,omitempty"`
@@ -618,12 +618,12 @@ type MsgClient interface {
 	// parameters. The authority is hard-coded to the Cosmos SDK x/gov module
 	// account
 	UpdateParams(ctx context.Context, in *MsgUpdateParams, opts ...grpc.CallOption) (*MsgUpdateParamsResponse, error)
-	// RegisterERC20 defines a governance operation for registering a token pair
+	// RegisterERC20 defines a governance operation for registering a token mapping
 	// for the specified erc20 contract. The authority is hard-coded to the Cosmos
 	// SDK x/gov module account
 	RegisterERC20(ctx context.Context, in *MsgRegisterERC20, opts ...grpc.CallOption) (*MsgRegisterERC20Response, error)
 	// ToggleConversion defines a governance operation for enabling/disabling a
-	// token pair conversion. The authority is hard-coded to the Cosmos SDK x/gov
+	// token mapping conversion. The authority is hard-coded to the Cosmos SDK x/gov
 	// module account
 	ToggleConversion(ctx context.Context, in *MsgToggleConversion, opts ...grpc.CallOption) (*MsgToggleConversionResponse, error)
 }
@@ -693,12 +693,12 @@ type MsgServer interface {
 	// parameters. The authority is hard-coded to the Cosmos SDK x/gov module
 	// account
 	UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error)
-	// RegisterERC20 defines a governance operation for registering a token pair
+	// RegisterERC20 defines a governance operation for registering a token mapping
 	// for the specified erc20 contract. The authority is hard-coded to the Cosmos
 	// SDK x/gov module account
 	RegisterERC20(context.Context, *MsgRegisterERC20) (*MsgRegisterERC20Response, error)
 	// ToggleConversion defines a governance operation for enabling/disabling a
-	// token pair conversion. The authority is hard-coded to the Cosmos SDK x/gov
+	// token mapping conversion. The authority is hard-coded to the Cosmos SDK x/gov
 	// module account
 	ToggleConversion(context.Context, *MsgToggleConversion) (*MsgToggleConversionResponse, error)
 }

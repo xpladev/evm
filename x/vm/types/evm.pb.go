@@ -4,14 +4,15 @@
 package types
 
 import (
-	cosmossdk_io_math "cosmossdk.io/math"
 	fmt "fmt"
-	_ "github.com/cosmos/cosmos-sdk/types/tx/amino"
-	_ "github.com/cosmos/gogoproto/gogoproto"
-	proto "github.com/cosmos/gogoproto/proto"
 	io "io"
 	math "math"
 	math_bits "math/bits"
+
+	cosmossdk_io_math "cosmossdk.io/math"
+	_ "github.com/cosmos/cosmos-sdk/types/tx/amino"
+	_ "github.com/cosmos/gogoproto/gogoproto"
+	proto "github.com/cosmos/gogoproto/proto"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -392,7 +393,7 @@ func (m *ChainConfig) GetDecimals() uint64 {
 	return 0
 }
 
-// State represents a single Storage key value pair item.
+// State represents a single Storage key value mapping item.
 type State struct {
 	// key is the stored key
 	Key string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`

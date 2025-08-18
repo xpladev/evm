@@ -13,8 +13,8 @@ func (s *KeeperTestSuite) TestMintingEnabled() {
 	var ctx sdk.Context
 	sender := sdk.AccAddress(utiltx.GenerateAddress().Bytes())
 	receiver := sdk.AccAddress(utiltx.GenerateAddress().Bytes())
-	expPair := types.NewTokenMapping(utiltx.GenerateAddress(), "coin", types.OWNER_MODULE)
-	id := expPair.GetID()
+	expMapping := types.NewTokenMapping(utiltx.GenerateAddress(), "coin", types.OWNER_MODULE)
+	id := expMapping.GetID()
 
 	testCases := []struct {
 		name     string
@@ -31,46 +31,46 @@ func (s *KeeperTestSuite) TestMintingEnabled() {
 			false,
 		},
 		{
-			"token pair not found",
+			"token mapping not found",
 			func() {},
 			false,
 		},
 		{
-			"conversion is disabled for the given pair",
+			"conversion is disabled for the given mapping",
 			func() {
-				expPair.Enabled = false
-				s.network.App.GetErc20Keeper().SetTokenMapping(ctx, expPair)
-				s.network.App.GetErc20Keeper().SetDenomMap(ctx, expPair.Denom, id)
-				s.network.App.GetErc20Keeper().SetERC20Map(ctx, expPair.GetERC20Contract(), id)
+				expMapping.Enabled = false
+				s.network.App.GetErc20Keeper().SetTokenMapping(ctx, expMapping)
+				s.network.App.GetErc20Keeper().SetDenomMap(ctx, expMapping.Denom, id)
+				s.network.App.GetErc20Keeper().SetERC20Map(ctx, expMapping.GetERC20Contract(), id)
 			},
 			false,
 		},
 		{
 			"token transfers are disabled",
 			func() {
-				expPair.Enabled = true
-				s.network.App.GetErc20Keeper().SetTokenMapping(ctx, expPair)
-				s.network.App.GetErc20Keeper().SetDenomMap(ctx, expPair.Denom, id)
-				s.network.App.GetErc20Keeper().SetERC20Map(ctx, expPair.GetERC20Contract(), id)
+				expMapping.Enabled = true
+				s.network.App.GetErc20Keeper().SetTokenMapping(ctx, expMapping)
+				s.network.App.GetErc20Keeper().SetDenomMap(ctx, expMapping.Denom, id)
+				s.network.App.GetErc20Keeper().SetERC20Map(ctx, expMapping.GetERC20Contract(), id)
 
-				s.network.App.GetBankKeeper().SetSendEnabled(ctx, expPair.Denom, false)
+				s.network.App.GetBankKeeper().SetSendEnabled(ctx, expMapping.Denom, false)
 			},
 			false,
 		},
 		{
 			"token not registered",
 			func() {
-				s.network.App.GetErc20Keeper().SetDenomMap(ctx, expPair.Denom, id)
-				s.network.App.GetErc20Keeper().SetERC20Map(ctx, expPair.GetERC20Contract(), id)
+				s.network.App.GetErc20Keeper().SetDenomMap(ctx, expMapping.Denom, id)
+				s.network.App.GetErc20Keeper().SetERC20Map(ctx, expMapping.GetERC20Contract(), id)
 			},
 			false,
 		},
 		{
 			"receiver address is blocked (module account)",
 			func() {
-				s.network.App.GetErc20Keeper().SetTokenMapping(ctx, expPair)
-				s.network.App.GetErc20Keeper().SetDenomMap(ctx, expPair.Denom, id)
-				s.network.App.GetErc20Keeper().SetERC20Map(ctx, expPair.GetERC20Contract(), id)
+				s.network.App.GetErc20Keeper().SetTokenMapping(ctx, expMapping)
+				s.network.App.GetErc20Keeper().SetDenomMap(ctx, expMapping.Denom, id)
+				s.network.App.GetErc20Keeper().SetERC20Map(ctx, expMapping.GetERC20Contract(), id)
 
 				acc := s.network.App.GetAccountKeeper().GetModuleAccount(ctx, types.ModuleName)
 				receiver = acc.GetAddress()
@@ -80,9 +80,9 @@ func (s *KeeperTestSuite) TestMintingEnabled() {
 		{
 			"ok",
 			func() {
-				s.network.App.GetErc20Keeper().SetTokenMapping(ctx, expPair)
-				s.network.App.GetErc20Keeper().SetDenomMap(ctx, expPair.Denom, id)
-				s.network.App.GetErc20Keeper().SetERC20Map(ctx, expPair.GetERC20Contract(), id)
+				s.network.App.GetErc20Keeper().SetTokenMapping(ctx, expMapping)
+				s.network.App.GetErc20Keeper().SetDenomMap(ctx, expMapping.Denom, id)
+				s.network.App.GetErc20Keeper().SetERC20Map(ctx, expMapping.GetERC20Contract(), id)
 
 				receiver = sdk.AccAddress(utiltx.GenerateAddress().Bytes())
 			},
@@ -97,10 +97,10 @@ func (s *KeeperTestSuite) TestMintingEnabled() {
 
 			tc.malleate()
 
-			pair, err := s.network.App.GetErc20Keeper().MintingEnabled(ctx, sender, receiver, expPair.Erc20Address)
+			mappping, err := s.network.App.GetErc20Keeper().MintingEnabled(ctx, sender, receiver, expMapping.Erc20Address)
 			if tc.expPass {
 				s.Require().NoError(err)
-				s.Require().Equal(expPair, pair)
+				s.Require().Equal(expMapping, mappping)
 			} else {
 				s.Require().Error(err)
 			}

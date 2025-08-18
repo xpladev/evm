@@ -5,10 +5,10 @@ import (
 )
 
 // NewGenesisState creates a new genesis state.
-func NewGenesisState(params Params, pairs []TokenMapping, allowances []Allowance) GenesisState {
+func NewGenesisState(params Params, mappings []TokenMapping, allowances []Allowance) GenesisState {
 	return GenesisState{
 		Params:        params,
-		TokenMappings: pairs,
+		TokenMappings: mappings,
 		Allowances:    allowances,
 	}
 }
@@ -25,7 +25,7 @@ func DefaultGenesisState() *GenesisState {
 
 // Validate performs basic genesis state validation returning an error upon any
 // failure.
-// TODO: Validate that the precompiles have a corresponding token pair
+// TODO: Validate that the precompiles have a corresponding token mapping
 func (gs GenesisState) Validate() error {
 	seenErc20 := make(map[string]bool)
 	seenDenom := make(map[string]bool)
@@ -46,7 +46,7 @@ func (gs GenesisState) Validate() error {
 		seenDenom[b.Denom] = true
 	}
 
-	// Check if active precompiles have a corresponding token pair
+	// Check if active precompiles have a corresponding token mapping
 	if err := validatePrecompiles(gs.TokenMappings, gs.DynamicPrecompiles); err != nil {
 		return fmt.Errorf("invalid dynamic precompiles on genesis: %w", err)
 	}
@@ -63,7 +63,7 @@ func (gs GenesisState) Validate() error {
 		}
 
 		if !seenErc20[a.Erc20Address] {
-			return fmt.Errorf("allowance has no corresponding token pair on genesis: %s", a.Erc20Address)
+			return fmt.Errorf("allowance has no corresponding token mapping on genesis: %s", a.Erc20Address)
 		}
 
 		if err := a.Validate(); err != nil {
@@ -76,18 +76,18 @@ func (gs GenesisState) Validate() error {
 	return nil
 }
 
-// validatePrecompiles checks if every precompile has a corresponding enabled token pair
-func validatePrecompiles(tokenPairs []TokenMapping, precompiles []string) error {
+// validatePrecompiles checks if every precompile has a corresponding enabled token mapping
+func validatePrecompiles(mappings []TokenMapping, precompiles []string) error {
 	for _, precompile := range precompiles {
-		if !hasActiveTokenPair(tokenPairs, precompile) {
-			return fmt.Errorf("precompile address '%s' not found in token pairs", precompile)
+		if !hasActiveTokenMapping(mappings, precompile) {
+			return fmt.Errorf("precompile address '%s' not found in token mappings", precompile)
 		}
 	}
 	return nil
 }
 
-func hasActiveTokenPair(pairs []TokenMapping, address string) bool {
-	for _, p := range pairs {
+func hasActiveTokenMapping(mappings []TokenMapping, address string) bool {
+	for _, p := range mappings {
 		if p.Erc20Address == address && p.Enabled {
 			return true
 		}

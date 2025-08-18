@@ -85,8 +85,8 @@ struct Balance {
 ### Token Resolution
 
 The precompile resolves native Cosmos SDK denominations to their corresponding ERC-20
-contract addresses through the `x/erc20` module's token pair registry.
-Only tokens with registered token pairs are returned in query results.
+contract addresses through the `x/erc20` module's token mapping registry.
+Only tokens with registered token mappings are returned in query results.
 
 ### Decimal Precision
 

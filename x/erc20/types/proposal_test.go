@@ -141,24 +141,24 @@ func (suite *ProposalTestSuite) TestRegisterERC20Proposal() {
 		msg         string
 		title       string
 		description string
-		pair        types.TokenMapping
+		mapping     types.TokenMapping
 		expectPass  bool
 	}{
 		// Valid tests
-		{msg: "Register token pair - valid pair enabled", title: "test", description: "test desc", pair: types.TokenMapping{utiltx.GenerateAddress().String(), "test", true, types.OWNER_MODULE}, expectPass: true},
-		{msg: "Register token pair - valid pair dissabled", title: "test", description: "test desc", pair: types.TokenMapping{utiltx.GenerateAddress().String(), "test", false, types.OWNER_MODULE}, expectPass: true},
+		{msg: "Register token mapping - valid mapping enabled", title: "test", description: "test desc", mapping: types.TokenMapping{utiltx.GenerateAddress().String(), "test", true, types.OWNER_MODULE}, expectPass: true},
+		{msg: "Register token mapping - valid mapping dissabled", title: "test", description: "test desc", mapping: types.TokenMapping{utiltx.GenerateAddress().String(), "test", false, types.OWNER_MODULE}, expectPass: true},
 		// Missing params valid
-		{msg: "Register token pair - invalid missing title ", title: "", description: "test desc", pair: types.TokenMapping{utiltx.GenerateAddress().String(), "test", false, types.OWNER_MODULE}, expectPass: false},
-		{msg: "Register token pair - invalid missing description ", title: "test", description: "", pair: types.TokenMapping{utiltx.GenerateAddress().String(), "test", false, types.OWNER_MODULE}, expectPass: false},
+		{msg: "Register token mapping - invalid missing title ", title: "", description: "test desc", mapping: types.TokenMapping{utiltx.GenerateAddress().String(), "test", false, types.OWNER_MODULE}, expectPass: false},
+		{msg: "Register token mapping - invalid missing description ", title: "test", description: "", mapping: types.TokenMapping{utiltx.GenerateAddress().String(), "test", false, types.OWNER_MODULE}, expectPass: false},
 		// Invalid address
-		{msg: "Register token pair - invalid address (no hex)", title: "test", description: "test desc", pair: types.TokenMapping{"0x5dCA2483280D9727c80b5518faC4556617fb19ZZ", "test", true, types.OWNER_MODULE}, expectPass: false},
-		{msg: "Register token pair - invalid address (invalid length 1)", title: "test", description: "test desc", pair: types.TokenMapping{"0x5dCA2483280D9727c80b5518faC4556617fb19", "test", true, types.OWNER_MODULE}, expectPass: false},
-		{msg: "Register token pair - invalid address (invalid length 2)", title: "test", description: "test desc", pair: types.TokenMapping{"0x5dCA2483280D9727c80b5518faC4556617fb194FFF", "test", true, types.OWNER_MODULE}, expectPass: false},
-		{msg: "Register token pair - invalid address (invalid prefix)", title: "test", description: "test desc", pair: types.TokenMapping{"1x5dCA2483280D9727c80b5518faC4556617fb19F", "test", true, types.OWNER_MODULE}, expectPass: false},
+		{msg: "Register token mapping - invalid address (no hex)", title: "test", description: "test desc", mapping: types.TokenMapping{"0x5dCA2483280D9727c80b5518faC4556617fb19ZZ", "test", true, types.OWNER_MODULE}, expectPass: false},
+		{msg: "Register token mapping - invalid address (invalid length 1)", title: "test", description: "test desc", mapping: types.TokenMapping{"0x5dCA2483280D9727c80b5518faC4556617fb19", "test", true, types.OWNER_MODULE}, expectPass: false},
+		{msg: "Register token mapping - invalid address (invalid length 2)", title: "test", description: "test desc", mapping: types.TokenMapping{"0x5dCA2483280D9727c80b5518faC4556617fb194FFF", "test", true, types.OWNER_MODULE}, expectPass: false},
+		{msg: "Register token mapping - invalid address (invalid prefix)", title: "test", description: "test desc", mapping: types.TokenMapping{"1x5dCA2483280D9727c80b5518faC4556617fb19F", "test", true, types.OWNER_MODULE}, expectPass: false},
 	}
 
 	for i, tc := range testCases {
-		tx := types.NewRegisterERC20Proposal(tc.title, tc.description, tc.pair.Erc20Address)
+		tx := types.NewRegisterERC20Proposal(tc.title, tc.description, tc.mapping.Erc20Address)
 		err := tx.ValidateBasic()
 
 		if tc.expectPass {

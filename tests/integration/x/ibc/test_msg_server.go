@@ -44,7 +44,7 @@ func (suite *KeeperTestSuite) TestTransfer() {
 		expPass  bool
 	}{
 		{
-			"pass - no token pair",
+			"pass - no token mapping",
 			func() *types.MsgTransfer {
 				transferMsg := types.NewMsgTransfer(types.PortID, chan0, sdk.NewCoin(evmtypes.GetEVMCoinDenom(), math.NewInt(10)), sender.AccAddr.String(), receiver.String(), timeoutHeight, 0, "")
 				return transferMsg
@@ -69,12 +69,12 @@ func (suite *KeeperTestSuite) TestTransfer() {
 				contractAddr, err := suite.DeployContract("coin", "token", uint8(6))
 				suite.Require().NoError(err)
 
-				pair, err := utils.RegisterERC20(suite.factory, suite.network, utils.ERC20RegistrationData{
+				mapping, err := utils.RegisterERC20(suite.factory, suite.network, utils.ERC20RegistrationData{
 					Addresses:    []string{contractAddr.Hex()},
 					ProposerPriv: sender.Priv,
 				})
 				suite.Require().NoError(err)
-				suite.Require().True(len(pair) == 1)
+				suite.Require().True(len(mapping) == 1)
 
 				amt := math.NewInt(10)
 				_, err = suite.MintERC20Token(contractAddr, sender.Addr, amt.BigInt())
@@ -95,7 +95,7 @@ func (suite *KeeperTestSuite) TestTransfer() {
 				})
 				suite.Require().NoError(err)
 
-				coin := sdk.NewCoin(pair[0].Denom, amt)
+				coin := sdk.NewCoin(mapping[0].Denom, amt)
 				transferMsg := types.NewMsgTransfer(types.PortID, chan0, coin, sender.AccAddr.String(), receiver.String(), timeoutHeight, 0, "")
 
 				return transferMsg
@@ -108,12 +108,12 @@ func (suite *KeeperTestSuite) TestTransfer() {
 				contractAddr, err := suite.DeployContract("coin", "token", uint8(6))
 				suite.Require().NoError(err)
 
-				pair, err := utils.RegisterERC20(suite.factory, suite.network, utils.ERC20RegistrationData{
+				mapping, err := utils.RegisterERC20(suite.factory, suite.network, utils.ERC20RegistrationData{
 					Addresses:    []string{contractAddr.Hex()},
 					ProposerPriv: sender.Priv,
 				})
 				suite.Require().NoError(err)
-				suite.Require().True(len(pair) == 1)
+				suite.Require().True(len(mapping) == 1)
 
 				amt := math.NewInt(10)
 				_, err = suite.MintERC20Token(contractAddr, sender.Addr, amt.BigInt())
@@ -121,7 +121,7 @@ func (suite *KeeperTestSuite) TestTransfer() {
 
 				// No conversion to IBC coin, so the balance is insufficient
 				suite.Require().EqualValues(suite.network.App.GetBankKeeper().GetBalance(
-					ctx, sender.AccAddr, pair[0].Denom).Amount, math.ZeroInt())
+					ctx, sender.AccAddr, mapping[0].Denom).Amount, math.ZeroInt())
 
 				params := suite.network.App.GetErc20Keeper().GetParams(ctx)
 				params.EnableErc20 = false
@@ -133,7 +133,7 @@ func (suite *KeeperTestSuite) TestTransfer() {
 				})
 				suite.Require().NoError(err)
 
-				coin := sdk.NewCoin(pair[0].Denom, amt)
+				coin := sdk.NewCoin(mapping[0].Denom, amt)
 				transferMsg := types.NewMsgTransfer(types.PortID, chan0, coin, sender.AccAddr.String(), receiver.String(), timeoutHeight, 0, "")
 
 				return transferMsg
@@ -141,7 +141,7 @@ func (suite *KeeperTestSuite) TestTransfer() {
 			false,
 		},
 		{
-			"no-op - pair not registered",
+			"no-op - mapping not registered",
 			func() *types.MsgTransfer {
 				coin := sdk.NewCoin(suite.otherDenom, math.NewInt(10))
 				transferMsg := types.NewMsgTransfer(types.PortID, chan0, coin, sender.AccAddr.String(), receiver.String(), timeoutHeight, 0, "")
@@ -150,17 +150,17 @@ func (suite *KeeperTestSuite) TestTransfer() {
 			true,
 		},
 		{
-			"no-op - pair is disabled",
+			"no-op - mapping is disabled",
 			func() *types.MsgTransfer {
 				contractAddr, err := suite.DeployContract("coin", "token", uint8(6))
 				suite.Require().NoError(err)
 
-				pair, err := utils.RegisterERC20(suite.factory, suite.network, utils.ERC20RegistrationData{
+				mapping, err := utils.RegisterERC20(suite.factory, suite.network, utils.ERC20RegistrationData{
 					Addresses:    []string{contractAddr.Hex()},
 					ProposerPriv: sender.Priv,
 				})
 				suite.Require().NoError(err)
-				suite.Require().True(len(pair) == 1)
+				suite.Require().True(len(mapping) == 1)
 
 				amt := math.NewInt(10)
 				_, err = suite.MintERC20Token(contractAddr, sender.Addr, amt.BigInt())
@@ -171,10 +171,10 @@ func (suite *KeeperTestSuite) TestTransfer() {
 				suite.Require().NoError(err)
 
 				// disable token conversion
-				err = utils.ToggleTokenConversion(suite.factory, suite.network, sender.Priv, pair[0].Denom)
+				err = utils.ToggleTokenConversion(suite.factory, suite.network, sender.Priv, mapping[0].Denom)
 				suite.Require().NoError(err)
 
-				coin := sdk.NewCoin(pair[0].Denom, math.NewInt(10))
+				coin := sdk.NewCoin(mapping[0].Denom, math.NewInt(10))
 				transferMsg := types.NewMsgTransfer(types.PortID, chan0, coin, sender.AccAddr.String(), receiver.String(), timeoutHeight, 0, "")
 
 				return transferMsg
@@ -193,14 +193,14 @@ func (suite *KeeperTestSuite) TestTransfer() {
 				})
 				suite.Require().NoError(err)
 				suite.Require().True(len(res) == 1)
-				pair := res[0]
-				suite.Require().Equal(erc20types.CreateDenom(pair.Erc20Address), pair.Denom)
+				mapping := res[0]
+				suite.Require().Equal(erc20types.CreateDenom(mapping.Erc20Address), mapping.Denom)
 
 				amt := math.NewInt(10)
 				_, err = suite.MintERC20Token(contractAddr, sender.Addr, amt.BigInt())
 				suite.Require().NoError(err)
 
-				transferMsg := types.NewMsgTransfer(types.PortID, chan0, sdk.NewCoin(pair.Denom, amt), sender.AccAddr.String(), receiver.String(), timeoutHeight, 0, "")
+				transferMsg := types.NewMsgTransfer(types.PortID, chan0, sdk.NewCoin(mapping.Denom, amt), sender.AccAddr.String(), receiver.String(), timeoutHeight, 0, "")
 
 				return transferMsg
 			},
@@ -212,12 +212,12 @@ func (suite *KeeperTestSuite) TestTransfer() {
 				contractAddr, err := suite.DeployContract("coin", "token", uint8(6))
 				suite.Require().NoError(err)
 
-				pair, err := utils.RegisterERC20(suite.factory, suite.network, utils.ERC20RegistrationData{
+				mapping, err := utils.RegisterERC20(suite.factory, suite.network, utils.ERC20RegistrationData{
 					Addresses:    []string{contractAddr.Hex()},
 					ProposerPriv: sender.Priv,
 				})
 				suite.Require().NoError(err)
-				suite.Require().True(len(pair) == 1)
+				suite.Require().True(len(mapping) == 1)
 
 				// mint some erc20 tokens
 				amt := math.NewInt(10)
@@ -228,7 +228,7 @@ func (suite *KeeperTestSuite) TestTransfer() {
 				err = suite.ConvertERC20(sender, contractAddr, amt)
 				suite.Require().NoError(err)
 
-				transferMsg := types.NewMsgTransfer(types.PortID, chan0, sdk.NewCoin(pair[0].Denom, amt), sender.AccAddr.String(), receiver.String(), timeoutHeight, 0, "")
+				transferMsg := types.NewMsgTransfer(types.PortID, chan0, sdk.NewCoin(mapping[0].Denom, amt), sender.AccAddr.String(), receiver.String(), timeoutHeight, 0, "")
 
 				return transferMsg
 			},
@@ -240,14 +240,14 @@ func (suite *KeeperTestSuite) TestTransfer() {
 				contractAddr, err := suite.DeployContract("coin", "token", uint8(6))
 				suite.Require().NoError(err)
 
-				pair, err := utils.RegisterERC20(suite.factory, suite.network, utils.ERC20RegistrationData{
+				mapping, err := utils.RegisterERC20(suite.factory, suite.network, utils.ERC20RegistrationData{
 					Addresses:    []string{contractAddr.Hex()},
 					ProposerPriv: sender.Priv,
 				})
 				suite.Require().NoError(err)
-				suite.Require().True(len(pair) == 1)
+				suite.Require().True(len(mapping) == 1)
 
-				transferMsg := types.NewMsgTransfer(types.PortID, chan0, sdk.NewCoin(pair[0].Denom, math.NewInt(10)), sender.AccAddr.String(), receiver.String(), timeoutHeight, 0, "")
+				transferMsg := types.NewMsgTransfer(types.PortID, chan0, sdk.NewCoin(mapping[0].Denom, math.NewInt(10)), sender.AccAddr.String(), receiver.String(), timeoutHeight, 0, "")
 				return transferMsg
 			},
 			false,
@@ -258,12 +258,12 @@ func (suite *KeeperTestSuite) TestTransfer() {
 				contractAddr, err := suite.DeployContract("coin", "token", uint8(6))
 				suite.Require().NoError(err)
 
-				pair, err := testutils.RegisterERC20(suite.factory, suite.network, testutils.ERC20RegistrationData{
+				mapping, err := testutils.RegisterERC20(suite.factory, suite.network, testutils.ERC20RegistrationData{
 					Addresses:    []string{contractAddr.Hex()},
 					ProposerPriv: sender.Priv,
 				})
 				suite.Require().NoError(err)
-				suite.Require().True(len(pair) == 1)
+				suite.Require().True(len(mapping) == 1)
 
 				// Mint ERC20 tokens
 				amt := math.NewInt(10)
@@ -274,16 +274,16 @@ func (suite *KeeperTestSuite) TestTransfer() {
 				erc20Denom := erc20types.CreateDenom(contractAddr.String())
 				suite.Require().Equal(erc20types.Erc20NativeCoinDenomPrefix+contractAddr.String(), erc20Denom)
 
-				// Verify that GetTokenPairID works correctly with the contract address (hex string)
-				pairIDFromAddress := suite.network.App.GetErc20Keeper().GetTokenMappingID(ctx, contractAddr.String())
-				suite.Require().NotEmpty(pairIDFromAddress)
+				// Verify that GetTokenMappingID works correctly with the contract address (hex string)
+				mappingIDFromAddress := suite.network.App.GetErc20Keeper().GetTokenMappingID(ctx, contractAddr.String())
+				suite.Require().NotEmpty(mappingIDFromAddress)
 
-				// Verify that GetTokenPairID works correctly with the full denom
-				pairIDFromDenom := suite.network.App.GetErc20Keeper().GetTokenMappingID(ctx, erc20Denom)
-				suite.Require().NotEmpty(pairIDFromDenom)
+				// Verify that GetTokenMappingID works correctly with the full denom
+				mappingIDFromDenom := suite.network.App.GetErc20Keeper().GetTokenMappingID(ctx, erc20Denom)
+				suite.Require().NotEmpty(mappingIDFromDenom)
 
-				// Both should return the same pair ID
-				suite.Require().Equal(pairIDFromAddress, pairIDFromDenom)
+				// Both should return the same mapping ID
+				suite.Require().Equal(mappingIDFromAddress, mappingIDFromDenom)
 
 				transferMsg := types.NewMsgTransfer(types.PortID, chan0, sdk.NewCoin(erc20Denom, amt), sender.AccAddr.String(), receiver.String(), timeoutHeight, 0, "")
 
@@ -321,8 +321,8 @@ func (suite *KeeperTestSuite) TestTransfer() {
 
 				coin := sdk.NewCoin(denom, math.NewInt(10))
 
-				pair, err := suite.network.App.GetErc20Keeper().RegisterERC20Extension(suite.network.GetContext(), coinMetadata.Base)
-				suite.Require().Equal(pair.Denom, denom)
+				mapping, err := suite.network.App.GetErc20Keeper().RegisterERC20Extension(suite.network.GetContext(), coinMetadata.Base)
+				suite.Require().Equal(mapping.Denom, denom)
 				suite.Require().NoError(err)
 
 				transferMsg := types.NewMsgTransfer(types.PortID, chan0, coin, senderAcc.String(), receiver.String(), timeoutHeight, 0, "")
@@ -393,12 +393,12 @@ func (suite *KeeperTestSuite) TestPrefixTrimming() {
 				contractAddr, err := suite.DeployContract("coin", "token", uint8(6))
 				suite.Require().NoError(err)
 
-				pair, err := testutils.RegisterERC20(suite.factory, suite.network, testutils.ERC20RegistrationData{
+				mapping, err := testutils.RegisterERC20(suite.factory, suite.network, testutils.ERC20RegistrationData{
 					Addresses:    []string{contractAddr.Hex()},
 					ProposerPriv: sender.Priv,
 				})
 				suite.Require().NoError(err)
-				suite.Require().True(len(pair) == 1)
+				suite.Require().True(len(mapping) == 1)
 
 				// Mint ERC20 tokens
 				amt := math.NewInt(10)
@@ -414,16 +414,16 @@ func (suite *KeeperTestSuite) TestPrefixTrimming() {
 				expectedTrimmed := strings.TrimPrefix(erc20Denom, erc20types.Erc20NativeCoinDenomPrefix)
 				suite.Require().Equal(contractAddr.String(), expectedTrimmed)
 
-				// Verify that GetTokenPairID works correctly with the contract address (hex string)
-				pairIDFromAddress := suite.network.App.GetErc20Keeper().GetTokenMappingID(ctx, contractAddr.String())
-				suite.Require().NotEmpty(pairIDFromAddress)
+				// Verify that GetTokenMappingID works correctly with the contract address (hex string)
+				mappingIDFromAddress := suite.network.App.GetErc20Keeper().GetTokenMappingID(ctx, contractAddr.String())
+				suite.Require().NotEmpty(mappingIDFromAddress)
 
-				// Verify that GetTokenPairID works correctly with the full denom
-				pairIDFromDenom := suite.network.App.GetErc20Keeper().GetTokenMappingID(ctx, erc20Denom)
-				suite.Require().NotEmpty(pairIDFromDenom)
+				// Verify that GetTokenMappingID works correctly with the full denom
+				mappingIDFromDenom := suite.network.App.GetErc20Keeper().GetTokenMappingID(ctx, erc20Denom)
+				suite.Require().NotEmpty(mappingIDFromDenom)
 
-				// Both should return the same pair ID
-				suite.Require().Equal(pairIDFromAddress, pairIDFromDenom)
+				// Both should return the same mapping ID
+				suite.Require().Equal(mappingIDFromAddress, mappingIDFromDenom)
 
 				// TEST: Verify that incorrect prefix trimming would fail
 				// If we incorrectly trim "erc20/" instead of "erc20:", we'd get the wrong string
@@ -444,12 +444,12 @@ func (suite *KeeperTestSuite) TestPrefixTrimming() {
 				contractAddr, err := suite.DeployContract("coin2", "token2", uint8(6))
 				suite.Require().NoError(err)
 
-				pair, err := testutils.RegisterERC20(suite.factory, suite.network, testutils.ERC20RegistrationData{
+				mapping, err := testutils.RegisterERC20(suite.factory, suite.network, testutils.ERC20RegistrationData{
 					Addresses:    []string{contractAddr.Hex()},
 					ProposerPriv: sender.Priv,
 				})
 				suite.Require().NoError(err)
-				suite.Require().True(len(pair) == 1)
+				suite.Require().True(len(mapping) == 1)
 
 				// Mint ERC20 tokens
 				amt := math.NewInt(10)
@@ -469,12 +469,12 @@ func (suite *KeeperTestSuite) TestPrefixTrimming() {
 				suite.Require().Equal(erc20Denom, incorrectTrimmed)
 
 				// Both lookups should work due to dual mapping, but use different code paths
-				pairIDFromCorrect := suite.network.App.GetErc20Keeper().GetTokenMappingID(ctx, correctTrimmed)
-				pairIDFromIncorrect := suite.network.App.GetErc20Keeper().GetTokenMappingID(ctx, incorrectTrimmed)
+				mappingIDFromCorrect := suite.network.App.GetErc20Keeper().GetTokenMappingID(ctx, correctTrimmed)
+				mappingIDFromIncorrect := suite.network.App.GetErc20Keeper().GetTokenMappingID(ctx, incorrectTrimmed)
 
-				suite.Require().NotEmpty(pairIDFromCorrect)
-				suite.Require().NotEmpty(pairIDFromIncorrect)
-				suite.Require().Equal(pairIDFromCorrect, pairIDFromIncorrect)
+				suite.Require().NotEmpty(mappingIDFromCorrect)
+				suite.Require().NotEmpty(mappingIDFromIncorrect)
+				suite.Require().Equal(mappingIDFromCorrect, mappingIDFromIncorrect)
 
 				transferMsg := types.NewMsgTransfer(types.PortID, chan0, sdk.NewCoin(erc20Denom, amt), sender.AccAddr.String(), receiver.String(), timeoutHeight, 0, "")
 

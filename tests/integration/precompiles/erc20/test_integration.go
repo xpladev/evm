@@ -70,7 +70,7 @@ func (is *IntegrationTestSuite) SetupTest() {
 	is.tokenDenomTwo = "xmpl2"
 
 	keys := keyring.New(2)
-	genesis := utils.CreateGenesisWithTokenPairs(keys, is.tokenDenom, is.tokenDenomTwo)
+	genesis := utils.CreateGenesisWithTokenMappings(keys, is.tokenDenom, is.tokenDenomTwo)
 
 	options := []network.ConfigOption{
 		network.WithPreFundedAccounts(keys.GetAllAccAddrs()...),
@@ -2030,7 +2030,7 @@ func TestIntegrationTestSuite(t *testing.T, create network.CreateEvmApp, options
 				err = is.network.NextBlock()
 				Expect(err).ToNot(HaveOccurred(), "failed to commit block")
 
-				// Register the deployed erc20 contract as a token pair
+				// Register the deployed erc20 contract as a token mapping
 				_, err = utils.RegisterERC20(is.factory, is.network, utils.ERC20RegistrationData{
 					Addresses:    []string{erc20Addr.Hex()},
 					ProposerPriv: contractOwner.Priv,
@@ -2095,7 +2095,7 @@ func TestIntegrationTestSuite(t *testing.T, create network.CreateEvmApp, options
 
 		When("registering a native IBC coin", func() {
 			BeforeEach(func() {
-				// TODO: Add some IBC coins, register the token pair and then run migration logic
+				// TODO: Add some IBC coins, register the token mapping and then run migration logic
 			})
 
 			It("should add the corresponding erc20 precompiles", func() {

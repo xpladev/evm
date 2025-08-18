@@ -11,10 +11,10 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 )
 
-// CreateGenesisWithTokenPairs creates a genesis that includes
+// CreateGenesisWithTokenMappings creates a genesis that includes
 // the WEVMOS and the provided denoms.
 // If no denoms provided, creates only one dynamic precompile with the 'xmpl' denom.
-func CreateGenesisWithTokenPairs(keyring testkeyring.Keyring, denoms ...string) network.CustomGenesisState {
+func CreateGenesisWithTokenMappings(keyring testkeyring.Keyring, denoms ...string) network.CustomGenesisState {
 	// Add all keys from the keyring to the genesis accounts as well.
 	//
 	// NOTE: This is necessary to enable the account to send EVM transactions,
@@ -46,10 +46,10 @@ func CreateGenesisWithTokenPairs(keyring testkeyring.Keyring, denoms ...string) 
 		accGenesisState.Accounts = append(accGenesisState.Accounts, codectypes.UnsafePackAny(genesisAccount))
 	}
 
-	// Add token pairs to genesis
-	tokenPairs := make([]erc20types.TokenMapping, 0, len(denoms)+1)
-	tokenPairs = append(tokenPairs,
-		// NOTE: the example token pairs are being added in the integration test utils
+	// Add token mappings to genesis
+	tokenMappings := make([]erc20types.TokenMapping, 0, len(denoms)+1)
+	tokenMappings = append(tokenMappings,
+		// NOTE: the example token mappings are being added in the integration test utils
 		testconstants.ExampleTokenMappings...,
 	)
 
@@ -62,14 +62,14 @@ func CreateGenesisWithTokenPairs(keyring testkeyring.Keyring, denoms ...string) 
 			Enabled:       true,
 			ContractOwner: erc20types.OWNER_MODULE, // NOTE: Owner is the module account since it's a native token and was registered through governance
 		}
-		tokenPairs = append(tokenPairs, tp)
+		tokenMappings = append(tokenMappings, tp)
 		dynPrecAddr = append(dynPrecAddr, addr)
 	}
 
 	// STR v2: update the NativePrecompiles and DynamicPrecompiles
 	// with the WEVMOS (default is mainnet) and 'xmpl' tokens in the erc20 params
 	erc20GenesisState := erc20types.DefaultGenesisState()
-	erc20GenesisState.TokenMappings = tokenPairs
+	erc20GenesisState.TokenMappings = tokenMappings
 	erc20GenesisState.NativePrecompiles = []string{testconstants.WEVMOSContractMainnet}
 	erc20GenesisState.DynamicPrecompiles = dynPrecAddr
 
@@ -82,7 +82,7 @@ func CreateGenesisWithTokenPairs(keyring testkeyring.Keyring, denoms ...string) 
 
 // NewErc20GenesisState returns the default genesis state for the ERC20 module.
 //
-// NOTE: for the example chain implementation we are also adding a default token pair,
+// NOTE: for the example chain implementation we are also adding a default token mapping,
 // which is the base denomination of the chain (i.e. the WEVMOS contract).
 func NewErc20GenesisState() *erc20types.GenesisState {
 	erc20GenState := erc20types.DefaultGenesisState()

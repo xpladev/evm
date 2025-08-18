@@ -50,7 +50,7 @@ func (suite *GenesisTestSuite) TestValidateGenesis() {
 			expPass: true,
 		},
 		{
-			name: "valid genesis - with tokens pairs",
+			name: "valid genesis - with tokens mappings",
 			genState: &types.GenesisState{
 				Params: types.DefaultParams(),
 				TokenMappings: []types.TokenMapping{
@@ -70,7 +70,7 @@ func (suite *GenesisTestSuite) TestValidateGenesis() {
 			expPass: true,
 		},
 		{
-			name: "invalid genesis - duplicated token pair",
+			name: "invalid genesis - duplicated token mapping",
 			genState: &types.GenesisState{
 				Params: types.DefaultParams(),
 				TokenMappings: []types.TokenMapping{
@@ -95,7 +95,7 @@ func (suite *GenesisTestSuite) TestValidateGenesis() {
 			expPass: false,
 		},
 		{
-			name: "invalid genesis - duplicated token pair",
+			name: "invalid genesis - duplicated token mapping",
 			genState: &types.GenesisState{
 				Params: types.DefaultParams(),
 				TokenMappings: []types.TokenMapping{
@@ -120,7 +120,7 @@ func (suite *GenesisTestSuite) TestValidateGenesis() {
 			expPass: false,
 		},
 		{
-			name: "invalid genesis - duplicated token pair",
+			name: "invalid genesis - duplicated token mapping",
 			genState: &types.GenesisState{
 				Params: types.DefaultParams(),
 				TokenMappings: []types.TokenMapping{
@@ -145,7 +145,7 @@ func (suite *GenesisTestSuite) TestValidateGenesis() {
 			expPass: false,
 		},
 		{
-			name: "invalid genesis - invalid token pair",
+			name: "invalid genesis - invalid token mapping",
 			genState: &types.GenesisState{
 				Params: types.DefaultParams(),
 				TokenMappings: []types.TokenMapping{
@@ -165,7 +165,7 @@ func (suite *GenesisTestSuite) TestValidateGenesis() {
 			expPass: false,
 		},
 		{
-			name: "invalid genesis - missing wevmos token pair",
+			name: "invalid genesis - missing wevmos token mapping",
 			genState: &types.GenesisState{
 				Params: types.DefaultParams(),
 				TokenMappings: []types.TokenMapping{

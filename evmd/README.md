@@ -12,15 +12,15 @@ as well as to provide a chain object for testing purposes within the repository.
 
 By default, this chain has the following configuration:
 
-| Option              | Value                  |
-|---------------------|------------------------|
-| Binary              | `evmd`                 |
-| Chain ID            | `cosmos_262144-1`      |
-| Custom Opcodes      | -                      |
-| Default Token Pairs | 1 for the native token |
-| Denomination        | `atest`                |
-| EVM permissioning   | permissionless         |
-| Enabled Precompiles | all                    |
+| Option                 | Value                  |
+|------------------------|------------------------|
+| Binary                 | `evmd`                 |
+| Chain ID               | `cosmos_262144-1`      |
+| Custom Opcodes         | -                      |
+| Default Token Mappings | 1 for the native token |
+| Denomination           | `atest`                |
+| EVM permissioning      | permissionless         |
+| Enabled Precompiles    | all                    |
 
 ## Running The Chain
 

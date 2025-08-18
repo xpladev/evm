@@ -20,7 +20,7 @@ var _ types.MsgServer = Keeper{}
 
 // Transfer defines a gRPC msg server method for the MsgTransfer message.
 // This implementation overrides the default ICS20 transfer by converting
-// the ERC20 tokens to their Cosmos representation if the token pair has been
+// the ERC20 tokens to their Cosmos representation if the token mapping has been
 // registered through governance.
 // If user doesn't have enough balance of coin, it will attempt to convert
 // ERC20 tokens to the coin denomination, and continue with a regular transfer.
@@ -53,7 +53,7 @@ func (k Keeper) Transfer(goCtx context.Context, msg *types.MsgTransfer) (*types.
 
 	mapping, _ := k.erc20Keeper.GetTokenMapping(ctx, tokenMappingID)
 	if !mapping.Enabled {
-		// no-op: pair is not enabled so we can proceed with regular transfer
+		// no-op: mapping is not enabled so we can proceed with regular transfer
 		return k.Keeper.Transfer(ctx, msg)
 	}
 
@@ -64,7 +64,7 @@ func (k Keeper) Transfer(goCtx context.Context, msg *types.MsgTransfer) (*types.
 		return k.Keeper.Transfer(ctx, msg)
 	}
 
-	// update the msg denom to the token pair denom
+	// update the msg denom to the token mapping denom
 	msg.Token.Denom = mapping.Denom
 
 	if !mapping.IsNativeERC20() {
@@ -87,7 +87,7 @@ func (k Keeper) Transfer(goCtx context.Context, msg *types.MsgTransfer) (*types.
 		return k.Keeper.Transfer(ctx, msg)
 	}
 
-	// Only convert if the pair is a native ERC20
+	// Only convert if the mapping is a native ERC20
 	// only convert the remaining difference
 	difference := msg.Token.Amount.Sub(balance.Amount)
 

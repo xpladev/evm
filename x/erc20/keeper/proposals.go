@@ -13,7 +13,7 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 )
 
-// RegisterERC20 creates a Cosmos coin and registers the token pair between the
+// RegisterERC20 creates a Cosmos coin and registers the token mapping between the
 // coin and the ERC20
 func (k Keeper) registerERC20(
 	ctx sdk.Context,
@@ -33,12 +33,12 @@ func (k Keeper) registerERC20(
 		)
 	}
 
-	pair := types.NewTokenMapping(contract, metadata.Name, types.OWNER_EXTERNAL)
-	err = k.SetToken(ctx, pair)
+	mapping := types.NewTokenMapping(contract, metadata.Name, types.OWNER_EXTERNAL)
+	err = k.SetToken(ctx, mapping)
 	if err != nil {
 		return nil, err
 	}
-	return &pair, nil
+	return &mapping, nil
 }
 
 // CreateCoinMetadata generates the metadata to represent the ERC20 token on
@@ -113,7 +113,7 @@ func (k Keeper) CreateCoinMetadata(
 	return &metadata, nil
 }
 
-// ToggleConversion toggles conversion for a given token pair
+// ToggleConversion toggles conversion for a given token mapping
 func (k Keeper) toggleConversion(
 	ctx sdk.Context,
 	token string,
@@ -125,14 +125,14 @@ func (k Keeper) toggleConversion(
 		)
 	}
 
-	pair, found := k.GetTokenMapping(ctx, id)
+	mapping, found := k.GetTokenMapping(ctx, id)
 	if !found {
 		return types.TokenMapping{}, errorsmod.Wrapf(
 			types.ErrTokenMappingNotFound, "token '%s' not registered", token,
 		)
 	}
 
-	pair.Enabled = !pair.Enabled
-	k.SetTokenMapping(ctx, pair)
-	return pair, nil
+	mapping.Enabled = !mapping.Enabled
+	k.SetTokenMapping(ctx, mapping)
+	return mapping, nil
 }

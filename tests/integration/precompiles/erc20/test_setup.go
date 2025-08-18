@@ -68,7 +68,7 @@ func (s *PrecompileTestSuite) SetupTest() {
 	s.precompile, err = s.setupERC20Precompile(s.tokenDenom)
 	s.Require().NoError(err)
 
-	// Instantiate the precompile2 with the bond denom (the token pair was already set up in genesis).
+	// Instantiate the precompile2 with the bond denom (the token mapping was already set up in genesis).
 	tokenMappingID := s.network.App.GetErc20Keeper().GetDenomMap(s.network.GetContext(), bondDenom)
 	tokenMapping, found := s.network.App.GetErc20Keeper().GetTokenMapping(s.network.GetContext(), tokenMappingID)
 	s.Require().True(found)

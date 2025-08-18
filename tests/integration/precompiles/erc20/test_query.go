@@ -423,7 +423,7 @@ func (s *PrecompileTestSuite) TestBalanceOf() {
 			errContains: "invalid account address: invalid address",
 		},
 		{
-			name: "pass - no coins in token denomination of precompile token pair",
+			name: "pass - no coins in token denomination of precompile token mapping",
 			malleate: func(_ sdk.Context, keeper bankkeeper.Keeper, _ *big.Int) []interface{} {
 				// NOTE: we fund the account with some coins in a different denomination from what was used in the precompile.
 				err := testutil.FundAccount(
@@ -515,7 +515,7 @@ func (s *PrecompileTestSuite) TestAllowance() {
 			expAllow: common.Big0,
 		},
 		{
-			name: "pass - allowance exists for precompile token pair denom",
+			name: "pass - allowance exists for precompile token mapping denom",
 			malleate: func(_ sdk.Context, amount *big.Int) []interface{} {
 				ownerIdx := 0
 				spenderIdx := 1

@@ -200,7 +200,7 @@ func (m *Allowance) GetSpender() string {
 }
 
 // Deprecated: RegisterCoinProposal is a gov Content type to register a token
-// pair for a native Cosmos coin. We're keeping it to remove the existing
+// mapping for a native Cosmos coin. We're keeping it to remove the existing
 // proposals from store. After that, remove this message.
 //
 // NOTE: Keep this message for backwards compatibility on proposals query
@@ -316,7 +316,7 @@ func (m *ProposalMetadata) GetMetadata() []types.Metadata {
 }
 
 // Deprecated: RegisterERC20Proposal is a gov Content type to register a token
-// pair for an ERC20 token.
+// mapping for an ERC20 token.
 //
 // NOTE: Keep this message for backwards compatibility on proposals query
 type RegisterERC20Proposal struct {
@@ -383,7 +383,7 @@ func (m *RegisterERC20Proposal) GetErc20Addresses() []string {
 }
 
 // Deprecated: ToggleTokenConversionProposal is a gov Content type to toggle the
-// conversion of a token pair.
+// conversion of a token mapping.
 //
 // NOTE: Keep this message for backwards compatibility on proposals query
 type ToggleTokenConversionProposal struct {

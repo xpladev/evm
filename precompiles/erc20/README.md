@@ -47,14 +47,14 @@ The following gas costs are charged for each method:
 
 ## Implementation Details
 
-### Token Pair Mapping
+### Token Mappings
 
-Each ERC20 precompile instance is associated with a `TokenPair` that links:
+Each ERC20 precompile instance is associated with a `TokenMapping` that links:
 
 - A Cosmos SDK denomination (e.g., `uatom`)
 - An ERC20 contract address
 
-The precompile address is determined by the token pair configuration.
+The precompile address is determined by the token mapping configuration.
 
 ### Transfer Mechanism
 
@@ -121,6 +121,6 @@ token.transferFrom(owner, recipient, 3000000);
 
 ## Integration Notes
 
-- The precompile is automatically available for registered token pairs
+- The precompile is automatically available for registered token mappings
 - Smart contracts can interact with native tokens without wrapping
 - Full compatibility with existing ERC20 tooling and libraries
