@@ -68,23 +68,23 @@ func (s *PrecompileTestSuite) SetupTest() sdk.Context {
 	s.keyring = keyring
 	s.network = unitNetwork
 
-	tokenPairID := s.network.App.GetErc20Keeper().GetTokenPairID(s.network.GetContext(), s.bondDenom)
-	tokenPair, found := s.network.App.GetErc20Keeper().GetTokenPair(s.network.GetContext(), tokenPairID)
+	tokenMappingID := s.network.App.GetErc20Keeper().GetTokenMappingID(s.network.GetContext(), s.bondDenom)
+	tokenMapping, found := s.network.App.GetErc20Keeper().GetTokenMapping(s.network.GetContext(), tokenMappingID)
 	s.Require().True(found)
-	s.cosmosEVMAddr = common.HexToAddress(tokenPair.Erc20Address)
+	s.cosmosEVMAddr = common.HexToAddress(tokenMapping.Erc20Address)
 
-	s.cosmosEVMAddr = tokenPair.GetERC20Contract()
+	s.cosmosEVMAddr = tokenMapping.GetERC20Contract()
 
 	// Mint and register a second coin for testing purposes
 	err = s.network.App.GetBankKeeper().MintCoins(s.network.GetContext(), minttypes.ModuleName, sdk.Coins{{Denom: "xmpl", Amount: math.NewInt(1e18)}})
 	s.Require().NoError(err)
 
-	tokenPairID = s.network.App.GetErc20Keeper().GetTokenPairID(s.network.GetContext(), s.tokenDenom)
-	tokenPair, found = s.network.App.GetErc20Keeper().GetTokenPair(s.network.GetContext(), tokenPairID)
+	tokenMappingID = s.network.App.GetErc20Keeper().GetTokenMappingID(s.network.GetContext(), s.tokenDenom)
+	tokenMapping, found = s.network.App.GetErc20Keeper().GetTokenMapping(s.network.GetContext(), tokenMappingID)
 	s.Require().True(found)
-	s.xmplAddr = common.HexToAddress(tokenPair.Erc20Address)
+	s.xmplAddr = common.HexToAddress(tokenMapping.Erc20Address)
 
-	s.xmplAddr = tokenPair.GetERC20Contract()
+	s.xmplAddr = tokenMapping.GetERC20Contract()
 
 	s.precompile = s.setupBankPrecompile()
 	return ctx

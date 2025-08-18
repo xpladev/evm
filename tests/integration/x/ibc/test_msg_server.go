@@ -275,11 +275,11 @@ func (suite *KeeperTestSuite) TestTransfer() {
 				suite.Require().Equal(erc20types.Erc20NativeCoinDenomPrefix+contractAddr.String(), erc20Denom)
 
 				// Verify that GetTokenPairID works correctly with the contract address (hex string)
-				pairIDFromAddress := suite.network.App.GetErc20Keeper().GetTokenPairID(ctx, contractAddr.String())
+				pairIDFromAddress := suite.network.App.GetErc20Keeper().GetTokenMappingID(ctx, contractAddr.String())
 				suite.Require().NotEmpty(pairIDFromAddress)
 
 				// Verify that GetTokenPairID works correctly with the full denom
-				pairIDFromDenom := suite.network.App.GetErc20Keeper().GetTokenPairID(ctx, erc20Denom)
+				pairIDFromDenom := suite.network.App.GetErc20Keeper().GetTokenMappingID(ctx, erc20Denom)
 				suite.Require().NotEmpty(pairIDFromDenom)
 
 				// Both should return the same pair ID
@@ -415,11 +415,11 @@ func (suite *KeeperTestSuite) TestPrefixTrimming() {
 				suite.Require().Equal(contractAddr.String(), expectedTrimmed)
 
 				// Verify that GetTokenPairID works correctly with the contract address (hex string)
-				pairIDFromAddress := suite.network.App.GetErc20Keeper().GetTokenPairID(ctx, contractAddr.String())
+				pairIDFromAddress := suite.network.App.GetErc20Keeper().GetTokenMappingID(ctx, contractAddr.String())
 				suite.Require().NotEmpty(pairIDFromAddress)
 
 				// Verify that GetTokenPairID works correctly with the full denom
-				pairIDFromDenom := suite.network.App.GetErc20Keeper().GetTokenPairID(ctx, erc20Denom)
+				pairIDFromDenom := suite.network.App.GetErc20Keeper().GetTokenMappingID(ctx, erc20Denom)
 				suite.Require().NotEmpty(pairIDFromDenom)
 
 				// Both should return the same pair ID
@@ -469,8 +469,8 @@ func (suite *KeeperTestSuite) TestPrefixTrimming() {
 				suite.Require().Equal(erc20Denom, incorrectTrimmed)
 
 				// Both lookups should work due to dual mapping, but use different code paths
-				pairIDFromCorrect := suite.network.App.GetErc20Keeper().GetTokenPairID(ctx, correctTrimmed)
-				pairIDFromIncorrect := suite.network.App.GetErc20Keeper().GetTokenPairID(ctx, incorrectTrimmed)
+				pairIDFromCorrect := suite.network.App.GetErc20Keeper().GetTokenMappingID(ctx, correctTrimmed)
+				pairIDFromIncorrect := suite.network.App.GetErc20Keeper().GetTokenMappingID(ctx, incorrectTrimmed)
 
 				suite.Require().NotEmpty(pairIDFromCorrect)
 				suite.Require().NotEmpty(pairIDFromIncorrect)

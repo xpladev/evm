@@ -17,25 +17,25 @@ import (
 )
 
 var (
-	md_QueryTokenPairsRequest            protoreflect.MessageDescriptor
-	fd_QueryTokenPairsRequest_pagination protoreflect.FieldDescriptor
+	md_QueryTokenMappingsRequest            protoreflect.MessageDescriptor
+	fd_QueryTokenMappingsRequest_pagination protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_cosmos_evm_erc20_v1_query_proto_init()
-	md_QueryTokenPairsRequest = File_cosmos_evm_erc20_v1_query_proto.Messages().ByName("QueryTokenPairsRequest")
-	fd_QueryTokenPairsRequest_pagination = md_QueryTokenPairsRequest.Fields().ByName("pagination")
+	md_QueryTokenMappingsRequest = File_cosmos_evm_erc20_v1_query_proto.Messages().ByName("QueryTokenMappingsRequest")
+	fd_QueryTokenMappingsRequest_pagination = md_QueryTokenMappingsRequest.Fields().ByName("pagination")
 }
 
-var _ protoreflect.Message = (*fastReflection_QueryTokenPairsRequest)(nil)
+var _ protoreflect.Message = (*fastReflection_QueryTokenMappingsRequest)(nil)
 
-type fastReflection_QueryTokenPairsRequest QueryTokenPairsRequest
+type fastReflection_QueryTokenMappingsRequest QueryTokenMappingsRequest
 
-func (x *QueryTokenPairsRequest) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_QueryTokenPairsRequest)(x)
+func (x *QueryTokenMappingsRequest) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_QueryTokenMappingsRequest)(x)
 }
 
-func (x *QueryTokenPairsRequest) slowProtoReflect() protoreflect.Message {
+func (x *QueryTokenMappingsRequest) slowProtoReflect() protoreflect.Message {
 	mi := &file_cosmos_evm_erc20_v1_query_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -47,43 +47,43 @@ func (x *QueryTokenPairsRequest) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_QueryTokenPairsRequest_messageType fastReflection_QueryTokenPairsRequest_messageType
-var _ protoreflect.MessageType = fastReflection_QueryTokenPairsRequest_messageType{}
+var _fastReflection_QueryTokenMappingsRequest_messageType fastReflection_QueryTokenMappingsRequest_messageType
+var _ protoreflect.MessageType = fastReflection_QueryTokenMappingsRequest_messageType{}
 
-type fastReflection_QueryTokenPairsRequest_messageType struct{}
+type fastReflection_QueryTokenMappingsRequest_messageType struct{}
 
-func (x fastReflection_QueryTokenPairsRequest_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_QueryTokenPairsRequest)(nil)
+func (x fastReflection_QueryTokenMappingsRequest_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_QueryTokenMappingsRequest)(nil)
 }
-func (x fastReflection_QueryTokenPairsRequest_messageType) New() protoreflect.Message {
-	return new(fastReflection_QueryTokenPairsRequest)
+func (x fastReflection_QueryTokenMappingsRequest_messageType) New() protoreflect.Message {
+	return new(fastReflection_QueryTokenMappingsRequest)
 }
-func (x fastReflection_QueryTokenPairsRequest_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_QueryTokenPairsRequest
+func (x fastReflection_QueryTokenMappingsRequest_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryTokenMappingsRequest
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_QueryTokenPairsRequest) Descriptor() protoreflect.MessageDescriptor {
-	return md_QueryTokenPairsRequest
+func (x *fastReflection_QueryTokenMappingsRequest) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryTokenMappingsRequest
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_QueryTokenPairsRequest) Type() protoreflect.MessageType {
-	return _fastReflection_QueryTokenPairsRequest_messageType
+func (x *fastReflection_QueryTokenMappingsRequest) Type() protoreflect.MessageType {
+	return _fastReflection_QueryTokenMappingsRequest_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_QueryTokenPairsRequest) New() protoreflect.Message {
-	return new(fastReflection_QueryTokenPairsRequest)
+func (x *fastReflection_QueryTokenMappingsRequest) New() protoreflect.Message {
+	return new(fastReflection_QueryTokenMappingsRequest)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_QueryTokenPairsRequest) Interface() protoreflect.ProtoMessage {
-	return (*QueryTokenPairsRequest)(x)
+func (x *fastReflection_QueryTokenMappingsRequest) Interface() protoreflect.ProtoMessage {
+	return (*QueryTokenMappingsRequest)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -91,10 +91,10 @@ func (x *fastReflection_QueryTokenPairsRequest) Interface() protoreflect.ProtoMe
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_QueryTokenPairsRequest) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_QueryTokenMappingsRequest) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	if x.Pagination != nil {
 		value := protoreflect.ValueOfMessage(x.Pagination.ProtoReflect())
-		if !f(fd_QueryTokenPairsRequest_pagination, value) {
+		if !f(fd_QueryTokenMappingsRequest_pagination, value) {
 			return
 		}
 	}
@@ -111,15 +111,15 @@ func (x *fastReflection_QueryTokenPairsRequest) Range(f func(protoreflect.FieldD
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_QueryTokenPairsRequest) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_QueryTokenMappingsRequest) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "cosmos.evm.erc20.v1.QueryTokenPairsRequest.pagination":
+	case "cosmos.evm.erc20.v1.QueryTokenMappingsRequest.pagination":
 		return x.Pagination != nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenPairsRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenMappingsRequest"))
 		}
-		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenPairsRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenMappingsRequest does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -129,15 +129,15 @@ func (x *fastReflection_QueryTokenPairsRequest) Has(fd protoreflect.FieldDescrip
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryTokenPairsRequest) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_QueryTokenMappingsRequest) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "cosmos.evm.erc20.v1.QueryTokenPairsRequest.pagination":
+	case "cosmos.evm.erc20.v1.QueryTokenMappingsRequest.pagination":
 		x.Pagination = nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenPairsRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenMappingsRequest"))
 		}
-		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenPairsRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenMappingsRequest does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -147,16 +147,16 @@ func (x *fastReflection_QueryTokenPairsRequest) Clear(fd protoreflect.FieldDescr
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_QueryTokenPairsRequest) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryTokenMappingsRequest) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "cosmos.evm.erc20.v1.QueryTokenPairsRequest.pagination":
+	case "cosmos.evm.erc20.v1.QueryTokenMappingsRequest.pagination":
 		value := x.Pagination
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenPairsRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenMappingsRequest"))
 		}
-		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenPairsRequest does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenMappingsRequest does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -170,15 +170,15 @@ func (x *fastReflection_QueryTokenPairsRequest) Get(descriptor protoreflect.Fiel
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryTokenPairsRequest) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_QueryTokenMappingsRequest) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "cosmos.evm.erc20.v1.QueryTokenPairsRequest.pagination":
+	case "cosmos.evm.erc20.v1.QueryTokenMappingsRequest.pagination":
 		x.Pagination = value.Message().Interface().(*v1beta1.PageRequest)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenPairsRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenMappingsRequest"))
 		}
-		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenPairsRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenMappingsRequest does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -192,44 +192,44 @@ func (x *fastReflection_QueryTokenPairsRequest) Set(fd protoreflect.FieldDescrip
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryTokenPairsRequest) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryTokenMappingsRequest) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "cosmos.evm.erc20.v1.QueryTokenPairsRequest.pagination":
+	case "cosmos.evm.erc20.v1.QueryTokenMappingsRequest.pagination":
 		if x.Pagination == nil {
 			x.Pagination = new(v1beta1.PageRequest)
 		}
 		return protoreflect.ValueOfMessage(x.Pagination.ProtoReflect())
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenPairsRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenMappingsRequest"))
 		}
-		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenPairsRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenMappingsRequest does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_QueryTokenPairsRequest) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryTokenMappingsRequest) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "cosmos.evm.erc20.v1.QueryTokenPairsRequest.pagination":
+	case "cosmos.evm.erc20.v1.QueryTokenMappingsRequest.pagination":
 		m := new(v1beta1.PageRequest)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenPairsRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenMappingsRequest"))
 		}
-		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenPairsRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenMappingsRequest does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_QueryTokenPairsRequest) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_QueryTokenMappingsRequest) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in cosmos.evm.erc20.v1.QueryTokenPairsRequest", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in cosmos.evm.erc20.v1.QueryTokenMappingsRequest", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -237,7 +237,7 @@ func (x *fastReflection_QueryTokenPairsRequest) WhichOneof(d protoreflect.OneofD
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_QueryTokenPairsRequest) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_QueryTokenMappingsRequest) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -248,7 +248,7 @@ func (x *fastReflection_QueryTokenPairsRequest) GetUnknown() protoreflect.RawFie
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryTokenPairsRequest) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_QueryTokenMappingsRequest) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -260,7 +260,7 @@ func (x *fastReflection_QueryTokenPairsRequest) SetUnknown(fields protoreflect.R
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_QueryTokenPairsRequest) IsValid() bool {
+func (x *fastReflection_QueryTokenMappingsRequest) IsValid() bool {
 	return x != nil
 }
 
@@ -270,9 +270,9 @@ func (x *fastReflection_QueryTokenPairsRequest) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_QueryTokenPairsRequest) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_QueryTokenMappingsRequest) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*QueryTokenPairsRequest)
+		x := input.Message.Interface().(*QueryTokenMappingsRequest)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -298,7 +298,7 @@ func (x *fastReflection_QueryTokenPairsRequest) ProtoMethods() *protoiface.Metho
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*QueryTokenPairsRequest)
+		x := input.Message.Interface().(*QueryTokenMappingsRequest)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -342,7 +342,7 @@ func (x *fastReflection_QueryTokenPairsRequest) ProtoMethods() *protoiface.Metho
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*QueryTokenPairsRequest)
+		x := input.Message.Interface().(*QueryTokenMappingsRequest)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -374,10 +374,10 @@ func (x *fastReflection_QueryTokenPairsRequest) ProtoMethods() *protoiface.Metho
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryTokenPairsRequest: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryTokenMappingsRequest: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryTokenPairsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryTokenMappingsRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
@@ -451,79 +451,79 @@ func (x *fastReflection_QueryTokenPairsRequest) ProtoMethods() *protoiface.Metho
 	}
 }
 
-var _ protoreflect.List = (*_QueryTokenPairsResponse_1_list)(nil)
+var _ protoreflect.List = (*_QueryTokenMappingsResponse_1_list)(nil)
 
-type _QueryTokenPairsResponse_1_list struct {
-	list *[]*TokenPair
+type _QueryTokenMappingsResponse_1_list struct {
+	list *[]*TokenMapping
 }
 
-func (x *_QueryTokenPairsResponse_1_list) Len() int {
+func (x *_QueryTokenMappingsResponse_1_list) Len() int {
 	if x.list == nil {
 		return 0
 	}
 	return len(*x.list)
 }
 
-func (x *_QueryTokenPairsResponse_1_list) Get(i int) protoreflect.Value {
+func (x *_QueryTokenMappingsResponse_1_list) Get(i int) protoreflect.Value {
 	return protoreflect.ValueOfMessage((*x.list)[i].ProtoReflect())
 }
 
-func (x *_QueryTokenPairsResponse_1_list) Set(i int, value protoreflect.Value) {
+func (x *_QueryTokenMappingsResponse_1_list) Set(i int, value protoreflect.Value) {
 	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*TokenPair)
+	concreteValue := valueUnwrapped.Interface().(*TokenMapping)
 	(*x.list)[i] = concreteValue
 }
 
-func (x *_QueryTokenPairsResponse_1_list) Append(value protoreflect.Value) {
+func (x *_QueryTokenMappingsResponse_1_list) Append(value protoreflect.Value) {
 	valueUnwrapped := value.Message()
-	concreteValue := valueUnwrapped.Interface().(*TokenPair)
+	concreteValue := valueUnwrapped.Interface().(*TokenMapping)
 	*x.list = append(*x.list, concreteValue)
 }
 
-func (x *_QueryTokenPairsResponse_1_list) AppendMutable() protoreflect.Value {
-	v := new(TokenPair)
+func (x *_QueryTokenMappingsResponse_1_list) AppendMutable() protoreflect.Value {
+	v := new(TokenMapping)
 	*x.list = append(*x.list, v)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
 
-func (x *_QueryTokenPairsResponse_1_list) Truncate(n int) {
+func (x *_QueryTokenMappingsResponse_1_list) Truncate(n int) {
 	for i := n; i < len(*x.list); i++ {
 		(*x.list)[i] = nil
 	}
 	*x.list = (*x.list)[:n]
 }
 
-func (x *_QueryTokenPairsResponse_1_list) NewElement() protoreflect.Value {
-	v := new(TokenPair)
+func (x *_QueryTokenMappingsResponse_1_list) NewElement() protoreflect.Value {
+	v := new(TokenMapping)
 	return protoreflect.ValueOfMessage(v.ProtoReflect())
 }
 
-func (x *_QueryTokenPairsResponse_1_list) IsValid() bool {
+func (x *_QueryTokenMappingsResponse_1_list) IsValid() bool {
 	return x.list != nil
 }
 
 var (
-	md_QueryTokenPairsResponse             protoreflect.MessageDescriptor
-	fd_QueryTokenPairsResponse_token_pairs protoreflect.FieldDescriptor
-	fd_QueryTokenPairsResponse_pagination  protoreflect.FieldDescriptor
+	md_QueryTokenMappingsResponse                protoreflect.MessageDescriptor
+	fd_QueryTokenMappingsResponse_token_mappings protoreflect.FieldDescriptor
+	fd_QueryTokenMappingsResponse_pagination     protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_cosmos_evm_erc20_v1_query_proto_init()
-	md_QueryTokenPairsResponse = File_cosmos_evm_erc20_v1_query_proto.Messages().ByName("QueryTokenPairsResponse")
-	fd_QueryTokenPairsResponse_token_pairs = md_QueryTokenPairsResponse.Fields().ByName("token_pairs")
-	fd_QueryTokenPairsResponse_pagination = md_QueryTokenPairsResponse.Fields().ByName("pagination")
+	md_QueryTokenMappingsResponse = File_cosmos_evm_erc20_v1_query_proto.Messages().ByName("QueryTokenMappingsResponse")
+	fd_QueryTokenMappingsResponse_token_mappings = md_QueryTokenMappingsResponse.Fields().ByName("token_mappings")
+	fd_QueryTokenMappingsResponse_pagination = md_QueryTokenMappingsResponse.Fields().ByName("pagination")
 }
 
-var _ protoreflect.Message = (*fastReflection_QueryTokenPairsResponse)(nil)
+var _ protoreflect.Message = (*fastReflection_QueryTokenMappingsResponse)(nil)
 
-type fastReflection_QueryTokenPairsResponse QueryTokenPairsResponse
+type fastReflection_QueryTokenMappingsResponse QueryTokenMappingsResponse
 
-func (x *QueryTokenPairsResponse) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_QueryTokenPairsResponse)(x)
+func (x *QueryTokenMappingsResponse) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_QueryTokenMappingsResponse)(x)
 }
 
-func (x *QueryTokenPairsResponse) slowProtoReflect() protoreflect.Message {
+func (x *QueryTokenMappingsResponse) slowProtoReflect() protoreflect.Message {
 	mi := &file_cosmos_evm_erc20_v1_query_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -535,43 +535,43 @@ func (x *QueryTokenPairsResponse) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_QueryTokenPairsResponse_messageType fastReflection_QueryTokenPairsResponse_messageType
-var _ protoreflect.MessageType = fastReflection_QueryTokenPairsResponse_messageType{}
+var _fastReflection_QueryTokenMappingsResponse_messageType fastReflection_QueryTokenMappingsResponse_messageType
+var _ protoreflect.MessageType = fastReflection_QueryTokenMappingsResponse_messageType{}
 
-type fastReflection_QueryTokenPairsResponse_messageType struct{}
+type fastReflection_QueryTokenMappingsResponse_messageType struct{}
 
-func (x fastReflection_QueryTokenPairsResponse_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_QueryTokenPairsResponse)(nil)
+func (x fastReflection_QueryTokenMappingsResponse_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_QueryTokenMappingsResponse)(nil)
 }
-func (x fastReflection_QueryTokenPairsResponse_messageType) New() protoreflect.Message {
-	return new(fastReflection_QueryTokenPairsResponse)
+func (x fastReflection_QueryTokenMappingsResponse_messageType) New() protoreflect.Message {
+	return new(fastReflection_QueryTokenMappingsResponse)
 }
-func (x fastReflection_QueryTokenPairsResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_QueryTokenPairsResponse
+func (x fastReflection_QueryTokenMappingsResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryTokenMappingsResponse
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_QueryTokenPairsResponse) Descriptor() protoreflect.MessageDescriptor {
-	return md_QueryTokenPairsResponse
+func (x *fastReflection_QueryTokenMappingsResponse) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryTokenMappingsResponse
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_QueryTokenPairsResponse) Type() protoreflect.MessageType {
-	return _fastReflection_QueryTokenPairsResponse_messageType
+func (x *fastReflection_QueryTokenMappingsResponse) Type() protoreflect.MessageType {
+	return _fastReflection_QueryTokenMappingsResponse_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_QueryTokenPairsResponse) New() protoreflect.Message {
-	return new(fastReflection_QueryTokenPairsResponse)
+func (x *fastReflection_QueryTokenMappingsResponse) New() protoreflect.Message {
+	return new(fastReflection_QueryTokenMappingsResponse)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_QueryTokenPairsResponse) Interface() protoreflect.ProtoMessage {
-	return (*QueryTokenPairsResponse)(x)
+func (x *fastReflection_QueryTokenMappingsResponse) Interface() protoreflect.ProtoMessage {
+	return (*QueryTokenMappingsResponse)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -579,16 +579,16 @@ func (x *fastReflection_QueryTokenPairsResponse) Interface() protoreflect.ProtoM
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_QueryTokenPairsResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if len(x.TokenPairs) != 0 {
-		value := protoreflect.ValueOfList(&_QueryTokenPairsResponse_1_list{list: &x.TokenPairs})
-		if !f(fd_QueryTokenPairsResponse_token_pairs, value) {
+func (x *fastReflection_QueryTokenMappingsResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if len(x.TokenMappings) != 0 {
+		value := protoreflect.ValueOfList(&_QueryTokenMappingsResponse_1_list{list: &x.TokenMappings})
+		if !f(fd_QueryTokenMappingsResponse_token_mappings, value) {
 			return
 		}
 	}
 	if x.Pagination != nil {
 		value := protoreflect.ValueOfMessage(x.Pagination.ProtoReflect())
-		if !f(fd_QueryTokenPairsResponse_pagination, value) {
+		if !f(fd_QueryTokenMappingsResponse_pagination, value) {
 			return
 		}
 	}
@@ -605,17 +605,17 @@ func (x *fastReflection_QueryTokenPairsResponse) Range(f func(protoreflect.Field
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_QueryTokenPairsResponse) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_QueryTokenMappingsResponse) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "cosmos.evm.erc20.v1.QueryTokenPairsResponse.token_pairs":
-		return len(x.TokenPairs) != 0
-	case "cosmos.evm.erc20.v1.QueryTokenPairsResponse.pagination":
+	case "cosmos.evm.erc20.v1.QueryTokenMappingsResponse.token_mappings":
+		return len(x.TokenMappings) != 0
+	case "cosmos.evm.erc20.v1.QueryTokenMappingsResponse.pagination":
 		return x.Pagination != nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenPairsResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenMappingsResponse"))
 		}
-		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenPairsResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenMappingsResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -625,17 +625,17 @@ func (x *fastReflection_QueryTokenPairsResponse) Has(fd protoreflect.FieldDescri
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryTokenPairsResponse) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_QueryTokenMappingsResponse) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "cosmos.evm.erc20.v1.QueryTokenPairsResponse.token_pairs":
-		x.TokenPairs = nil
-	case "cosmos.evm.erc20.v1.QueryTokenPairsResponse.pagination":
+	case "cosmos.evm.erc20.v1.QueryTokenMappingsResponse.token_mappings":
+		x.TokenMappings = nil
+	case "cosmos.evm.erc20.v1.QueryTokenMappingsResponse.pagination":
 		x.Pagination = nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenPairsResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenMappingsResponse"))
 		}
-		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenPairsResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenMappingsResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -645,22 +645,22 @@ func (x *fastReflection_QueryTokenPairsResponse) Clear(fd protoreflect.FieldDesc
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_QueryTokenPairsResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryTokenMappingsResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "cosmos.evm.erc20.v1.QueryTokenPairsResponse.token_pairs":
-		if len(x.TokenPairs) == 0 {
-			return protoreflect.ValueOfList(&_QueryTokenPairsResponse_1_list{})
+	case "cosmos.evm.erc20.v1.QueryTokenMappingsResponse.token_mappings":
+		if len(x.TokenMappings) == 0 {
+			return protoreflect.ValueOfList(&_QueryTokenMappingsResponse_1_list{})
 		}
-		listValue := &_QueryTokenPairsResponse_1_list{list: &x.TokenPairs}
+		listValue := &_QueryTokenMappingsResponse_1_list{list: &x.TokenMappings}
 		return protoreflect.ValueOfList(listValue)
-	case "cosmos.evm.erc20.v1.QueryTokenPairsResponse.pagination":
+	case "cosmos.evm.erc20.v1.QueryTokenMappingsResponse.pagination":
 		value := x.Pagination
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenPairsResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenMappingsResponse"))
 		}
-		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenPairsResponse does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenMappingsResponse does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -674,19 +674,19 @@ func (x *fastReflection_QueryTokenPairsResponse) Get(descriptor protoreflect.Fie
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryTokenPairsResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_QueryTokenMappingsResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "cosmos.evm.erc20.v1.QueryTokenPairsResponse.token_pairs":
+	case "cosmos.evm.erc20.v1.QueryTokenMappingsResponse.token_mappings":
 		lv := value.List()
-		clv := lv.(*_QueryTokenPairsResponse_1_list)
-		x.TokenPairs = *clv.list
-	case "cosmos.evm.erc20.v1.QueryTokenPairsResponse.pagination":
+		clv := lv.(*_QueryTokenMappingsResponse_1_list)
+		x.TokenMappings = *clv.list
+	case "cosmos.evm.erc20.v1.QueryTokenMappingsResponse.pagination":
 		x.Pagination = value.Message().Interface().(*v1beta1.PageResponse)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenPairsResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenMappingsResponse"))
 		}
-		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenPairsResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenMappingsResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -700,53 +700,53 @@ func (x *fastReflection_QueryTokenPairsResponse) Set(fd protoreflect.FieldDescri
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryTokenPairsResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryTokenMappingsResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "cosmos.evm.erc20.v1.QueryTokenPairsResponse.token_pairs":
-		if x.TokenPairs == nil {
-			x.TokenPairs = []*TokenPair{}
+	case "cosmos.evm.erc20.v1.QueryTokenMappingsResponse.token_mappings":
+		if x.TokenMappings == nil {
+			x.TokenMappings = []*TokenMapping{}
 		}
-		value := &_QueryTokenPairsResponse_1_list{list: &x.TokenPairs}
+		value := &_QueryTokenMappingsResponse_1_list{list: &x.TokenMappings}
 		return protoreflect.ValueOfList(value)
-	case "cosmos.evm.erc20.v1.QueryTokenPairsResponse.pagination":
+	case "cosmos.evm.erc20.v1.QueryTokenMappingsResponse.pagination":
 		if x.Pagination == nil {
 			x.Pagination = new(v1beta1.PageResponse)
 		}
 		return protoreflect.ValueOfMessage(x.Pagination.ProtoReflect())
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenPairsResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenMappingsResponse"))
 		}
-		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenPairsResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenMappingsResponse does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_QueryTokenPairsResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryTokenMappingsResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "cosmos.evm.erc20.v1.QueryTokenPairsResponse.token_pairs":
-		list := []*TokenPair{}
-		return protoreflect.ValueOfList(&_QueryTokenPairsResponse_1_list{list: &list})
-	case "cosmos.evm.erc20.v1.QueryTokenPairsResponse.pagination":
+	case "cosmos.evm.erc20.v1.QueryTokenMappingsResponse.token_mappings":
+		list := []*TokenMapping{}
+		return protoreflect.ValueOfList(&_QueryTokenMappingsResponse_1_list{list: &list})
+	case "cosmos.evm.erc20.v1.QueryTokenMappingsResponse.pagination":
 		m := new(v1beta1.PageResponse)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenPairsResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenMappingsResponse"))
 		}
-		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenPairsResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenMappingsResponse does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_QueryTokenPairsResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_QueryTokenMappingsResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in cosmos.evm.erc20.v1.QueryTokenPairsResponse", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in cosmos.evm.erc20.v1.QueryTokenMappingsResponse", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -754,7 +754,7 @@ func (x *fastReflection_QueryTokenPairsResponse) WhichOneof(d protoreflect.Oneof
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_QueryTokenPairsResponse) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_QueryTokenMappingsResponse) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -765,7 +765,7 @@ func (x *fastReflection_QueryTokenPairsResponse) GetUnknown() protoreflect.RawFi
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryTokenPairsResponse) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_QueryTokenMappingsResponse) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -777,7 +777,7 @@ func (x *fastReflection_QueryTokenPairsResponse) SetUnknown(fields protoreflect.
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_QueryTokenPairsResponse) IsValid() bool {
+func (x *fastReflection_QueryTokenMappingsResponse) IsValid() bool {
 	return x != nil
 }
 
@@ -787,9 +787,9 @@ func (x *fastReflection_QueryTokenPairsResponse) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_QueryTokenPairsResponse) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_QueryTokenMappingsResponse) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*QueryTokenPairsResponse)
+		x := input.Message.Interface().(*QueryTokenMappingsResponse)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -801,8 +801,8 @@ func (x *fastReflection_QueryTokenPairsResponse) ProtoMethods() *protoiface.Meth
 		var n int
 		var l int
 		_ = l
-		if len(x.TokenPairs) > 0 {
-			for _, e := range x.TokenPairs {
+		if len(x.TokenMappings) > 0 {
+			for _, e := range x.TokenMappings {
 				l = options.Size(e)
 				n += 1 + l + runtime.Sov(uint64(l))
 			}
@@ -821,7 +821,7 @@ func (x *fastReflection_QueryTokenPairsResponse) ProtoMethods() *protoiface.Meth
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*QueryTokenPairsResponse)
+		x := input.Message.Interface().(*QueryTokenMappingsResponse)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -854,9 +854,9 @@ func (x *fastReflection_QueryTokenPairsResponse) ProtoMethods() *protoiface.Meth
 			i--
 			dAtA[i] = 0x12
 		}
-		if len(x.TokenPairs) > 0 {
-			for iNdEx := len(x.TokenPairs) - 1; iNdEx >= 0; iNdEx-- {
-				encoded, err := options.Marshal(x.TokenPairs[iNdEx])
+		if len(x.TokenMappings) > 0 {
+			for iNdEx := len(x.TokenMappings) - 1; iNdEx >= 0; iNdEx-- {
+				encoded, err := options.Marshal(x.TokenMappings[iNdEx])
 				if err != nil {
 					return protoiface.MarshalOutput{
 						NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -881,7 +881,7 @@ func (x *fastReflection_QueryTokenPairsResponse) ProtoMethods() *protoiface.Meth
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*QueryTokenPairsResponse)
+		x := input.Message.Interface().(*QueryTokenMappingsResponse)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -913,15 +913,15 @@ func (x *fastReflection_QueryTokenPairsResponse) ProtoMethods() *protoiface.Meth
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryTokenPairsResponse: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryTokenMappingsResponse: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryTokenPairsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryTokenMappingsResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field TokenPairs", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field TokenMappings", wireType)
 				}
 				var msglen int
 				for shift := uint(0); ; shift += 7 {
@@ -948,8 +948,8 @@ func (x *fastReflection_QueryTokenPairsResponse) ProtoMethods() *protoiface.Meth
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.TokenPairs = append(x.TokenPairs, &TokenPair{})
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.TokenPairs[len(x.TokenPairs)-1]); err != nil {
+				x.TokenMappings = append(x.TokenMappings, &TokenMapping{})
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.TokenMappings[len(x.TokenMappings)-1]); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
@@ -1025,25 +1025,25 @@ func (x *fastReflection_QueryTokenPairsResponse) ProtoMethods() *protoiface.Meth
 }
 
 var (
-	md_QueryTokenPairRequest       protoreflect.MessageDescriptor
-	fd_QueryTokenPairRequest_token protoreflect.FieldDescriptor
+	md_QueryTokenMappingRequest       protoreflect.MessageDescriptor
+	fd_QueryTokenMappingRequest_token protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_cosmos_evm_erc20_v1_query_proto_init()
-	md_QueryTokenPairRequest = File_cosmos_evm_erc20_v1_query_proto.Messages().ByName("QueryTokenPairRequest")
-	fd_QueryTokenPairRequest_token = md_QueryTokenPairRequest.Fields().ByName("token")
+	md_QueryTokenMappingRequest = File_cosmos_evm_erc20_v1_query_proto.Messages().ByName("QueryTokenMappingRequest")
+	fd_QueryTokenMappingRequest_token = md_QueryTokenMappingRequest.Fields().ByName("token")
 }
 
-var _ protoreflect.Message = (*fastReflection_QueryTokenPairRequest)(nil)
+var _ protoreflect.Message = (*fastReflection_QueryTokenMappingRequest)(nil)
 
-type fastReflection_QueryTokenPairRequest QueryTokenPairRequest
+type fastReflection_QueryTokenMappingRequest QueryTokenMappingRequest
 
-func (x *QueryTokenPairRequest) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_QueryTokenPairRequest)(x)
+func (x *QueryTokenMappingRequest) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_QueryTokenMappingRequest)(x)
 }
 
-func (x *QueryTokenPairRequest) slowProtoReflect() protoreflect.Message {
+func (x *QueryTokenMappingRequest) slowProtoReflect() protoreflect.Message {
 	mi := &file_cosmos_evm_erc20_v1_query_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1055,43 +1055,43 @@ func (x *QueryTokenPairRequest) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_QueryTokenPairRequest_messageType fastReflection_QueryTokenPairRequest_messageType
-var _ protoreflect.MessageType = fastReflection_QueryTokenPairRequest_messageType{}
+var _fastReflection_QueryTokenMappingRequest_messageType fastReflection_QueryTokenMappingRequest_messageType
+var _ protoreflect.MessageType = fastReflection_QueryTokenMappingRequest_messageType{}
 
-type fastReflection_QueryTokenPairRequest_messageType struct{}
+type fastReflection_QueryTokenMappingRequest_messageType struct{}
 
-func (x fastReflection_QueryTokenPairRequest_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_QueryTokenPairRequest)(nil)
+func (x fastReflection_QueryTokenMappingRequest_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_QueryTokenMappingRequest)(nil)
 }
-func (x fastReflection_QueryTokenPairRequest_messageType) New() protoreflect.Message {
-	return new(fastReflection_QueryTokenPairRequest)
+func (x fastReflection_QueryTokenMappingRequest_messageType) New() protoreflect.Message {
+	return new(fastReflection_QueryTokenMappingRequest)
 }
-func (x fastReflection_QueryTokenPairRequest_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_QueryTokenPairRequest
+func (x fastReflection_QueryTokenMappingRequest_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryTokenMappingRequest
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_QueryTokenPairRequest) Descriptor() protoreflect.MessageDescriptor {
-	return md_QueryTokenPairRequest
+func (x *fastReflection_QueryTokenMappingRequest) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryTokenMappingRequest
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_QueryTokenPairRequest) Type() protoreflect.MessageType {
-	return _fastReflection_QueryTokenPairRequest_messageType
+func (x *fastReflection_QueryTokenMappingRequest) Type() protoreflect.MessageType {
+	return _fastReflection_QueryTokenMappingRequest_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_QueryTokenPairRequest) New() protoreflect.Message {
-	return new(fastReflection_QueryTokenPairRequest)
+func (x *fastReflection_QueryTokenMappingRequest) New() protoreflect.Message {
+	return new(fastReflection_QueryTokenMappingRequest)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_QueryTokenPairRequest) Interface() protoreflect.ProtoMessage {
-	return (*QueryTokenPairRequest)(x)
+func (x *fastReflection_QueryTokenMappingRequest) Interface() protoreflect.ProtoMessage {
+	return (*QueryTokenMappingRequest)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -1099,10 +1099,10 @@ func (x *fastReflection_QueryTokenPairRequest) Interface() protoreflect.ProtoMes
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_QueryTokenPairRequest) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+func (x *fastReflection_QueryTokenMappingRequest) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
 	if x.Token != "" {
 		value := protoreflect.ValueOfString(x.Token)
-		if !f(fd_QueryTokenPairRequest_token, value) {
+		if !f(fd_QueryTokenMappingRequest_token, value) {
 			return
 		}
 	}
@@ -1119,15 +1119,15 @@ func (x *fastReflection_QueryTokenPairRequest) Range(f func(protoreflect.FieldDe
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_QueryTokenPairRequest) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_QueryTokenMappingRequest) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "cosmos.evm.erc20.v1.QueryTokenPairRequest.token":
+	case "cosmos.evm.erc20.v1.QueryTokenMappingRequest.token":
 		return x.Token != ""
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenPairRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenMappingRequest"))
 		}
-		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenPairRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenMappingRequest does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1137,15 +1137,15 @@ func (x *fastReflection_QueryTokenPairRequest) Has(fd protoreflect.FieldDescript
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryTokenPairRequest) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_QueryTokenMappingRequest) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "cosmos.evm.erc20.v1.QueryTokenPairRequest.token":
+	case "cosmos.evm.erc20.v1.QueryTokenMappingRequest.token":
 		x.Token = ""
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenPairRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenMappingRequest"))
 		}
-		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenPairRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenMappingRequest does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1155,16 +1155,16 @@ func (x *fastReflection_QueryTokenPairRequest) Clear(fd protoreflect.FieldDescri
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_QueryTokenPairRequest) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryTokenMappingRequest) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "cosmos.evm.erc20.v1.QueryTokenPairRequest.token":
+	case "cosmos.evm.erc20.v1.QueryTokenMappingRequest.token":
 		value := x.Token
 		return protoreflect.ValueOfString(value)
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenPairRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenMappingRequest"))
 		}
-		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenPairRequest does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenMappingRequest does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -1178,15 +1178,15 @@ func (x *fastReflection_QueryTokenPairRequest) Get(descriptor protoreflect.Field
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryTokenPairRequest) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_QueryTokenMappingRequest) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "cosmos.evm.erc20.v1.QueryTokenPairRequest.token":
+	case "cosmos.evm.erc20.v1.QueryTokenMappingRequest.token":
 		x.Token = value.Interface().(string)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenPairRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenMappingRequest"))
 		}
-		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenPairRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenMappingRequest does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1200,40 +1200,40 @@ func (x *fastReflection_QueryTokenPairRequest) Set(fd protoreflect.FieldDescript
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryTokenPairRequest) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryTokenMappingRequest) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "cosmos.evm.erc20.v1.QueryTokenPairRequest.token":
-		panic(fmt.Errorf("field token of message cosmos.evm.erc20.v1.QueryTokenPairRequest is not mutable"))
+	case "cosmos.evm.erc20.v1.QueryTokenMappingRequest.token":
+		panic(fmt.Errorf("field token of message cosmos.evm.erc20.v1.QueryTokenMappingRequest is not mutable"))
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenPairRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenMappingRequest"))
 		}
-		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenPairRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenMappingRequest does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_QueryTokenPairRequest) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryTokenMappingRequest) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "cosmos.evm.erc20.v1.QueryTokenPairRequest.token":
+	case "cosmos.evm.erc20.v1.QueryTokenMappingRequest.token":
 		return protoreflect.ValueOfString("")
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenPairRequest"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenMappingRequest"))
 		}
-		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenPairRequest does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenMappingRequest does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_QueryTokenPairRequest) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_QueryTokenMappingRequest) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in cosmos.evm.erc20.v1.QueryTokenPairRequest", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in cosmos.evm.erc20.v1.QueryTokenMappingRequest", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -1241,7 +1241,7 @@ func (x *fastReflection_QueryTokenPairRequest) WhichOneof(d protoreflect.OneofDe
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_QueryTokenPairRequest) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_QueryTokenMappingRequest) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -1252,7 +1252,7 @@ func (x *fastReflection_QueryTokenPairRequest) GetUnknown() protoreflect.RawFiel
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryTokenPairRequest) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_QueryTokenMappingRequest) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -1264,7 +1264,7 @@ func (x *fastReflection_QueryTokenPairRequest) SetUnknown(fields protoreflect.Ra
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_QueryTokenPairRequest) IsValid() bool {
+func (x *fastReflection_QueryTokenMappingRequest) IsValid() bool {
 	return x != nil
 }
 
@@ -1274,9 +1274,9 @@ func (x *fastReflection_QueryTokenPairRequest) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_QueryTokenPairRequest) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_QueryTokenMappingRequest) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*QueryTokenPairRequest)
+		x := input.Message.Interface().(*QueryTokenMappingRequest)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1302,7 +1302,7 @@ func (x *fastReflection_QueryTokenPairRequest) ProtoMethods() *protoiface.Method
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*QueryTokenPairRequest)
+		x := input.Message.Interface().(*QueryTokenMappingRequest)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1339,7 +1339,7 @@ func (x *fastReflection_QueryTokenPairRequest) ProtoMethods() *protoiface.Method
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*QueryTokenPairRequest)
+		x := input.Message.Interface().(*QueryTokenMappingRequest)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1371,10 +1371,10 @@ func (x *fastReflection_QueryTokenPairRequest) ProtoMethods() *protoiface.Method
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryTokenPairRequest: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryTokenMappingRequest: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryTokenPairRequest: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryTokenMappingRequest: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
@@ -1445,25 +1445,25 @@ func (x *fastReflection_QueryTokenPairRequest) ProtoMethods() *protoiface.Method
 }
 
 var (
-	md_QueryTokenPairResponse            protoreflect.MessageDescriptor
-	fd_QueryTokenPairResponse_token_pair protoreflect.FieldDescriptor
+	md_QueryTokenMappingResponse               protoreflect.MessageDescriptor
+	fd_QueryTokenMappingResponse_token_mapping protoreflect.FieldDescriptor
 )
 
 func init() {
 	file_cosmos_evm_erc20_v1_query_proto_init()
-	md_QueryTokenPairResponse = File_cosmos_evm_erc20_v1_query_proto.Messages().ByName("QueryTokenPairResponse")
-	fd_QueryTokenPairResponse_token_pair = md_QueryTokenPairResponse.Fields().ByName("token_pair")
+	md_QueryTokenMappingResponse = File_cosmos_evm_erc20_v1_query_proto.Messages().ByName("QueryTokenMappingResponse")
+	fd_QueryTokenMappingResponse_token_mapping = md_QueryTokenMappingResponse.Fields().ByName("token_mapping")
 }
 
-var _ protoreflect.Message = (*fastReflection_QueryTokenPairResponse)(nil)
+var _ protoreflect.Message = (*fastReflection_QueryTokenMappingResponse)(nil)
 
-type fastReflection_QueryTokenPairResponse QueryTokenPairResponse
+type fastReflection_QueryTokenMappingResponse QueryTokenMappingResponse
 
-func (x *QueryTokenPairResponse) ProtoReflect() protoreflect.Message {
-	return (*fastReflection_QueryTokenPairResponse)(x)
+func (x *QueryTokenMappingResponse) ProtoReflect() protoreflect.Message {
+	return (*fastReflection_QueryTokenMappingResponse)(x)
 }
 
-func (x *QueryTokenPairResponse) slowProtoReflect() protoreflect.Message {
+func (x *QueryTokenMappingResponse) slowProtoReflect() protoreflect.Message {
 	mi := &file_cosmos_evm_erc20_v1_query_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1475,43 +1475,43 @@ func (x *QueryTokenPairResponse) slowProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-var _fastReflection_QueryTokenPairResponse_messageType fastReflection_QueryTokenPairResponse_messageType
-var _ protoreflect.MessageType = fastReflection_QueryTokenPairResponse_messageType{}
+var _fastReflection_QueryTokenMappingResponse_messageType fastReflection_QueryTokenMappingResponse_messageType
+var _ protoreflect.MessageType = fastReflection_QueryTokenMappingResponse_messageType{}
 
-type fastReflection_QueryTokenPairResponse_messageType struct{}
+type fastReflection_QueryTokenMappingResponse_messageType struct{}
 
-func (x fastReflection_QueryTokenPairResponse_messageType) Zero() protoreflect.Message {
-	return (*fastReflection_QueryTokenPairResponse)(nil)
+func (x fastReflection_QueryTokenMappingResponse_messageType) Zero() protoreflect.Message {
+	return (*fastReflection_QueryTokenMappingResponse)(nil)
 }
-func (x fastReflection_QueryTokenPairResponse_messageType) New() protoreflect.Message {
-	return new(fastReflection_QueryTokenPairResponse)
+func (x fastReflection_QueryTokenMappingResponse_messageType) New() protoreflect.Message {
+	return new(fastReflection_QueryTokenMappingResponse)
 }
-func (x fastReflection_QueryTokenPairResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
-	return md_QueryTokenPairResponse
+func (x fastReflection_QueryTokenMappingResponse_messageType) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryTokenMappingResponse
 }
 
 // Descriptor returns message descriptor, which contains only the protobuf
 // type information for the message.
-func (x *fastReflection_QueryTokenPairResponse) Descriptor() protoreflect.MessageDescriptor {
-	return md_QueryTokenPairResponse
+func (x *fastReflection_QueryTokenMappingResponse) Descriptor() protoreflect.MessageDescriptor {
+	return md_QueryTokenMappingResponse
 }
 
 // Type returns the message type, which encapsulates both Go and protobuf
 // type information. If the Go type information is not needed,
 // it is recommended that the message descriptor be used instead.
-func (x *fastReflection_QueryTokenPairResponse) Type() protoreflect.MessageType {
-	return _fastReflection_QueryTokenPairResponse_messageType
+func (x *fastReflection_QueryTokenMappingResponse) Type() protoreflect.MessageType {
+	return _fastReflection_QueryTokenMappingResponse_messageType
 }
 
 // New returns a newly allocated and mutable empty message.
-func (x *fastReflection_QueryTokenPairResponse) New() protoreflect.Message {
-	return new(fastReflection_QueryTokenPairResponse)
+func (x *fastReflection_QueryTokenMappingResponse) New() protoreflect.Message {
+	return new(fastReflection_QueryTokenMappingResponse)
 }
 
 // Interface unwraps the message reflection interface and
 // returns the underlying ProtoMessage interface.
-func (x *fastReflection_QueryTokenPairResponse) Interface() protoreflect.ProtoMessage {
-	return (*QueryTokenPairResponse)(x)
+func (x *fastReflection_QueryTokenMappingResponse) Interface() protoreflect.ProtoMessage {
+	return (*QueryTokenMappingResponse)(x)
 }
 
 // Range iterates over every populated field in an undefined order,
@@ -1519,10 +1519,10 @@ func (x *fastReflection_QueryTokenPairResponse) Interface() protoreflect.ProtoMe
 // Range returns immediately if f returns false.
 // While iterating, mutating operations may only be performed
 // on the current field descriptor.
-func (x *fastReflection_QueryTokenPairResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
-	if x.TokenPair != nil {
-		value := protoreflect.ValueOfMessage(x.TokenPair.ProtoReflect())
-		if !f(fd_QueryTokenPairResponse_token_pair, value) {
+func (x *fastReflection_QueryTokenMappingResponse) Range(f func(protoreflect.FieldDescriptor, protoreflect.Value) bool) {
+	if x.TokenMapping != nil {
+		value := protoreflect.ValueOfMessage(x.TokenMapping.ProtoReflect())
+		if !f(fd_QueryTokenMappingResponse_token_mapping, value) {
 			return
 		}
 	}
@@ -1539,15 +1539,15 @@ func (x *fastReflection_QueryTokenPairResponse) Range(f func(protoreflect.FieldD
 // In other cases (aside from the nullable cases above),
 // a proto3 scalar field is populated if it contains a non-zero value, and
 // a repeated field is populated if it is non-empty.
-func (x *fastReflection_QueryTokenPairResponse) Has(fd protoreflect.FieldDescriptor) bool {
+func (x *fastReflection_QueryTokenMappingResponse) Has(fd protoreflect.FieldDescriptor) bool {
 	switch fd.FullName() {
-	case "cosmos.evm.erc20.v1.QueryTokenPairResponse.token_pair":
-		return x.TokenPair != nil
+	case "cosmos.evm.erc20.v1.QueryTokenMappingResponse.token_mapping":
+		return x.TokenMapping != nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenPairResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenMappingResponse"))
 		}
-		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenPairResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenMappingResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1557,15 +1557,15 @@ func (x *fastReflection_QueryTokenPairResponse) Has(fd protoreflect.FieldDescrip
 // associated with the given field number.
 //
 // Clear is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryTokenPairResponse) Clear(fd protoreflect.FieldDescriptor) {
+func (x *fastReflection_QueryTokenMappingResponse) Clear(fd protoreflect.FieldDescriptor) {
 	switch fd.FullName() {
-	case "cosmos.evm.erc20.v1.QueryTokenPairResponse.token_pair":
-		x.TokenPair = nil
+	case "cosmos.evm.erc20.v1.QueryTokenMappingResponse.token_mapping":
+		x.TokenMapping = nil
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenPairResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenMappingResponse"))
 		}
-		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenPairResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenMappingResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1575,16 +1575,16 @@ func (x *fastReflection_QueryTokenPairResponse) Clear(fd protoreflect.FieldDescr
 // the default value of a bytes scalar is guaranteed to be a copy.
 // For unpopulated composite types, it returns an empty, read-only view
 // of the value; to obtain a mutable reference, use Mutable.
-func (x *fastReflection_QueryTokenPairResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryTokenMappingResponse) Get(descriptor protoreflect.FieldDescriptor) protoreflect.Value {
 	switch descriptor.FullName() {
-	case "cosmos.evm.erc20.v1.QueryTokenPairResponse.token_pair":
-		value := x.TokenPair
+	case "cosmos.evm.erc20.v1.QueryTokenMappingResponse.token_mapping":
+		value := x.TokenMapping
 		return protoreflect.ValueOfMessage(value.ProtoReflect())
 	default:
 		if descriptor.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenPairResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenMappingResponse"))
 		}
-		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenPairResponse does not contain field %s", descriptor.FullName()))
+		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenMappingResponse does not contain field %s", descriptor.FullName()))
 	}
 }
 
@@ -1598,15 +1598,15 @@ func (x *fastReflection_QueryTokenPairResponse) Get(descriptor protoreflect.Fiel
 // empty, read-only value, then it panics.
 //
 // Set is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryTokenPairResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
+func (x *fastReflection_QueryTokenMappingResponse) Set(fd protoreflect.FieldDescriptor, value protoreflect.Value) {
 	switch fd.FullName() {
-	case "cosmos.evm.erc20.v1.QueryTokenPairResponse.token_pair":
-		x.TokenPair = value.Message().Interface().(*TokenPair)
+	case "cosmos.evm.erc20.v1.QueryTokenMappingResponse.token_mapping":
+		x.TokenMapping = value.Message().Interface().(*TokenMapping)
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenPairResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenMappingResponse"))
 		}
-		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenPairResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenMappingResponse does not contain field %s", fd.FullName()))
 	}
 }
 
@@ -1620,44 +1620,44 @@ func (x *fastReflection_QueryTokenPairResponse) Set(fd protoreflect.FieldDescrip
 // It panics if the field does not contain a composite type.
 //
 // Mutable is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryTokenPairResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryTokenMappingResponse) Mutable(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "cosmos.evm.erc20.v1.QueryTokenPairResponse.token_pair":
-		if x.TokenPair == nil {
-			x.TokenPair = new(TokenPair)
+	case "cosmos.evm.erc20.v1.QueryTokenMappingResponse.token_mapping":
+		if x.TokenMapping == nil {
+			x.TokenMapping = new(TokenMapping)
 		}
-		return protoreflect.ValueOfMessage(x.TokenPair.ProtoReflect())
+		return protoreflect.ValueOfMessage(x.TokenMapping.ProtoReflect())
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenPairResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenMappingResponse"))
 		}
-		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenPairResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenMappingResponse does not contain field %s", fd.FullName()))
 	}
 }
 
 // NewField returns a new value that is assignable to the field
 // for the given descriptor. For scalars, this returns the default value.
 // For lists, maps, and messages, this returns a new, empty, mutable value.
-func (x *fastReflection_QueryTokenPairResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
+func (x *fastReflection_QueryTokenMappingResponse) NewField(fd protoreflect.FieldDescriptor) protoreflect.Value {
 	switch fd.FullName() {
-	case "cosmos.evm.erc20.v1.QueryTokenPairResponse.token_pair":
-		m := new(TokenPair)
+	case "cosmos.evm.erc20.v1.QueryTokenMappingResponse.token_mapping":
+		m := new(TokenMapping)
 		return protoreflect.ValueOfMessage(m.ProtoReflect())
 	default:
 		if fd.IsExtension() {
-			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenPairResponse"))
+			panic(fmt.Errorf("proto3 declared messages do not support extensions: cosmos.evm.erc20.v1.QueryTokenMappingResponse"))
 		}
-		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenPairResponse does not contain field %s", fd.FullName()))
+		panic(fmt.Errorf("message cosmos.evm.erc20.v1.QueryTokenMappingResponse does not contain field %s", fd.FullName()))
 	}
 }
 
 // WhichOneof reports which field within the oneof is populated,
 // returning nil if none are populated.
 // It panics if the oneof descriptor does not belong to this message.
-func (x *fastReflection_QueryTokenPairResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
+func (x *fastReflection_QueryTokenMappingResponse) WhichOneof(d protoreflect.OneofDescriptor) protoreflect.FieldDescriptor {
 	switch d.FullName() {
 	default:
-		panic(fmt.Errorf("%s is not a oneof field in cosmos.evm.erc20.v1.QueryTokenPairResponse", d.FullName()))
+		panic(fmt.Errorf("%s is not a oneof field in cosmos.evm.erc20.v1.QueryTokenMappingResponse", d.FullName()))
 	}
 	panic("unreachable")
 }
@@ -1665,7 +1665,7 @@ func (x *fastReflection_QueryTokenPairResponse) WhichOneof(d protoreflect.OneofD
 // GetUnknown retrieves the entire list of unknown fields.
 // The caller may only mutate the contents of the RawFields
 // if the mutated bytes are stored back into the message with SetUnknown.
-func (x *fastReflection_QueryTokenPairResponse) GetUnknown() protoreflect.RawFields {
+func (x *fastReflection_QueryTokenMappingResponse) GetUnknown() protoreflect.RawFields {
 	return x.unknownFields
 }
 
@@ -1676,7 +1676,7 @@ func (x *fastReflection_QueryTokenPairResponse) GetUnknown() protoreflect.RawFie
 // An empty RawFields may be passed to clear the fields.
 //
 // SetUnknown is a mutating operation and unsafe for concurrent use.
-func (x *fastReflection_QueryTokenPairResponse) SetUnknown(fields protoreflect.RawFields) {
+func (x *fastReflection_QueryTokenMappingResponse) SetUnknown(fields protoreflect.RawFields) {
 	x.unknownFields = fields
 }
 
@@ -1688,7 +1688,7 @@ func (x *fastReflection_QueryTokenPairResponse) SetUnknown(fields protoreflect.R
 // message type, but the details are implementation dependent.
 // Validity is not part of the protobuf data model, and may not
 // be preserved in marshaling or other operations.
-func (x *fastReflection_QueryTokenPairResponse) IsValid() bool {
+func (x *fastReflection_QueryTokenMappingResponse) IsValid() bool {
 	return x != nil
 }
 
@@ -1698,9 +1698,9 @@ func (x *fastReflection_QueryTokenPairResponse) IsValid() bool {
 // The returned methods type is identical to
 // "google.golang.org/protobuf/runtime/protoiface".Methods.
 // Consult the protoiface package documentation for details.
-func (x *fastReflection_QueryTokenPairResponse) ProtoMethods() *protoiface.Methods {
+func (x *fastReflection_QueryTokenMappingResponse) ProtoMethods() *protoiface.Methods {
 	size := func(input protoiface.SizeInput) protoiface.SizeOutput {
-		x := input.Message.Interface().(*QueryTokenPairResponse)
+		x := input.Message.Interface().(*QueryTokenMappingResponse)
 		if x == nil {
 			return protoiface.SizeOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1712,8 +1712,8 @@ func (x *fastReflection_QueryTokenPairResponse) ProtoMethods() *protoiface.Metho
 		var n int
 		var l int
 		_ = l
-		if x.TokenPair != nil {
-			l = options.Size(x.TokenPair)
+		if x.TokenMapping != nil {
+			l = options.Size(x.TokenMapping)
 			n += 1 + l + runtime.Sov(uint64(l))
 		}
 		if x.unknownFields != nil {
@@ -1726,7 +1726,7 @@ func (x *fastReflection_QueryTokenPairResponse) ProtoMethods() *protoiface.Metho
 	}
 
 	marshal := func(input protoiface.MarshalInput) (protoiface.MarshalOutput, error) {
-		x := input.Message.Interface().(*QueryTokenPairResponse)
+		x := input.Message.Interface().(*QueryTokenMappingResponse)
 		if x == nil {
 			return protoiface.MarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1745,8 +1745,8 @@ func (x *fastReflection_QueryTokenPairResponse) ProtoMethods() *protoiface.Metho
 			i -= len(x.unknownFields)
 			copy(dAtA[i:], x.unknownFields)
 		}
-		if x.TokenPair != nil {
-			encoded, err := options.Marshal(x.TokenPair)
+		if x.TokenMapping != nil {
+			encoded, err := options.Marshal(x.TokenMapping)
 			if err != nil {
 				return protoiface.MarshalOutput{
 					NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1770,7 +1770,7 @@ func (x *fastReflection_QueryTokenPairResponse) ProtoMethods() *protoiface.Metho
 		}, nil
 	}
 	unmarshal := func(input protoiface.UnmarshalInput) (protoiface.UnmarshalOutput, error) {
-		x := input.Message.Interface().(*QueryTokenPairResponse)
+		x := input.Message.Interface().(*QueryTokenMappingResponse)
 		if x == nil {
 			return protoiface.UnmarshalOutput{
 				NoUnkeyedLiterals: input.NoUnkeyedLiterals,
@@ -1802,15 +1802,15 @@ func (x *fastReflection_QueryTokenPairResponse) ProtoMethods() *protoiface.Metho
 			fieldNum := int32(wire >> 3)
 			wireType := int(wire & 0x7)
 			if wireType == 4 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryTokenPairResponse: wiretype end group for non-group")
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryTokenMappingResponse: wiretype end group for non-group")
 			}
 			if fieldNum <= 0 {
-				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryTokenPairResponse: illegal tag %d (wire type %d)", fieldNum, wire)
+				return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: QueryTokenMappingResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 			}
 			switch fieldNum {
 			case 1:
 				if wireType != 2 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field TokenPair", wireType)
+					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field TokenMapping", wireType)
 				}
 				var msglen int
 				for shift := uint(0); ; shift += 7 {
@@ -1837,10 +1837,10 @@ func (x *fastReflection_QueryTokenPairResponse) ProtoMethods() *protoiface.Metho
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				if x.TokenPair == nil {
-					x.TokenPair = &TokenPair{}
+				if x.TokenMapping == nil {
+					x.TokenMapping = &TokenMapping{}
 				}
-				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.TokenPair); err != nil {
+				if err := options.Unmarshal(dAtA[iNdEx:postIndex], x.TokenMapping); err != nil {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
 				}
 				iNdEx = postIndex
@@ -2683,9 +2683,9 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// QueryTokenPairsRequest is the request type for the Query/TokenPairs RPC
+// QueryTokenMappingsRequest is the request type for the Query/TokenMappings RPC
 // method.
-type QueryTokenPairsRequest struct {
+type QueryTokenMappingsRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -2694,8 +2694,8 @@ type QueryTokenPairsRequest struct {
 	Pagination *v1beta1.PageRequest `protobuf:"bytes,1,opt,name=pagination,proto3" json:"pagination,omitempty"`
 }
 
-func (x *QueryTokenPairsRequest) Reset() {
-	*x = QueryTokenPairsRequest{}
+func (x *QueryTokenMappingsRequest) Reset() {
+	*x = QueryTokenMappingsRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_cosmos_evm_erc20_v1_query_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2703,39 +2703,39 @@ func (x *QueryTokenPairsRequest) Reset() {
 	}
 }
 
-func (x *QueryTokenPairsRequest) String() string {
+func (x *QueryTokenMappingsRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*QueryTokenPairsRequest) ProtoMessage() {}
+func (*QueryTokenMappingsRequest) ProtoMessage() {}
 
-// Deprecated: Use QueryTokenPairsRequest.ProtoReflect.Descriptor instead.
-func (*QueryTokenPairsRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use QueryTokenMappingsRequest.ProtoReflect.Descriptor instead.
+func (*QueryTokenMappingsRequest) Descriptor() ([]byte, []int) {
 	return file_cosmos_evm_erc20_v1_query_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *QueryTokenPairsRequest) GetPagination() *v1beta1.PageRequest {
+func (x *QueryTokenMappingsRequest) GetPagination() *v1beta1.PageRequest {
 	if x != nil {
 		return x.Pagination
 	}
 	return nil
 }
 
-// QueryTokenPairsResponse is the response type for the Query/TokenPairs RPC
+// QueryTokenMappingsResponse is the response type for the Query/TokenMappings RPC
 // method.
-type QueryTokenPairsResponse struct {
+type QueryTokenMappingsResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// token_pairs is a slice of registered token pairs for the erc20 module
-	TokenPairs []*TokenPair `protobuf:"bytes,1,rep,name=token_pairs,json=tokenPairs,proto3" json:"token_pairs,omitempty"`
+	// token_mappings is a slice of registered token mappings for the erc20 module
+	TokenMappings []*TokenMapping `protobuf:"bytes,1,rep,name=token_mappings,json=tokenMappings,proto3" json:"token_mappings,omitempty"`
 	// pagination defines the pagination in the response.
 	Pagination *v1beta1.PageResponse `protobuf:"bytes,2,opt,name=pagination,proto3" json:"pagination,omitempty"`
 }
 
-func (x *QueryTokenPairsResponse) Reset() {
-	*x = QueryTokenPairsResponse{}
+func (x *QueryTokenMappingsResponse) Reset() {
+	*x = QueryTokenMappingsResponse{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_cosmos_evm_erc20_v1_query_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2743,33 +2743,33 @@ func (x *QueryTokenPairsResponse) Reset() {
 	}
 }
 
-func (x *QueryTokenPairsResponse) String() string {
+func (x *QueryTokenMappingsResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*QueryTokenPairsResponse) ProtoMessage() {}
+func (*QueryTokenMappingsResponse) ProtoMessage() {}
 
-// Deprecated: Use QueryTokenPairsResponse.ProtoReflect.Descriptor instead.
-func (*QueryTokenPairsResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use QueryTokenMappingsResponse.ProtoReflect.Descriptor instead.
+func (*QueryTokenMappingsResponse) Descriptor() ([]byte, []int) {
 	return file_cosmos_evm_erc20_v1_query_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *QueryTokenPairsResponse) GetTokenPairs() []*TokenPair {
+func (x *QueryTokenMappingsResponse) GetTokenMappings() []*TokenMapping {
 	if x != nil {
-		return x.TokenPairs
+		return x.TokenMappings
 	}
 	return nil
 }
 
-func (x *QueryTokenPairsResponse) GetPagination() *v1beta1.PageResponse {
+func (x *QueryTokenMappingsResponse) GetPagination() *v1beta1.PageResponse {
 	if x != nil {
 		return x.Pagination
 	}
 	return nil
 }
 
-// QueryTokenPairRequest is the request type for the Query/TokenPair RPC method.
-type QueryTokenPairRequest struct {
+// QueryTokenMappingRequest is the request type for the Query/TokenMapping RPC method.
+type QueryTokenMappingRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -2779,8 +2779,8 @@ type QueryTokenPairRequest struct {
 	Token string `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
 }
 
-func (x *QueryTokenPairRequest) Reset() {
-	*x = QueryTokenPairRequest{}
+func (x *QueryTokenMappingRequest) Reset() {
+	*x = QueryTokenMappingRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_cosmos_evm_erc20_v1_query_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2788,38 +2788,38 @@ func (x *QueryTokenPairRequest) Reset() {
 	}
 }
 
-func (x *QueryTokenPairRequest) String() string {
+func (x *QueryTokenMappingRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*QueryTokenPairRequest) ProtoMessage() {}
+func (*QueryTokenMappingRequest) ProtoMessage() {}
 
-// Deprecated: Use QueryTokenPairRequest.ProtoReflect.Descriptor instead.
-func (*QueryTokenPairRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use QueryTokenMappingRequest.ProtoReflect.Descriptor instead.
+func (*QueryTokenMappingRequest) Descriptor() ([]byte, []int) {
 	return file_cosmos_evm_erc20_v1_query_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *QueryTokenPairRequest) GetToken() string {
+func (x *QueryTokenMappingRequest) GetToken() string {
 	if x != nil {
 		return x.Token
 	}
 	return ""
 }
 
-// QueryTokenPairResponse is the response type for the Query/TokenPair RPC
+// QueryTokenMappingResponse is the response type for the Query/TokenMapping RPC
 // method.
-type QueryTokenPairResponse struct {
+type QueryTokenMappingResponse struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// token_pairs returns the info about a registered token pair for the erc20
+	// token_mappings returns the info about a registered token mapping for the erc20
 	// module
-	TokenPair *TokenPair `protobuf:"bytes,1,opt,name=token_pair,json=tokenPair,proto3" json:"token_pair,omitempty"`
+	TokenMapping *TokenMapping `protobuf:"bytes,1,opt,name=token_mapping,json=tokenMapping,proto3" json:"token_mapping,omitempty"`
 }
 
-func (x *QueryTokenPairResponse) Reset() {
-	*x = QueryTokenPairResponse{}
+func (x *QueryTokenMappingResponse) Reset() {
+	*x = QueryTokenMappingResponse{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_cosmos_evm_erc20_v1_query_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2827,20 +2827,20 @@ func (x *QueryTokenPairResponse) Reset() {
 	}
 }
 
-func (x *QueryTokenPairResponse) String() string {
+func (x *QueryTokenMappingResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*QueryTokenPairResponse) ProtoMessage() {}
+func (*QueryTokenMappingResponse) ProtoMessage() {}
 
-// Deprecated: Use QueryTokenPairResponse.ProtoReflect.Descriptor instead.
-func (*QueryTokenPairResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use QueryTokenMappingResponse.ProtoReflect.Descriptor instead.
+func (*QueryTokenMappingResponse) Descriptor() ([]byte, []int) {
 	return file_cosmos_evm_erc20_v1_query_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *QueryTokenPairResponse) GetTokenPair() *TokenPair {
+func (x *QueryTokenMappingResponse) GetTokenMapping() *TokenMapping {
 	if x != nil {
-		return x.TokenPair
+		return x.TokenMapping
 	}
 	return nil
 }
@@ -2927,81 +2927,84 @@ var file_cosmos_evm_erc20_v1_query_proto_rawDesc = []byte{
 	0x73, 0x69, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x14, 0x67, 0x6f, 0x67, 0x6f, 0x70,
 	0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a,
 	0x1c, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x61, 0x6e, 0x6e, 0x6f,
-	0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x60, 0x0a,
-	0x16, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x50, 0x61, 0x69, 0x72, 0x73,
-	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x46, 0x0a, 0x0a, 0x70, 0x61, 0x67, 0x69, 0x6e,
-	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x26, 0x2e, 0x63, 0x6f,
-	0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x71, 0x75, 0x65, 0x72, 0x79, 0x2e,
-	0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x50, 0x61, 0x67, 0x65, 0x52, 0x65, 0x71, 0x75,
-	0x65, 0x73, 0x74, 0x52, 0x0a, 0x70, 0x61, 0x67, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x22,
-	0xae, 0x01, 0x0a, 0x17, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x50, 0x61,
-	0x69, 0x72, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x4a, 0x0a, 0x0b, 0x74,
-	0x6f, 0x6b, 0x65, 0x6e, 0x5f, 0x70, 0x61, 0x69, 0x72, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b,
-	0x32, 0x1e, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x72,
-	0x63, 0x32, 0x30, 0x2e, 0x76, 0x31, 0x2e, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x50, 0x61, 0x69, 0x72,
-	0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0a, 0x74, 0x6f, 0x6b,
-	0x65, 0x6e, 0x50, 0x61, 0x69, 0x72, 0x73, 0x12, 0x47, 0x0a, 0x0a, 0x70, 0x61, 0x67, 0x69, 0x6e,
-	0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x27, 0x2e, 0x63, 0x6f,
-	0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x71, 0x75, 0x65, 0x72, 0x79, 0x2e,
-	0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x50, 0x61, 0x67, 0x65, 0x52, 0x65, 0x73, 0x70,
-	0x6f, 0x6e, 0x73, 0x65, 0x52, 0x0a, 0x70, 0x61, 0x67, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e,
-	0x22, 0x2d, 0x0a, 0x15, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x50, 0x61,
-	0x69, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x14, 0x0a, 0x05, 0x74, 0x6f, 0x6b,
-	0x65, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x22,
-	0x62, 0x0a, 0x16, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x50, 0x61, 0x69,
-	0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x48, 0x0a, 0x0a, 0x74, 0x6f, 0x6b,
-	0x65, 0x6e, 0x5f, 0x70, 0x61, 0x69, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1e, 0x2e,
-	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x72, 0x63, 0x32, 0x30,
-	0x2e, 0x76, 0x31, 0x2e, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x50, 0x61, 0x69, 0x72, 0x42, 0x09, 0xc8,
-	0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x09, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x50,
-	0x61, 0x69, 0x72, 0x22, 0x14, 0x0a, 0x12, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x61, 0x72, 0x61,
-	0x6d, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x55, 0x0a, 0x13, 0x51, 0x75, 0x65,
-	0x72, 0x79, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
-	0x12, 0x3e, 0x0a, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b,
-	0x32, 0x1b, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x72,
-	0x63, 0x32, 0x30, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x42, 0x09, 0xc8,
-	0xde, 0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73,
-	0x32, 0xb7, 0x03, 0x0a, 0x05, 0x51, 0x75, 0x65, 0x72, 0x79, 0x12, 0x91, 0x01, 0x0a, 0x0a, 0x54,
-	0x6f, 0x6b, 0x65, 0x6e, 0x50, 0x61, 0x69, 0x72, 0x73, 0x12, 0x2b, 0x2e, 0x63, 0x6f, 0x73, 0x6d,
+	0x74, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x63, 0x0a,
+	0x19, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x4d, 0x61, 0x70, 0x70, 0x69,
+	0x6e, 0x67, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x46, 0x0a, 0x0a, 0x70, 0x61,
+	0x67, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x26,
+	0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x71, 0x75, 0x65,
+	0x72, 0x79, 0x2e, 0x76, 0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x50, 0x61, 0x67, 0x65, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x52, 0x0a, 0x70, 0x61, 0x67, 0x69, 0x6e, 0x61, 0x74, 0x69,
+	0x6f, 0x6e, 0x22, 0xba, 0x01, 0x0a, 0x1a, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x6f, 0x6b, 0x65,
+	0x6e, 0x4d, 0x61, 0x70, 0x70, 0x69, 0x6e, 0x67, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x12, 0x53, 0x0a, 0x0e, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x5f, 0x6d, 0x61, 0x70, 0x70, 0x69,
+	0x6e, 0x67, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x21, 0x2e, 0x63, 0x6f, 0x73, 0x6d,
 	0x6f, 0x73, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x72, 0x63, 0x32, 0x30, 0x2e, 0x76, 0x31, 0x2e,
-	0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x50, 0x61, 0x69, 0x72, 0x73, 0x52,
-	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2c, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e,
-	0x65, 0x76, 0x6d, 0x2e, 0x65, 0x72, 0x63, 0x32, 0x30, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65,
-	0x72, 0x79, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x50, 0x61, 0x69, 0x72, 0x73, 0x52, 0x65, 0x73, 0x70,
-	0x6f, 0x6e, 0x73, 0x65, 0x22, 0x28, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x22, 0x12, 0x20, 0x2f, 0x63,
-	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2f, 0x65, 0x76, 0x6d, 0x2f, 0x65, 0x72, 0x63, 0x32, 0x30, 0x2f,
-	0x76, 0x31, 0x2f, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x5f, 0x70, 0x61, 0x69, 0x72, 0x73, 0x12, 0x96,
-	0x01, 0x0a, 0x09, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x50, 0x61, 0x69, 0x72, 0x12, 0x2a, 0x2e, 0x63,
-	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x72, 0x63, 0x32, 0x30, 0x2e,
-	0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x50, 0x61, 0x69,
-	0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2b, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
+	0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x4d, 0x61, 0x70, 0x70, 0x69, 0x6e, 0x67, 0x42, 0x09, 0xc8, 0xde,
+	0x1f, 0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x0d, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x4d, 0x61,
+	0x70, 0x70, 0x69, 0x6e, 0x67, 0x73, 0x12, 0x47, 0x0a, 0x0a, 0x70, 0x61, 0x67, 0x69, 0x6e, 0x61,
+	0x74, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x27, 0x2e, 0x63, 0x6f, 0x73,
+	0x6d, 0x6f, 0x73, 0x2e, 0x62, 0x61, 0x73, 0x65, 0x2e, 0x71, 0x75, 0x65, 0x72, 0x79, 0x2e, 0x76,
+	0x31, 0x62, 0x65, 0x74, 0x61, 0x31, 0x2e, 0x50, 0x61, 0x67, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x52, 0x0a, 0x70, 0x61, 0x67, 0x69, 0x6e, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x22,
+	0x30, 0x0a, 0x18, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x4d, 0x61, 0x70,
+	0x70, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x14, 0x0a, 0x05, 0x74,
+	0x6f, 0x6b, 0x65, 0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x74, 0x6f, 0x6b, 0x65,
+	0x6e, 0x22, 0x6e, 0x0a, 0x19, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x4d,
+	0x61, 0x70, 0x70, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x51,
+	0x0a, 0x0d, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x5f, 0x6d, 0x61, 0x70, 0x70, 0x69, 0x6e, 0x67, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x21, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x65,
+	0x76, 0x6d, 0x2e, 0x65, 0x72, 0x63, 0x32, 0x30, 0x2e, 0x76, 0x31, 0x2e, 0x54, 0x6f, 0x6b, 0x65,
+	0x6e, 0x4d, 0x61, 0x70, 0x70, 0x69, 0x6e, 0x67, 0x42, 0x09, 0xc8, 0xde, 0x1f, 0x00, 0xa8, 0xe7,
+	0xb0, 0x2a, 0x01, 0x52, 0x0c, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x4d, 0x61, 0x70, 0x70, 0x69, 0x6e,
+	0x67, 0x22, 0x14, 0x0a, 0x12, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x55, 0x0a, 0x13, 0x51, 0x75, 0x65, 0x72, 0x79,
+	0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x3e,
+	0x0a, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1b,
+	0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x72, 0x63, 0x32,
+	0x30, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x42, 0x09, 0xc8, 0xde, 0x1f,
+	0x00, 0xa8, 0xe7, 0xb0, 0x2a, 0x01, 0x52, 0x06, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x32, 0xcf,
+	0x03, 0x0a, 0x05, 0x51, 0x75, 0x65, 0x72, 0x79, 0x12, 0x9d, 0x01, 0x0a, 0x0d, 0x54, 0x6f, 0x6b,
+	0x65, 0x6e, 0x4d, 0x61, 0x70, 0x70, 0x69, 0x6e, 0x67, 0x73, 0x12, 0x2e, 0x2e, 0x63, 0x6f, 0x73,
+	0x6d, 0x6f, 0x73, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x72, 0x63, 0x32, 0x30, 0x2e, 0x76, 0x31,
+	0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x4d, 0x61, 0x70, 0x70, 0x69,
+	0x6e, 0x67, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2f, 0x2e, 0x63, 0x6f, 0x73,
+	0x6d, 0x6f, 0x73, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x72, 0x63, 0x32, 0x30, 0x2e, 0x76, 0x31,
+	0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x4d, 0x61, 0x70, 0x70, 0x69,
+	0x6e, 0x67, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x2b, 0x82, 0xd3, 0xe4,
+	0x93, 0x02, 0x25, 0x12, 0x23, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2f, 0x65, 0x76, 0x6d,
+	0x2f, 0x65, 0x72, 0x63, 0x32, 0x30, 0x2f, 0x76, 0x31, 0x2f, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x5f,
+	0x6d, 0x61, 0x70, 0x70, 0x69, 0x6e, 0x67, 0x73, 0x12, 0xa2, 0x01, 0x0a, 0x0c, 0x54, 0x6f, 0x6b,
+	0x65, 0x6e, 0x4d, 0x61, 0x70, 0x70, 0x69, 0x6e, 0x67, 0x12, 0x2d, 0x2e, 0x63, 0x6f, 0x73, 0x6d,
+	0x6f, 0x73, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x72, 0x63, 0x32, 0x30, 0x2e, 0x76, 0x31, 0x2e,
+	0x51, 0x75, 0x65, 0x72, 0x79, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x4d, 0x61, 0x70, 0x70, 0x69, 0x6e,
+	0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x2e, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
 	0x73, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x72, 0x63, 0x32, 0x30, 0x2e, 0x76, 0x31, 0x2e, 0x51,
-	0x75, 0x65, 0x72, 0x79, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x50, 0x61, 0x69, 0x72, 0x52, 0x65, 0x73,
-	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x30, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x2a, 0x12, 0x28, 0x2f,
-	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2f, 0x65, 0x76, 0x6d, 0x2f, 0x65, 0x72, 0x63, 0x32, 0x30,
-	0x2f, 0x76, 0x31, 0x2f, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x5f, 0x70, 0x61, 0x69, 0x72, 0x73, 0x2f,
-	0x7b, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x7d, 0x12, 0x80, 0x01, 0x0a, 0x06, 0x50, 0x61, 0x72, 0x61,
-	0x6d, 0x73, 0x12, 0x27, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x65, 0x76, 0x6d, 0x2e,
-	0x65, 0x72, 0x63, 0x32, 0x30, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x61,
-	0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x28, 0x2e, 0x63, 0x6f,
-	0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x72, 0x63, 0x32, 0x30, 0x2e, 0x76,
-	0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x73,
-	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x23, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x1d, 0x12, 0x1b, 0x2f,
-	0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2f, 0x65, 0x76, 0x6d, 0x2f, 0x65, 0x72, 0x63, 0x32, 0x30,
-	0x2f, 0x76, 0x31, 0x2f, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x42, 0xc2, 0x01, 0x0a, 0x17, 0x63,
-	0x6f, 0x6d, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x72,
-	0x63, 0x32, 0x30, 0x2e, 0x76, 0x31, 0x42, 0x0a, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x72, 0x6f,
-	0x74, 0x6f, 0x50, 0x01, 0x5a, 0x2c, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e,
-	0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2f, 0x65, 0x76,
-	0x6d, 0x2f, 0x65, 0x72, 0x63, 0x32, 0x30, 0x2f, 0x76, 0x31, 0x3b, 0x65, 0x72, 0x63, 0x32, 0x30,
-	0x76, 0x31, 0xa2, 0x02, 0x03, 0x43, 0x45, 0x45, 0xaa, 0x02, 0x13, 0x43, 0x6f, 0x73, 0x6d, 0x6f,
-	0x73, 0x2e, 0x45, 0x76, 0x6d, 0x2e, 0x45, 0x72, 0x63, 0x32, 0x30, 0x2e, 0x56, 0x31, 0xca, 0x02,
-	0x13, 0x43, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x5c, 0x45, 0x76, 0x6d, 0x5c, 0x45, 0x72, 0x63, 0x32,
-	0x30, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x1f, 0x43, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x5c, 0x45, 0x76,
-	0x6d, 0x5c, 0x45, 0x72, 0x63, 0x32, 0x30, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65,
-	0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x16, 0x43, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x3a,
-	0x3a, 0x45, 0x76, 0x6d, 0x3a, 0x3a, 0x45, 0x72, 0x63, 0x32, 0x30, 0x3a, 0x3a, 0x56, 0x31, 0x62,
-	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x75, 0x65, 0x72, 0x79, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x4d, 0x61, 0x70, 0x70, 0x69, 0x6e, 0x67,
+	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x33, 0x82, 0xd3, 0xe4, 0x93, 0x02, 0x2d,
+	0x12, 0x2b, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2f, 0x65, 0x76, 0x6d, 0x2f, 0x65, 0x72,
+	0x63, 0x32, 0x30, 0x2f, 0x76, 0x31, 0x2f, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x5f, 0x6d, 0x61, 0x70,
+	0x70, 0x69, 0x6e, 0x67, 0x73, 0x2f, 0x7b, 0x74, 0x6f, 0x6b, 0x65, 0x6e, 0x7d, 0x12, 0x80, 0x01,
+	0x0a, 0x06, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x12, 0x27, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f,
+	0x73, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x65, 0x72, 0x63, 0x32, 0x30, 0x2e, 0x76, 0x31, 0x2e, 0x51,
+	0x75, 0x65, 0x72, 0x79, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x1a, 0x28, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x65, 0x76, 0x6d, 0x2e, 0x65,
+	0x72, 0x63, 0x32, 0x30, 0x2e, 0x76, 0x31, 0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x50, 0x61, 0x72,
+	0x61, 0x6d, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x23, 0x82, 0xd3, 0xe4,
+	0x93, 0x02, 0x1d, 0x12, 0x1b, 0x2f, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2f, 0x65, 0x76, 0x6d,
+	0x2f, 0x65, 0x72, 0x63, 0x32, 0x30, 0x2f, 0x76, 0x31, 0x2f, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x73,
+	0x42, 0xc2, 0x01, 0x0a, 0x17, 0x63, 0x6f, 0x6d, 0x2e, 0x63, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e,
+	0x65, 0x76, 0x6d, 0x2e, 0x65, 0x72, 0x63, 0x32, 0x30, 0x2e, 0x76, 0x31, 0x42, 0x0a, 0x51, 0x75,
+	0x65, 0x72, 0x79, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x2c, 0x63, 0x6f, 0x73, 0x6d,
+	0x6f, 0x73, 0x73, 0x64, 0x6b, 0x2e, 0x69, 0x6f, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x63, 0x6f, 0x73,
+	0x6d, 0x6f, 0x73, 0x2f, 0x65, 0x76, 0x6d, 0x2f, 0x65, 0x72, 0x63, 0x32, 0x30, 0x2f, 0x76, 0x31,
+	0x3b, 0x65, 0x72, 0x63, 0x32, 0x30, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x43, 0x45, 0x45, 0xaa, 0x02,
+	0x13, 0x43, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x2e, 0x45, 0x76, 0x6d, 0x2e, 0x45, 0x72, 0x63, 0x32,
+	0x30, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x13, 0x43, 0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x5c, 0x45, 0x76,
+	0x6d, 0x5c, 0x45, 0x72, 0x63, 0x32, 0x30, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x1f, 0x43, 0x6f, 0x73,
+	0x6d, 0x6f, 0x73, 0x5c, 0x45, 0x76, 0x6d, 0x5c, 0x45, 0x72, 0x63, 0x32, 0x30, 0x5c, 0x56, 0x31,
+	0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x16, 0x43,
+	0x6f, 0x73, 0x6d, 0x6f, 0x73, 0x3a, 0x3a, 0x45, 0x76, 0x6d, 0x3a, 0x3a, 0x45, 0x72, 0x63, 0x32,
+	0x30, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -3018,28 +3021,28 @@ func file_cosmos_evm_erc20_v1_query_proto_rawDescGZIP() []byte {
 
 var file_cosmos_evm_erc20_v1_query_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_cosmos_evm_erc20_v1_query_proto_goTypes = []interface{}{
-	(*QueryTokenPairsRequest)(nil),  // 0: cosmos.evm.erc20.v1.QueryTokenPairsRequest
-	(*QueryTokenPairsResponse)(nil), // 1: cosmos.evm.erc20.v1.QueryTokenPairsResponse
-	(*QueryTokenPairRequest)(nil),   // 2: cosmos.evm.erc20.v1.QueryTokenPairRequest
-	(*QueryTokenPairResponse)(nil),  // 3: cosmos.evm.erc20.v1.QueryTokenPairResponse
-	(*QueryParamsRequest)(nil),      // 4: cosmos.evm.erc20.v1.QueryParamsRequest
-	(*QueryParamsResponse)(nil),     // 5: cosmos.evm.erc20.v1.QueryParamsResponse
-	(*v1beta1.PageRequest)(nil),     // 6: cosmos.base.query.v1beta1.PageRequest
-	(*TokenPair)(nil),               // 7: cosmos.evm.erc20.v1.TokenPair
-	(*v1beta1.PageResponse)(nil),    // 8: cosmos.base.query.v1beta1.PageResponse
-	(*Params)(nil),                  // 9: cosmos.evm.erc20.v1.Params
+	(*QueryTokenMappingsRequest)(nil),  // 0: cosmos.evm.erc20.v1.QueryTokenMappingsRequest
+	(*QueryTokenMappingsResponse)(nil), // 1: cosmos.evm.erc20.v1.QueryTokenMappingsResponse
+	(*QueryTokenMappingRequest)(nil),   // 2: cosmos.evm.erc20.v1.QueryTokenMappingRequest
+	(*QueryTokenMappingResponse)(nil),  // 3: cosmos.evm.erc20.v1.QueryTokenMappingResponse
+	(*QueryParamsRequest)(nil),         // 4: cosmos.evm.erc20.v1.QueryParamsRequest
+	(*QueryParamsResponse)(nil),        // 5: cosmos.evm.erc20.v1.QueryParamsResponse
+	(*v1beta1.PageRequest)(nil),        // 6: cosmos.base.query.v1beta1.PageRequest
+	(*TokenMapping)(nil),               // 7: cosmos.evm.erc20.v1.TokenMapping
+	(*v1beta1.PageResponse)(nil),       // 8: cosmos.base.query.v1beta1.PageResponse
+	(*Params)(nil),                     // 9: cosmos.evm.erc20.v1.Params
 }
 var file_cosmos_evm_erc20_v1_query_proto_depIdxs = []int32{
-	6, // 0: cosmos.evm.erc20.v1.QueryTokenPairsRequest.pagination:type_name -> cosmos.base.query.v1beta1.PageRequest
-	7, // 1: cosmos.evm.erc20.v1.QueryTokenPairsResponse.token_pairs:type_name -> cosmos.evm.erc20.v1.TokenPair
-	8, // 2: cosmos.evm.erc20.v1.QueryTokenPairsResponse.pagination:type_name -> cosmos.base.query.v1beta1.PageResponse
-	7, // 3: cosmos.evm.erc20.v1.QueryTokenPairResponse.token_pair:type_name -> cosmos.evm.erc20.v1.TokenPair
+	6, // 0: cosmos.evm.erc20.v1.QueryTokenMappingsRequest.pagination:type_name -> cosmos.base.query.v1beta1.PageRequest
+	7, // 1: cosmos.evm.erc20.v1.QueryTokenMappingsResponse.token_mappings:type_name -> cosmos.evm.erc20.v1.TokenMapping
+	8, // 2: cosmos.evm.erc20.v1.QueryTokenMappingsResponse.pagination:type_name -> cosmos.base.query.v1beta1.PageResponse
+	7, // 3: cosmos.evm.erc20.v1.QueryTokenMappingResponse.token_mapping:type_name -> cosmos.evm.erc20.v1.TokenMapping
 	9, // 4: cosmos.evm.erc20.v1.QueryParamsResponse.params:type_name -> cosmos.evm.erc20.v1.Params
-	0, // 5: cosmos.evm.erc20.v1.Query.TokenPairs:input_type -> cosmos.evm.erc20.v1.QueryTokenPairsRequest
-	2, // 6: cosmos.evm.erc20.v1.Query.TokenPair:input_type -> cosmos.evm.erc20.v1.QueryTokenPairRequest
+	0, // 5: cosmos.evm.erc20.v1.Query.TokenMappings:input_type -> cosmos.evm.erc20.v1.QueryTokenMappingsRequest
+	2, // 6: cosmos.evm.erc20.v1.Query.TokenMapping:input_type -> cosmos.evm.erc20.v1.QueryTokenMappingRequest
 	4, // 7: cosmos.evm.erc20.v1.Query.Params:input_type -> cosmos.evm.erc20.v1.QueryParamsRequest
-	1, // 8: cosmos.evm.erc20.v1.Query.TokenPairs:output_type -> cosmos.evm.erc20.v1.QueryTokenPairsResponse
-	3, // 9: cosmos.evm.erc20.v1.Query.TokenPair:output_type -> cosmos.evm.erc20.v1.QueryTokenPairResponse
+	1, // 8: cosmos.evm.erc20.v1.Query.TokenMappings:output_type -> cosmos.evm.erc20.v1.QueryTokenMappingsResponse
+	3, // 9: cosmos.evm.erc20.v1.Query.TokenMapping:output_type -> cosmos.evm.erc20.v1.QueryTokenMappingResponse
 	5, // 10: cosmos.evm.erc20.v1.Query.Params:output_type -> cosmos.evm.erc20.v1.QueryParamsResponse
 	8, // [8:11] is the sub-list for method output_type
 	5, // [5:8] is the sub-list for method input_type
@@ -3057,7 +3060,7 @@ func file_cosmos_evm_erc20_v1_query_proto_init() {
 	file_cosmos_evm_erc20_v1_genesis_proto_init()
 	if !protoimpl.UnsafeEnabled {
 		file_cosmos_evm_erc20_v1_query_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryTokenPairsRequest); i {
+			switch v := v.(*QueryTokenMappingsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3069,7 +3072,7 @@ func file_cosmos_evm_erc20_v1_query_proto_init() {
 			}
 		}
 		file_cosmos_evm_erc20_v1_query_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryTokenPairsResponse); i {
+			switch v := v.(*QueryTokenMappingsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3081,7 +3084,7 @@ func file_cosmos_evm_erc20_v1_query_proto_init() {
 			}
 		}
 		file_cosmos_evm_erc20_v1_query_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryTokenPairRequest); i {
+			switch v := v.(*QueryTokenMappingRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3093,7 +3096,7 @@ func file_cosmos_evm_erc20_v1_query_proto_init() {
 			}
 		}
 		file_cosmos_evm_erc20_v1_query_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*QueryTokenPairResponse); i {
+			switch v := v.(*QueryTokenMappingResponse); i {
 			case 0:
 				return &v.state
 			case 1:

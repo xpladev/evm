@@ -52,11 +52,11 @@ func (k Keeper) GetERC20PrecompileInstance(
 func (k Keeper) InstantiateERC20Precompile(ctx sdk.Context, contractAddr common.Address, hasWrappedMethods bool) (vm.PrecompiledContract, error) {
 	address := contractAddr.String()
 	// check if the precompile is an ERC20 contract
-	id := k.GetTokenPairID(ctx, address)
+	id := k.GetTokenMappingID(ctx, address)
 	if len(id) == 0 {
 		return nil, fmt.Errorf("precompile id not found: %s", address)
 	}
-	pair, ok := k.GetTokenPair(ctx, id)
+	pair, ok := k.GetTokenMapping(ctx, id)
 	if !ok {
 		return nil, fmt.Errorf("token pair not found: %s", address)
 	}

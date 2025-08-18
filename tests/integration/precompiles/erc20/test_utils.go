@@ -144,58 +144,58 @@ func (s *PrecompileTestSuite) requireAllowance(erc20Addr, owner, spender common.
 }
 
 // setupERC20Precompile is a helper function to set up an instance of the ERC20 precompile for
-// a given token denomination, set the token pair in the ERC20 keeper and adds the precompile
+// a given token denomination, set the token mapping in the ERC20 keeper and adds the precompile
 // to the available and active precompiles.
 func (s *PrecompileTestSuite) setupERC20Precompile(denom string) (*erc20.Precompile, error) {
-	tokenPair := erc20types.NewTokenPair(utiltx.GenerateAddress(), denom, erc20types.OWNER_MODULE)
-	err := s.network.App.GetErc20Keeper().SetToken(s.network.GetContext(), tokenPair)
+	tokenMapping := erc20types.NewTokenMapping(utiltx.GenerateAddress(), denom, erc20types.OWNER_MODULE)
+	err := s.network.App.GetErc20Keeper().SetToken(s.network.GetContext(), tokenMapping)
 	if err != nil {
 		return nil, errorsmod.Wrap(err, "failed to set token")
 	}
 
-	precompile, err := setupERC20PrecompileForTokenPair(*s.network, tokenPair)
-	s.Require().NoError(err, "failed to set up %q erc20 precompile", tokenPair.Denom)
+	precompile, err := setupERC20PrecompileForTokenMapping(*s.network, tokenMapping)
+	s.Require().NoError(err, "failed to set up %q erc20 precompile", tokenMapping.Denom)
 
 	return precompile, nil
 }
 
 // setupERC20Precompile is a helper function to set up an instance of the ERC20 precompile for
-// a given token denomination, set the token pair in the ERC20 keeper and adds the precompile
+// a given token denomination, set the token mapping in the ERC20 keeper and adds the precompile
 // to the available and active precompiles.
-func (is *IntegrationTestSuite) setupERC20Precompile(denom string, tokenPairs []erc20types.TokenPair) *erc20.Precompile {
-	var tokenPair erc20types.TokenPair
-	for _, tp := range tokenPairs {
+func (is *IntegrationTestSuite) setupERC20Precompile(denom string, tokenMappings []erc20types.TokenMapping) *erc20.Precompile {
+	var tokenMapping erc20types.TokenMapping
+	for _, tp := range tokenMappings {
 		if tp.Denom != denom {
 			continue
 		}
-		tokenPair = tp
+		tokenMapping = tp
 	}
 
 	precompile, err := erc20.NewPrecompile(
-		tokenPair,
+		tokenMapping,
 		is.network.App.GetBankKeeper(),
 		is.network.App.GetErc20Keeper(),
 		is.network.App.GetTransferKeeper(),
 	)
-	Expect(err).ToNot(HaveOccurred(), "failed to set up %q erc20 precompile", tokenPair.Denom)
+	Expect(err).ToNot(HaveOccurred(), "failed to set up %q erc20 precompile", tokenMapping.Denom)
 
 	return precompile
 }
 
-// setupERC20PrecompileForTokenPair is a helper function to set up an instance of the ERC20 precompile for
-// a given token pair and adds the precompile to the available and active precompiles.
+// setupERC20PrecompileForTokenMapping is a helper function to set up an instance of the ERC20 precompile for
+// a given token mapping and adds the precompile to the available and active precompiles.
 // Do not use this function for integration tests.
-func setupERC20PrecompileForTokenPair(
-	unitNetwork network.UnitTestNetwork, tokenPair erc20types.TokenPair,
+func setupERC20PrecompileForTokenMapping(
+	unitNetwork network.UnitTestNetwork, tokenMapping erc20types.TokenMapping,
 ) (*erc20.Precompile, error) {
 	precompile, err := erc20.NewPrecompile(
-		tokenPair,
+		tokenMapping,
 		unitNetwork.App.GetBankKeeper(),
 		unitNetwork.App.GetErc20Keeper(),
 		unitNetwork.App.GetTransferKeeper(),
 	)
 	if err != nil {
-		return nil, errorsmod.Wrapf(err, "failed to create %q erc20 precompile", tokenPair.Denom)
+		return nil, errorsmod.Wrapf(err, "failed to create %q erc20 precompile", tokenMapping.Denom)
 	}
 
 	err = unitNetwork.App.GetErc20Keeper().EnableDynamicPrecompile(
@@ -203,26 +203,26 @@ func setupERC20PrecompileForTokenPair(
 		precompile.Address(),
 	)
 	if err != nil {
-		return nil, errorsmod.Wrapf(err, "failed to add %q erc20 precompile to EVM extensions", tokenPair.Denom)
+		return nil, errorsmod.Wrapf(err, "failed to add %q erc20 precompile to EVM extensions", tokenMapping.Denom)
 	}
 
 	return precompile, nil
 }
 
-// setupNewERC20PrecompileForTokenPair is a helper function to set up an instance of the ERC20 precompile for
-// a given token pair and adds the precompile to the available and active precompiles.
+// setupNewERC20PrecompileForTokenMapping is a helper function to set up an instance of the ERC20 precompile for
+// a given token mapping and adds the precompile to the available and active precompiles.
 // This function should be used for integration tests
-func (is *IntegrationTestSuite) setupNewERC20PrecompileForTokenPair(
-	tokenPair erc20types.TokenPair,
+func (is *IntegrationTestSuite) setupNewERC20PrecompileForTokenMapping(
+	tokenMapping erc20types.TokenMapping,
 ) (*erc20.Precompile, error) {
 	precompile, err := erc20.NewPrecompile(
-		tokenPair,
+		tokenMapping,
 		is.network.App.GetBankKeeper(),
 		is.network.App.GetErc20Keeper(),
 		is.network.App.GetTransferKeeper(),
 	)
 	if err != nil {
-		return nil, errorsmod.Wrapf(err, "failed to create %q erc20 precompile", tokenPair.Denom)
+		return nil, errorsmod.Wrapf(err, "failed to create %q erc20 precompile", tokenMapping.Denom)
 	}
 
 	// Update the params via gov proposal

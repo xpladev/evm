@@ -54,9 +54,9 @@ var metadataIbc = banktypes.Metadata{
 	Display: ibcBase,
 }
 
-// setupRegisterERC20Pair deploys an ERC20 smart contract and
+// setupRegisterERC20Mapping deploys an ERC20 smart contract and
 // registers it as ERC20.
-func (s *KeeperTestSuite) setupRegisterERC20Pair(contractType int) (common.Address, error) {
+func (s *KeeperTestSuite) setupRegisterERC20Mapping(contractType int) (common.Address, error) {
 	var (
 		contract common.Address
 		err      error
@@ -80,7 +80,7 @@ func (s *KeeperTestSuite) setupRegisterERC20Pair(contractType int) (common.Addre
 		return common.Address{}, err
 	}
 
-	// submit gov proposal to register ERC20 token pair
+	// submit gov proposal to register ERC20 token mapping
 	_, err = utils.RegisterERC20(s.factory, s.network, utils.ERC20RegistrationData{
 		Addresses:    []string{contract.Hex()},
 		ProposerPriv: s.keyring.GetPrivKey(0),
@@ -93,7 +93,7 @@ func (s *KeeperTestSuite) TestRegisterERC20() {
 	var (
 		ctx          sdk.Context
 		contractAddr common.Address
-		pair         types.TokenPair
+		mapping      types.TokenMapping
 	)
 	testCases := []struct {
 		name     string
@@ -104,7 +104,7 @@ func (s *KeeperTestSuite) TestRegisterERC20() {
 		{
 			"token ERC20 already registered",
 			func() {
-				s.network.App.GetErc20Keeper().SetERC20Map(ctx, pair.GetERC20Contract(), pair.GetID())
+				s.network.App.GetErc20Keeper().SetERC20Map(ctx, mapping.GetERC20Contract(), mapping.GetID())
 			},
 			s.keyring.GetAccAddr(0).String(),
 			false,
@@ -112,7 +112,7 @@ func (s *KeeperTestSuite) TestRegisterERC20() {
 		{
 			"denom already registered",
 			func() {
-				s.network.App.GetErc20Keeper().SetDenomMap(ctx, pair.Denom, pair.GetID())
+				s.network.App.GetErc20Keeper().SetDenomMap(ctx, mapping.Denom, mapping.GetID())
 			},
 			s.keyring.GetAccAddr(0).String(),
 			false,
@@ -192,7 +192,7 @@ func (s *KeeperTestSuite) TestRegisterERC20() {
 			s.Require().NoError(s.network.NextBlock(), "failed to advance block")
 
 			coinName := types.CreateDenom(contractAddr.String())
-			pair = types.NewTokenPair(contractAddr, coinName, types.OWNER_EXTERNAL)
+			mapping = types.NewTokenMapping(contractAddr, coinName, types.OWNER_EXTERNAL)
 
 			ctx = s.network.GetContext()
 
@@ -231,7 +231,7 @@ func (s *KeeperTestSuite) TestToggleConverision() {
 		err          error
 		contractAddr common.Address
 		id           []byte
-		pair         types.TokenPair
+		mapping      types.TokenMapping
 	)
 
 	testCases := []struct {
@@ -254,13 +254,13 @@ func (s *KeeperTestSuite) TestToggleConverision() {
 				s.Require().NoError(err, "failed to deploy contract")
 				s.Require().NoError(s.network.NextBlock(), "failed to advance block")
 
-				pair = types.NewTokenPair(contractAddr, cosmosTokenBase, types.OWNER_MODULE)
+				mapping = types.NewTokenMapping(contractAddr, cosmosTokenBase, types.OWNER_MODULE)
 			},
 			false,
 			false,
 		},
 		{
-			"token not registered - pair not found",
+			"token not registered - mapping not found",
 			func() {
 				contractAddr, err = s.factory.DeployContract(
 					s.keyring.GetPrivKey(0),
@@ -273,8 +273,8 @@ func (s *KeeperTestSuite) TestToggleConverision() {
 				s.Require().NoError(err, "failed to deploy contract")
 				s.Require().NoError(s.network.NextBlock(), "failed to advance block")
 
-				pair = types.NewTokenPair(contractAddr, cosmosTokenBase, types.OWNER_MODULE)
-				s.network.App.GetErc20Keeper().SetERC20Map(ctx, common.HexToAddress(pair.Erc20Address), pair.GetID())
+				mapping = types.NewTokenMapping(contractAddr, cosmosTokenBase, types.OWNER_MODULE)
+				s.network.App.GetErc20Keeper().SetERC20Map(ctx, common.HexToAddress(mapping.Erc20Address), mapping.GetID())
 			},
 			false,
 			false,
@@ -282,11 +282,11 @@ func (s *KeeperTestSuite) TestToggleConverision() {
 		{
 			"disable conversion",
 			func() {
-				contractAddr, err = s.setupRegisterERC20Pair(contractMinterBurner)
-				s.Require().NoError(err, "failed to register pair")
+				contractAddr, err = s.setupRegisterERC20Mapping(contractMinterBurner)
+				s.Require().NoError(err, "failed to register mapping")
 				ctx = s.network.GetContext()
-				id = s.network.App.GetErc20Keeper().GetTokenPairID(ctx, contractAddr.String())
-				pair, _ = s.network.App.GetErc20Keeper().GetTokenPair(ctx, id)
+				id = s.network.App.GetErc20Keeper().GetTokenMappingID(ctx, contractAddr.String())
+				mapping, _ = s.network.App.GetErc20Keeper().GetTokenMapping(ctx, id)
 			},
 			true,
 			false,
@@ -294,15 +294,15 @@ func (s *KeeperTestSuite) TestToggleConverision() {
 		{
 			"disable and enable conversion",
 			func() {
-				contractAddr, err = s.setupRegisterERC20Pair(contractMinterBurner)
-				s.Require().NoError(err, "failed to register pair")
+				contractAddr, err = s.setupRegisterERC20Mapping(contractMinterBurner)
+				s.Require().NoError(err, "failed to register mapping")
 				ctx = s.network.GetContext()
-				id = s.network.App.GetErc20Keeper().GetTokenPairID(ctx, contractAddr.String())
-				pair, _ = s.network.App.GetErc20Keeper().GetTokenPair(ctx, id)
+				id = s.network.App.GetErc20Keeper().GetTokenMappingID(ctx, contractAddr.String())
+				mapping, _ = s.network.App.GetErc20Keeper().GetTokenMapping(ctx, id)
 				res, err := s.network.App.GetErc20Keeper().ToggleConversion(ctx, &types.MsgToggleConversion{Authority: authtypes.NewModuleAddress("gov").String(), Token: contractAddr.String()})
 				s.Require().NoError(err)
 				s.Require().NotNil(res)
-				pair, _ = s.network.App.GetErc20Keeper().GetTokenPair(ctx, id)
+				mapping, _ = s.network.App.GetErc20Keeper().GetTokenMapping(ctx, id)
 			},
 			true,
 			true,
@@ -316,14 +316,14 @@ func (s *KeeperTestSuite) TestToggleConverision() {
 			tc.malleate()
 
 			_, err = s.network.App.GetErc20Keeper().ToggleConversion(ctx, &types.MsgToggleConversion{Authority: authtypes.NewModuleAddress("gov").String(), Token: contractAddr.String()})
-			// Request the pair using the GetPairToken func to make sure that is updated on the db
-			pair, _ = s.network.App.GetErc20Keeper().GetTokenPair(ctx, id)
+			// Request the mapping using the GetTokenMapping func to make sure that is updated on the db
+			mapping, _ = s.network.App.GetErc20Keeper().GetTokenMapping(ctx, id)
 			if tc.expPass {
 				s.Require().NoError(err, tc.name)
 				if tc.conversionEnabled {
-					s.Require().True(pair.Enabled)
+					s.Require().True(mapping.Enabled)
 				} else {
-					s.Require().False(pair.Enabled)
+					s.Require().False(mapping.Enabled)
 				}
 			} else {
 				s.Require().Error(err, tc.name)

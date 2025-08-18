@@ -12,11 +12,11 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/query"
 )
 
-func (s *KeeperTestSuite) TestTokenPairs() {
+func (s *KeeperTestSuite) TestTokenMappings() {
 	var (
 		ctx    sdk.Context
-		req    *types.QueryTokenPairsRequest
-		expRes *types.QueryTokenPairsResponse
+		req    *types.QueryTokenMappingsRequest
+		expRes *types.QueryTokenMappingsResponse
 	)
 
 	testCases := []struct {
@@ -25,51 +25,51 @@ func (s *KeeperTestSuite) TestTokenPairs() {
 		expPass  bool
 	}{
 		{
-			"no pairs registered",
+			"no mappings registered",
 			func() {
-				req = &types.QueryTokenPairsRequest{}
-				expRes = &types.QueryTokenPairsResponse{
+				req = &types.QueryTokenMappingsRequest{}
+				expRes = &types.QueryTokenMappingsResponse{
 					Pagination: &query.PageResponse{
 						Total: 1,
 					},
-					TokenPairs: testconstants.ExampleTokenPairs,
+					TokenMappings: testconstants.ExampleTokenMappings,
 				}
 			},
 			true,
 		},
 		{
-			"1 pair registered w/pagination",
+			"1 mapping registered w/pagination",
 			func() {
-				req = &types.QueryTokenPairsRequest{
+				req = &types.QueryTokenMappingsRequest{
 					Pagination: &query.PageRequest{Limit: 10, CountTotal: true},
 				}
-				pairs := testconstants.ExampleTokenPairs
-				pair := types.NewTokenPair(utiltx.GenerateAddress(), "coin", types.OWNER_MODULE)
-				s.network.App.GetErc20Keeper().SetTokenPair(ctx, pair)
-				pairs = append(pairs, pair)
+				mappings := testconstants.ExampleTokenMappings
+				mapping := types.NewTokenMapping(utiltx.GenerateAddress(), "coin", types.OWNER_MODULE)
+				s.network.App.GetErc20Keeper().SetTokenMapping(ctx, mapping)
+				mappings = append(mappings, mapping)
 
-				expRes = &types.QueryTokenPairsResponse{
-					Pagination: &query.PageResponse{Total: uint64(len(pairs))},
-					TokenPairs: pairs,
+				expRes = &types.QueryTokenMappingsResponse{
+					Pagination:    &query.PageResponse{Total: uint64(len(mappings))},
+					TokenMappings: mappings,
 				}
 			},
 			true,
 		},
 		{
-			"2 pairs registered wo/pagination",
+			"2 mappings registered wo/pagination",
 			func() {
-				req = &types.QueryTokenPairsRequest{}
-				pairs := testconstants.ExampleTokenPairs
+				req = &types.QueryTokenMappingsRequest{}
+				mappings := testconstants.ExampleTokenMappings
 
-				pair := types.NewTokenPair(utiltx.GenerateAddress(), "coin", types.OWNER_MODULE)
-				pair2 := types.NewTokenPair(utiltx.GenerateAddress(), "coin2", types.OWNER_MODULE)
-				s.network.App.GetErc20Keeper().SetTokenPair(ctx, pair)
-				s.network.App.GetErc20Keeper().SetTokenPair(ctx, pair2)
-				pairs = append(pairs, pair, pair2)
+				mapping := types.NewTokenMapping(utiltx.GenerateAddress(), "coin", types.OWNER_MODULE)
+				mapping2 := types.NewTokenMapping(utiltx.GenerateAddress(), "coin2", types.OWNER_MODULE)
+				s.network.App.GetErc20Keeper().SetTokenMapping(ctx, mapping)
+				s.network.App.GetErc20Keeper().SetTokenMapping(ctx, mapping2)
+				mappings = append(mappings, mapping, mapping2)
 
-				expRes = &types.QueryTokenPairsResponse{
-					Pagination: &query.PageResponse{Total: uint64(len(pairs))},
-					TokenPairs: pairs,
+				expRes = &types.QueryTokenMappingsResponse{
+					Pagination:    &query.PageResponse{Total: uint64(len(mappings))},
+					TokenMappings: mappings,
 				}
 			},
 			true,
@@ -82,11 +82,11 @@ func (s *KeeperTestSuite) TestTokenPairs() {
 
 			tc.malleate()
 
-			res, err := s.queryClient.TokenPairs(ctx, req)
+			res, err := s.queryClient.TokenMappings(ctx, req)
 			if tc.expPass {
 				s.Require().NoError(err)
 				s.Require().Equal(expRes.Pagination, res.Pagination)
-				s.Require().ElementsMatch(expRes.TokenPairs, res.TokenPairs)
+				s.Require().ElementsMatch(expRes.TokenMappings, res.TokenMappings)
 			} else {
 				s.Require().Error(err)
 			}
@@ -94,11 +94,11 @@ func (s *KeeperTestSuite) TestTokenPairs() {
 	}
 }
 
-func (s *KeeperTestSuite) TestTokenPair() {
+func (s *KeeperTestSuite) TestTokenMapping() {
 	var (
 		ctx    sdk.Context
-		req    *types.QueryTokenPairRequest
-		expRes *types.QueryTokenPairResponse
+		req    *types.QueryTokenMappingRequest
+		expRes *types.QueryTokenMappingResponse
 	)
 
 	testCases := []struct {
@@ -109,47 +109,47 @@ func (s *KeeperTestSuite) TestTokenPair() {
 		{
 			"invalid token address",
 			func() {
-				req = &types.QueryTokenPairRequest{}
-				expRes = &types.QueryTokenPairResponse{}
+				req = &types.QueryTokenMappingRequest{}
+				expRes = &types.QueryTokenMappingResponse{}
 			},
 			false,
 		},
 		{
-			"token pair not found",
+			"token mapping not found",
 			func() {
-				req = &types.QueryTokenPairRequest{
+				req = &types.QueryTokenMappingRequest{
 					Token: utiltx.GenerateAddress().Hex(),
 				}
-				expRes = &types.QueryTokenPairResponse{}
+				expRes = &types.QueryTokenMappingResponse{}
 			},
 			false,
 		},
 		{
-			"token pair found",
+			"token mapping found",
 			func() {
 				addr := utiltx.GenerateAddress()
-				pair := types.NewTokenPair(addr, "coin", types.OWNER_MODULE)
-				err := s.network.App.GetErc20Keeper().SetToken(ctx, pair)
+				mapping := types.NewTokenMapping(addr, "coin", types.OWNER_MODULE)
+				err := s.network.App.GetErc20Keeper().SetToken(ctx, mapping)
 				s.Require().NoError(err)
-				req = &types.QueryTokenPairRequest{
-					Token: pair.Erc20Address,
+				req = &types.QueryTokenMappingRequest{
+					Token: mapping.Erc20Address,
 				}
-				expRes = &types.QueryTokenPairResponse{TokenPair: pair}
+				expRes = &types.QueryTokenMappingResponse{TokenMapping: mapping}
 			},
 			true,
 		},
 		{
-			"token pair not found - with erc20 existent",
+			"token mapping not found - with erc20 existent",
 			func() {
 				addr := utiltx.GenerateAddress()
-				pair := types.NewTokenPair(addr, "coin", types.OWNER_MODULE)
-				s.network.App.GetErc20Keeper().SetERC20Map(ctx, addr, pair.GetID())
-				s.network.App.GetErc20Keeper().SetDenomMap(ctx, pair.Denom, pair.GetID())
+				mapping := types.NewTokenMapping(addr, "coin", types.OWNER_MODULE)
+				s.network.App.GetErc20Keeper().SetERC20Map(ctx, addr, mapping.GetID())
+				s.network.App.GetErc20Keeper().SetDenomMap(ctx, mapping.Denom, mapping.GetID())
 
-				req = &types.QueryTokenPairRequest{
-					Token: pair.Erc20Address,
+				req = &types.QueryTokenMappingRequest{
+					Token: mapping.Erc20Address,
 				}
-				expRes = &types.QueryTokenPairResponse{TokenPair: pair}
+				expRes = &types.QueryTokenMappingResponse{TokenMapping: mapping}
 			},
 			false,
 		},
@@ -161,7 +161,7 @@ func (s *KeeperTestSuite) TestTokenPair() {
 
 			tc.malleate()
 
-			res, err := s.queryClient.TokenPair(ctx, req)
+			res, err := s.queryClient.TokenMapping(ctx, req)
 			if tc.expPass {
 				s.Require().NoError(err)
 				s.Require().Equal(expRes, res)

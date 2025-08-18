@@ -90,8 +90,8 @@ func (k Keeper) OnRecvPacket(
 		return ack
 	}
 
-	pairID := k.GetTokenPairID(ctx, coin.Denom)
-	pair, found := k.GetTokenPair(ctx, pairID)
+	pairID := k.GetTokenMappingID(ctx, coin.Denom)
+	pair, found := k.GetTokenMapping(ctx, pairID)
 	switch {
 	// Case 1. token pair is not registered and is an IBC Coin
 	// by checking the prefix we ensure that only coins not native from this chain are evaluated.
@@ -193,8 +193,8 @@ func (k Keeper) ConvertCoinToERC20FromPacket(ctx sdk.Context, data transfertypes
 		return err
 	}
 
-	pairID := k.GetTokenPairID(ctx, data.Denom)
-	pair, found := k.GetTokenPair(ctx, pairID)
+	pairID := k.GetTokenMappingID(ctx, data.Denom)
+	pair, found := k.GetTokenMapping(ctx, pairID)
 	if !found {
 		// no-op, token pair is not registered
 		return nil

@@ -45,7 +45,6 @@ message EventConvertERC20 {
   string amount = 3;
   // denom is the coin's denomination.
   string denom = 4;
-  // contract_address of an ERC20 token contract, that is registered in a token
-  // pair
+  // contract_address of an ERC20 token contract, that is registered in a token mapping
   string contract_address = 5;
 }

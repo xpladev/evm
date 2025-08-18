@@ -78,7 +78,7 @@ func (p *Precompile) transfer(
 	from, to common.Address,
 	amount *big.Int,
 ) (data []byte, err error) {
-	coins := sdk.Coins{{Denom: p.tokenPair.Denom, Amount: math.NewIntFromBigInt(amount)}}
+	coins := sdk.Coins{{Denom: p.tokenMapping.Denom, Amount: math.NewIntFromBigInt(amount)}}
 
 	msg := banktypes.NewMsgSend(from.Bytes(), to.Bytes(), coins)
 
@@ -125,7 +125,7 @@ func (p *Precompile) transfer(
 	// Currently, decimal conversion issues exist with the precisebank module.
 	// As a temporary workaround, balances are adjusted directly using add/sub operations.
 	evmDenom := evmtypes.GetEVMCoinDenom()
-	if p.tokenPair.Denom == evmDenom {
+	if p.tokenMapping.Denom == evmDenom {
 		convertedAmount, err := utils.Uint256FromBigInt(evmtypes.ConvertAmountTo18DecimalsBigInt(amount))
 		if err != nil {
 			return nil, err

@@ -90,8 +90,8 @@ func (is *IntegrationTestSuite) SetupTest() {
 	is.bondDenom = nw.GetBaseDenom()
 
 	erc20Gen := genesis[erc20types.ModuleName].(*erc20types.GenesisState)
-	is.precompile = is.setupERC20Precompile(is.tokenDenom, erc20Gen.TokenPairs)
-	is.precompileTwo = is.setupERC20Precompile(is.tokenDenomTwo, erc20Gen.TokenPairs)
+	is.precompile = is.setupERC20Precompile(is.tokenDenom, erc20Gen.TokenMappings)
+	is.precompileTwo = is.setupERC20Precompile(is.tokenDenomTwo, erc20Gen.TokenMappings)
 }
 
 var (
@@ -1885,16 +1885,16 @@ func TestIntegrationTestSuite(t *testing.T, create network.CreateEvmApp, options
 					erc20Addr = contractsData.GetContractData(erc20V5Call).Address
 					expName = erc20types.CreateDenom(erc20Addr.String())
 
-					// Register ERC20 token pair for this test
-					tokenPairs, err := utils.RegisterERC20(is.factory, is.network, utils.ERC20RegistrationData{
+					// Register ERC20 token mapping for this test
+					tokenMapping, err := utils.RegisterERC20(is.factory, is.network, utils.ERC20RegistrationData{
 						Addresses:    []string{erc20Addr.Hex()},
 						ProposerPriv: is.keyring.GetPrivKey(0),
 					})
 					Expect(err).ToNot(HaveOccurred(), "failed to register ERC20 token")
-					Expect(tokenPairs).To(HaveLen(1))
+					Expect(tokenMapping).To(HaveLen(1))
 
 					// overwrite the other precompile with this one, so that the test utils like is.getTxAndCallArgs still work.
-					is.precompile, err = is.setupNewERC20PrecompileForTokenPair(tokenPairs[0])
+					is.precompile, err = is.setupNewERC20PrecompileForTokenMapping(tokenMapping[0])
 					Expect(err).ToNot(HaveOccurred(), "failed to set up erc20 precompile")
 
 					// commit changes to chain state

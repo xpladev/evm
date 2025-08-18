@@ -42,7 +42,7 @@ func (suite *TokenPairTestSuite) TestTokenPairNew() {
 	}
 
 	for i, tc := range testCases {
-		tp := types.NewTokenPair(tc.erc20Address, tc.denom, tc.owner)
+		tp := types.NewTokenMapping(tc.erc20Address, tc.denom, tc.owner)
 		err := tp.Validate()
 
 		if tc.expectPass {
@@ -56,17 +56,17 @@ func (suite *TokenPairTestSuite) TestTokenPairNew() {
 func (suite *TokenPairTestSuite) TestTokenPair() {
 	testCases := []struct {
 		msg        string
-		pair       types.TokenPair
+		mapping    types.TokenMapping
 		expectPass bool
 	}{
-		{msg: "Register token pair - invalid address (no hex)", pair: types.TokenPair{"0x5dCA2483280D9727c80b5518faC4556617fb19ZZ", "test", true, types.OWNER_MODULE}, expectPass: false},
-		{msg: "Register token pair - invalid address (invalid length 1)", pair: types.TokenPair{"0x5dCA2483280D9727c80b5518faC4556617fb19", "test", true, types.OWNER_MODULE}, expectPass: false},
-		{msg: "Register token pair - invalid address (invalid length 2)", pair: types.TokenPair{"0x5dCA2483280D9727c80b5518faC4556617fb194FFF", "test", true, types.OWNER_MODULE}, expectPass: false},
-		{msg: "pass", pair: types.TokenPair{utiltx.GenerateAddress().String(), "test", true, types.OWNER_MODULE}, expectPass: true},
+		{msg: "Register token pair - invalid address (no hex)", mapping: types.TokenMapping{"0x5dCA2483280D9727c80b5518faC4556617fb19ZZ", "test", true, types.OWNER_MODULE}, expectPass: false},
+		{msg: "Register token pair - invalid address (invalid length 1)", mapping: types.TokenMapping{"0x5dCA2483280D9727c80b5518faC4556617fb19", "test", true, types.OWNER_MODULE}, expectPass: false},
+		{msg: "Register token pair - invalid address (invalid length 2)", mapping: types.TokenMapping{"0x5dCA2483280D9727c80b5518faC4556617fb194FFF", "test", true, types.OWNER_MODULE}, expectPass: false},
+		{msg: "pass", mapping: types.TokenMapping{utiltx.GenerateAddress().String(), "test", true, types.OWNER_MODULE}, expectPass: true},
 	}
 
 	for i, tc := range testCases {
-		err := tc.pair.Validate()
+		err := tc.mapping.Validate()
 
 		if tc.expectPass {
 			suite.Require().NoError(err, "valid test %d failed: %s, %v", i, tc.msg)
@@ -79,8 +79,8 @@ func (suite *TokenPairTestSuite) TestTokenPair() {
 func (suite *TokenPairTestSuite) TestGetID() {
 	addr := utiltx.GenerateAddress()
 	denom := "test"
-	pair := types.NewTokenPair(addr, denom, types.OWNER_MODULE)
-	id := pair.GetID()
+	mapping := types.NewTokenMapping(addr, denom, types.OWNER_MODULE)
+	id := mapping.GetID()
 	expID := tmhash.Sum([]byte(addr.String() + "|" + denom))
 	suite.Require().Equal(expID, id)
 }
@@ -88,36 +88,36 @@ func (suite *TokenPairTestSuite) TestGetID() {
 func (suite *TokenPairTestSuite) TestGetERC20Contract() {
 	expAddr := utiltx.GenerateAddress()
 	denom := "test"
-	pair := types.NewTokenPair(expAddr, denom, types.OWNER_MODULE)
-	addr := pair.GetERC20Contract()
+	mapping := types.NewTokenMapping(expAddr, denom, types.OWNER_MODULE)
+	addr := mapping.GetERC20Contract()
 	suite.Require().Equal(expAddr, addr)
 }
 
 func (suite *TokenPairTestSuite) TestIsNativeCoin() {
 	testCases := []struct {
 		name       string
-		pair       types.TokenPair
+		mapping    types.TokenMapping
 		expectPass bool
 	}{
 		{
 			"no owner",
-			types.TokenPair{utiltx.GenerateAddress().String(), "test", true, types.OWNER_UNSPECIFIED},
+			types.TokenMapping{utiltx.GenerateAddress().String(), "test", true, types.OWNER_UNSPECIFIED},
 			false,
 		},
 		{
 			"external ERC20 owner",
-			types.TokenPair{utiltx.GenerateAddress().String(), "test", true, types.OWNER_EXTERNAL},
+			types.TokenMapping{utiltx.GenerateAddress().String(), "test", true, types.OWNER_EXTERNAL},
 			false,
 		},
 		{
 			"pass",
-			types.TokenPair{utiltx.GenerateAddress().String(), "test", true, types.OWNER_MODULE},
+			types.TokenMapping{utiltx.GenerateAddress().String(), "test", true, types.OWNER_MODULE},
 			true,
 		},
 	}
 
 	for _, tc := range testCases {
-		res := tc.pair.IsNativeCoin()
+		res := tc.mapping.IsNativeCoin()
 		if tc.expectPass {
 			suite.Require().True(res, tc.name)
 		} else {
@@ -129,22 +129,22 @@ func (suite *TokenPairTestSuite) TestIsNativeCoin() {
 func (suite *TokenPairTestSuite) TestIsNativeERC20() {
 	testCases := []struct {
 		name       string
-		pair       types.TokenPair
+		pair       types.TokenMapping
 		expectPass bool
 	}{
 		{
 			"no owner",
-			types.TokenPair{utiltx.GenerateAddress().String(), "test", true, types.OWNER_UNSPECIFIED},
+			types.TokenMapping{utiltx.GenerateAddress().String(), "test", true, types.OWNER_UNSPECIFIED},
 			false,
 		},
 		{
 			"module owner",
-			types.TokenPair{utiltx.GenerateAddress().String(), "test", true, types.OWNER_MODULE},
+			types.TokenMapping{utiltx.GenerateAddress().String(), "test", true, types.OWNER_MODULE},
 			false,
 		},
 		{
 			"pass",
-			types.TokenPair{utiltx.GenerateAddress().String(), "test", true, types.OWNER_EXTERNAL},
+			types.TokenMapping{utiltx.GenerateAddress().String(), "test", true, types.OWNER_EXTERNAL},
 			true,
 		},
 	}
@@ -165,7 +165,7 @@ func (suite *TokenPairTestSuite) TestNewTokenPairSTRv2() {
 		denom         string
 		expectPass    bool
 		expectedError string
-		expectedPair  types.TokenPair
+		expectedPair  types.TokenMapping
 	}{
 		{
 			name:          "fail to register token pair - invalid denom (not ibc)",
@@ -177,7 +177,7 @@ func (suite *TokenPairTestSuite) TestNewTokenPairSTRv2() {
 			name:       "register token pair - ibc denom",
 			denom:      "ibc/DF63978F803A2E27CA5CC9B7631654CCF0BBC788B3B7F0A10200508E37C70992",
 			expectPass: true,
-			expectedPair: types.TokenPair{
+			expectedPair: types.TokenMapping{
 				Denom:         "ibc/DF63978F803A2E27CA5CC9B7631654CCF0BBC788B3B7F0A10200508E37C70992",
 				Erc20Address:  "0x631654CCF0BBC788b3b7F0a10200508e37c70992",
 				Enabled:       true,
@@ -187,7 +187,7 @@ func (suite *TokenPairTestSuite) TestNewTokenPairSTRv2() {
 	}
 
 	for _, tc := range testCases {
-		tokenPair, err := types.NewTokenPairSTRv2(tc.denom)
+		tokenPair, err := types.NewTokenMappingSTRv2(tc.denom)
 		if tc.expectPass {
 			suite.Require().NoError(err)
 			suite.Require().Equal(tokenPair, tc.expectedPair)

@@ -173,8 +173,8 @@ func (k ContractKeeper) IBCReceivePacketCallback(
 	}
 	coin := ibc.GetReceivedCoin(packet.(channeltypes.Packet), token)
 
-	tokenPairID := k.erc20Keeper.GetTokenPairID(ctx, coin.Denom)
-	tokenPair, found := k.erc20Keeper.GetTokenPair(ctx, tokenPairID)
+	tokenMappingID := k.erc20Keeper.GetTokenMappingID(ctx, coin.Denom)
+	tokenMapping, found := k.erc20Keeper.GetTokenMapping(ctx, tokenMappingID)
 	if !found {
 		return errorsmod.Wrapf(types.ErrTokenPairNotFound, "token pair for denom %s not found", data.Token.Denom.IBCDenom())
 	}
@@ -190,7 +190,7 @@ func (k ContractKeeper) IBCReceivePacketCallback(
 	// Call the EVM with the remaining gas as the maximum gas limit.
 	// Up to now, the remaining gas is equal to the callback gas limit set by the user.
 	// NOTE: use the cached ctx for the EVM calls.
-	res, err := k.evmKeeper.CallEVM(cachedCtx, erc20.ABI, receiverHex, tokenPair.GetERC20Contract(), true, remainingGas, "approve", contractAddr, amountInt.BigInt())
+	res, err := k.evmKeeper.CallEVM(cachedCtx, erc20.ABI, receiverHex, tokenMapping.GetERC20Contract(), true, remainingGas, "approve", contractAddr, amountInt.BigInt())
 	if err != nil {
 		return errorsmod.Wrapf(types.ErrAllowanceFailed, "failed to set allowance: %v", err)
 	}
@@ -232,7 +232,7 @@ func (k ContractKeeper) IBCReceivePacketCallback(
 	// for the total amount, or the callback will fail.
 	// This check is here to prevent funds from getting stuck in the isolated address,
 	// since they would become irretrievable.
-	receiverTokenBalance := k.erc20Keeper.BalanceOf(ctx, erc20.ABI, tokenPair.GetERC20Contract(), receiverHex) // here,
+	receiverTokenBalance := k.erc20Keeper.BalanceOf(ctx, erc20.ABI, tokenMapping.GetERC20Contract(), receiverHex) // here,
 	// we can use the original ctx and skip manually adding the gas
 	if receiverTokenBalance.Cmp(big.NewInt(0)) != 0 {
 		return errorsmod.Wrapf(erc20types.ErrEVMCall,

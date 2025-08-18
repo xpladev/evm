@@ -83,15 +83,15 @@ func (k Keeper) setAllowance(
 ) error {
 	// validate existence of token pair
 	tokenPairID := k.GetERC20Map(ctx, erc20)
-	tokenPair, found := k.GetTokenPair(ctx, tokenPairID)
+	tokenPair, found := k.GetTokenMapping(ctx, tokenPairID)
 	if !found {
 		return errorsmod.Wrapf(
-			types.ErrTokenPairNotFound, "token pair for address '%s' not registered", erc20,
+			types.ErrTokenMappingNotFound, "token pair for address '%s' not registered", erc20,
 		)
 	}
 	if !allowDisabledTokenPair && !tokenPair.Enabled {
 		return errorsmod.Wrapf(
-			types.ErrERC20TokenPairDisabled, "token pair for address '%s' is disabled", erc20,
+			types.ErrERC20TokenMappingDisabled, "token pair for address '%s' is disabled", erc20,
 		)
 	}
 

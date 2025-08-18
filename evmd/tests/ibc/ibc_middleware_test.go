@@ -94,7 +94,7 @@ func (suite *MiddlewareTestSuite) TestOnRecvPacketWithCallback() {
 				// Only the 'add' function properly transfers tokens
 				amountInt, _ := math.NewIntFromString(ibctesting.DefaultCoinAmount.String())
 				voucherDenom := testutil.GetVoucherDenomFromPacketData(data, path.EndpointA.ChannelConfig.PortID, path.EndpointA.ChannelID)
-				singleTokenRepresentation, _ := types.NewTokenPairSTRv2(voucherDenom)
+				singleTokenRepresentation, _ := types.NewTokenMappingSTRv2(voucherDenom)
 				erc20Contract := singleTokenRepresentation.GetERC20Contract()
 				packedBytes, _ := contractData.ABI.Pack("add", erc20Contract, amountInt.BigInt())
 
@@ -114,7 +114,7 @@ func (suite *MiddlewareTestSuite) TestOnRecvPacketWithCallback() {
 			memo: func() string {
 				amountInt, _ := math.NewIntFromString(ibctesting.DefaultCoinAmount.String())
 				voucherDenom := testutil.GetVoucherDenomFromPacketData(data, path.EndpointA.ChannelConfig.PortID, path.EndpointA.ChannelID)
-				singleTokenRepresentation, _ := types.NewTokenPairSTRv2(voucherDenom)
+				singleTokenRepresentation, _ := types.NewTokenMappingSTRv2(voucherDenom)
 				erc20Contract := singleTokenRepresentation.GetERC20Contract()
 				packedBytes, _ := contractData.ABI.Pack("add", erc20Contract, amountInt.BigInt())
 
@@ -231,7 +231,7 @@ func (suite *MiddlewareTestSuite) TestOnRecvPacketWithCallback() {
 			malleate: nil,
 			memo: func() string {
 				voucherDenom := testutil.GetVoucherDenomFromPacketData(data, path.EndpointA.ChannelConfig.PortID, path.EndpointA.ChannelID)
-				singleTokenRepresentation, _ := types.NewTokenPairSTRv2(voucherDenom)
+				singleTokenRepresentation, _ := types.NewTokenMappingSTRv2(voucherDenom)
 				erc20Contract := singleTokenRepresentation.GetERC20Contract()
 				packedBytes, _ := contractData.ABI.Pack("add", erc20Contract, big.NewInt(0))
 
@@ -253,7 +253,7 @@ func (suite *MiddlewareTestSuite) TestOnRecvPacketWithCallback() {
 			memo: func() string {
 				amountInt, _ := math.NewIntFromString(ibctesting.DefaultCoinAmount.String())
 				voucherDenom := testutil.GetVoucherDenomFromPacketData(data, path.EndpointA.ChannelConfig.PortID, path.EndpointA.ChannelID)
-				singleTokenRepresentation, _ := types.NewTokenPairSTRv2(voucherDenom)
+				singleTokenRepresentation, _ := types.NewTokenMappingSTRv2(voucherDenom)
 				erc20Contract := singleTokenRepresentation.GetERC20Contract()
 				packedBytes, _ := contractData.ABI.Pack("add", erc20Contract, amountInt.BigInt())
 
@@ -382,7 +382,7 @@ func (suite *MiddlewareTestSuite) TestOnRecvPacketWithCallback() {
 
 			// Validate successful callback
 			evmApp := suite.evmChainA.App.(*evmd.EVMD)
-			singleTokenRepresentation, err := types.NewTokenPairSTRv2(voucherDenom)
+			singleTokenRepresentation, err := types.NewTokenMappingSTRv2(voucherDenom)
 			suite.Require().NoError(err)
 			erc20Contract := singleTokenRepresentation.GetERC20Contract()
 
@@ -393,11 +393,11 @@ func (suite *MiddlewareTestSuite) TestOnRecvPacketWithCallback() {
 				balAfterCallback := evmApp.Erc20Keeper.BalanceOf(evmCtx, contracts.ERC20MinterBurnerDecimalsContract.ABI, erc20Contract, contractAddr)
 				suite.Require().Equal(sendAmt.String(), balAfterCallback.String())
 
-				tokenPair, found := evmApp.Erc20Keeper.GetTokenPair(evmCtx, singleTokenRepresentation.GetID())
+				tokenMapping, found := evmApp.Erc20Keeper.GetTokenMapping(evmCtx, singleTokenRepresentation.GetID())
 				suite.Require().True(found)
-				suite.Require().Equal(voucherDenom, tokenPair.Denom)
+				suite.Require().Equal(voucherDenom, tokenMapping.Denom)
 
-				available := evmApp.Erc20Keeper.IsDynamicPrecompileAvailable(evmCtx, common.HexToAddress(tokenPair.Erc20Address))
+				available := evmApp.Erc20Keeper.IsDynamicPrecompileAvailable(evmCtx, common.HexToAddress(tokenMapping.Erc20Address))
 				suite.Require().True(available)
 			} else {
 				suite.Require().False(ack.Success(), "Expected failure but got success")
@@ -547,13 +547,13 @@ func (suite *MiddlewareTestSuite) TestOnRecvPacket() {
 				suite.Require().Equal(sendAmt.String(), voucherCoin.Amount.String())
 
 				// Make sure token pair is registered
-				singleTokenRepresentation, err := types.NewTokenPairSTRv2(voucherDenom)
+				singleTokenRepresentation, err := types.NewTokenMappingSTRv2(voucherDenom)
 				suite.Require().NoError(err)
-				tokenPair, found := evmApp.Erc20Keeper.GetTokenPair(ctxA, singleTokenRepresentation.GetID())
+				tokenMapping, found := evmApp.Erc20Keeper.GetTokenMapping(ctxA, singleTokenRepresentation.GetID())
 				suite.Require().True(found)
-				suite.Require().Equal(voucherDenom, tokenPair.Denom)
+				suite.Require().Equal(voucherDenom, tokenMapping.Denom)
 				// Make sure dynamic precompile is registered
-				available := evmApp.Erc20Keeper.IsDynamicPrecompileAvailable(ctxA, common.HexToAddress(tokenPair.Erc20Address))
+				available := evmApp.Erc20Keeper.IsDynamicPrecompileAvailable(ctxA, common.HexToAddress(tokenMapping.Erc20Address))
 				suite.Require().True(available)
 			} else {
 				suite.Require().False(ack.Success())

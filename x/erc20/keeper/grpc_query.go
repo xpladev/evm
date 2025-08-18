@@ -17,36 +17,36 @@ import (
 
 var _ types.QueryServer = Keeper{}
 
-// TokenPairs returns all registered pairs
-func (k Keeper) TokenPairs(c context.Context, req *types.QueryTokenPairsRequest) (*types.QueryTokenPairsResponse, error) {
+// TokenMappings returns all registered mappings
+func (k Keeper) TokenMappings(c context.Context, req *types.QueryTokenMappingsRequest) (*types.QueryTokenMappingsResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "empty request")
 	}
 
 	ctx := sdk.UnwrapSDKContext(c)
 
-	var pairs []types.TokenPair
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixTokenPair)
+	var mappings []types.TokenMapping
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixTokenMapping)
 
 	pageRes, err := query.Paginate(store, req.Pagination, func(_, value []byte) error {
-		var pair types.TokenPair
-		if err := k.cdc.Unmarshal(value, &pair); err != nil {
+		var mapping types.TokenMapping
+		if err := k.cdc.Unmarshal(value, &mapping); err != nil {
 			return err
 		}
-		pairs = append(pairs, pair)
+		mappings = append(mappings, mapping)
 		return nil
 	})
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	return &types.QueryTokenPairsResponse{
-		TokenPairs: pairs,
-		Pagination: pageRes,
+	return &types.QueryTokenMappingsResponse{
+		TokenMappings: mappings,
+		Pagination:    pageRes,
 	}, nil
 }
 
-// TokenPair returns a given registered token pair
-func (k Keeper) TokenPair(c context.Context, req *types.QueryTokenPairRequest) (*types.QueryTokenPairResponse, error) {
+// TokenMapping returns a given registered token mapping
+func (k Keeper) TokenMapping(c context.Context, req *types.QueryTokenMappingRequest) (*types.QueryTokenMappingResponse, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "empty request")
 	}
@@ -64,18 +64,18 @@ func (k Keeper) TokenPair(c context.Context, req *types.QueryTokenPairRequest) (
 		}
 	}
 
-	id := k.GetTokenPairID(ctx, req.Token)
+	id := k.GetTokenMappingID(ctx, req.Token)
 
 	if len(id) == 0 {
 		return nil, status.Errorf(codes.NotFound, "token pair with token '%s'", req.Token)
 	}
 
-	pair, found := k.GetTokenPair(ctx, id)
+	mapping, found := k.GetTokenMapping(ctx, id)
 	if !found {
 		return nil, status.Errorf(codes.NotFound, "token pair with token '%s'", req.Token)
 	}
 
-	return &types.QueryTokenPairResponse{TokenPair: pair}, nil
+	return &types.QueryTokenMappingResponse{TokenMapping: mapping}, nil
 }
 
 // Params returns the params of the erc20 module

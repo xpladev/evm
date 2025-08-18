@@ -18,11 +18,11 @@ import (
 func (k Keeper) registerERC20(
 	ctx sdk.Context,
 	contract common.Address,
-) (*types.TokenPair, error) {
+) (*types.TokenMapping, error) {
 	// Check if ERC20 is already registered
 	if k.IsERC20Registered(ctx, contract) {
 		return nil, errorsmod.Wrapf(
-			types.ErrTokenPairAlreadyExists, "token ERC20 contract already registered: %s", contract.String(),
+			types.ErrTokenMappingAlreadyExists, "token ERC20 contract already registered: %s", contract.String(),
 		)
 	}
 
@@ -33,7 +33,7 @@ func (k Keeper) registerERC20(
 		)
 	}
 
-	pair := types.NewTokenPair(contract, metadata.Name, types.OWNER_EXTERNAL)
+	pair := types.NewTokenMapping(contract, metadata.Name, types.OWNER_EXTERNAL)
 	err = k.SetToken(ctx, pair)
 	if err != nil {
 		return nil, err
@@ -58,13 +58,13 @@ func (k Keeper) CreateCoinMetadata(
 	_, found := k.bankKeeper.GetDenomMetaData(ctx, types.CreateDenom(strContract))
 	if found {
 		return nil, errorsmod.Wrap(
-			types.ErrInternalTokenPair, "denom metadata already registered",
+			types.ErrInternalTokenMapping, "denom metadata already registered",
 		)
 	}
 
 	if k.IsDenomRegistered(ctx, types.CreateDenom(strContract)) {
 		return nil, errorsmod.Wrapf(
-			types.ErrInternalTokenPair, "coin denomination already registered: %s", erc20Data.Name,
+			types.ErrInternalTokenMapping, "coin denomination already registered: %s", erc20Data.Name,
 		)
 	}
 
@@ -117,22 +117,22 @@ func (k Keeper) CreateCoinMetadata(
 func (k Keeper) toggleConversion(
 	ctx sdk.Context,
 	token string,
-) (types.TokenPair, error) {
-	id := k.GetTokenPairID(ctx, token)
+) (types.TokenMapping, error) {
+	id := k.GetTokenMappingID(ctx, token)
 	if len(id) == 0 {
-		return types.TokenPair{}, errorsmod.Wrapf(
-			types.ErrTokenPairNotFound, "token '%s' not registered by id", token,
+		return types.TokenMapping{}, errorsmod.Wrapf(
+			types.ErrTokenMappingNotFound, "token '%s' not registered by id", token,
 		)
 	}
 
-	pair, found := k.GetTokenPair(ctx, id)
+	pair, found := k.GetTokenMapping(ctx, id)
 	if !found {
-		return types.TokenPair{}, errorsmod.Wrapf(
-			types.ErrTokenPairNotFound, "token '%s' not registered", token,
+		return types.TokenMapping{}, errorsmod.Wrapf(
+			types.ErrTokenMappingNotFound, "token '%s' not registered", token,
 		)
 	}
 
 	pair.Enabled = !pair.Enabled
-	k.SetTokenPair(ctx, pair)
+	k.SetTokenMapping(ctx, pair)
 	return pair, nil
 }

@@ -30,7 +30,7 @@ func InitGenesis(
 		panic("the erc20 module account has not been set")
 	}
 
-	for _, pair := range data.TokenPairs {
+	for _, pair := range data.TokenMappings {
 		err := k.SetToken(ctx, pair)
 		if err != nil {
 			return
@@ -64,7 +64,7 @@ func InitGenesis(
 func ExportGenesis(ctx sdk.Context, k keeper.Keeper) *types.GenesisState {
 	return &types.GenesisState{
 		Params:             k.GetParams(ctx),
-		TokenPairs:         k.GetTokenPairs(ctx),
+		TokenMappings:      k.GetTokenMappings(ctx),
 		Allowances:         k.GetAllowances(ctx),
 		NativePrecompiles:  k.GetNativePrecompiles(ctx),
 		DynamicPrecompiles: k.GetDynamicPrecompiles(ctx),

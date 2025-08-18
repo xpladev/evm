@@ -107,9 +107,9 @@ var (
 		"bar",
 	}
 
-	// ExampleTokenPairs creates a slice of token pairs, that contains a pair for the native denom of the example chain
+	// ExampleTokenMappings creates a slice of token mappings, that contains a mapping for the native denom of the example chain
 	// implementation.
-	ExampleTokenPairs = []erc20types.TokenPair{
+	ExampleTokenMappings = []erc20types.TokenMapping{
 		{
 			Erc20Address:  WEVMOSContractMainnet,
 			Denom:         ExampleAttoDenom,

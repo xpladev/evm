@@ -50,8 +50,8 @@ func (ed ERC20RegistrationData) ValidateBasic() error {
 
 // RegisterERC20 is a helper function to register ERC20 token through
 // submitting a governance proposal and having it pass.
-// It returns the registered token pair.
-func RegisterERC20(tf factory.TxFactory, network network.Network, data ERC20RegistrationData) (res []erc20types.TokenPair, err error) {
+// It returns the registered token mapping.
+func RegisterERC20(tf factory.TxFactory, network network.Network, data ERC20RegistrationData) (res []erc20types.TokenMapping, err error) {
 	err = data.ValidateBasic()
 	if err != nil {
 		return nil, errorsmod.Wrap(err, "failed to validate erc20 registration data")
@@ -79,20 +79,20 @@ func RegisterERC20(tf factory.TxFactory, network network.Network, data ERC20Regi
 		return nil, errorsmod.Wrap(err, "failed to approve proposal")
 	}
 
-	// Check if token pair is registered
+	// Check if token mapping is registered
 	eq := network.GetERC20Client()
 	for _, a := range data.Addresses {
-		tokenPairRes, err := eq.TokenPair(network.GetContext(), &erc20types.QueryTokenPairRequest{Token: a})
+		tokenMappingRes, err := eq.TokenMapping(network.GetContext(), &erc20types.QueryTokenMappingRequest{Token: a})
 		if err != nil {
-			return nil, errorsmod.Wrap(err, "failed to query token pair")
+			return nil, errorsmod.Wrap(err, "failed to query token mapping")
 		}
-		res = append(res, tokenPairRes.TokenPair)
+		res = append(res, tokenMappingRes.TokenMapping)
 	}
 
 	return res, nil
 }
 
-// ToggleTokenConversion is a helper function to toggle an ERC20 token pair conversion through
+// ToggleTokenConversion is a helper function to toggle an ERC20 token mapping conversion through
 // submitting a governance proposal and having it pass.
 func ToggleTokenConversion(tf factory.TxFactory, network network.Network, privKey cryptotypes.PrivKey, token string) error {
 	proposal := erc20types.MsgToggleConversion{

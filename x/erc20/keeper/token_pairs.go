@@ -13,67 +13,67 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-// CreateNewTokenPair creates a new token pair and stores it in the state.
-func (k Keeper) CreateNewTokenPair(ctx sdk.Context, denom string) (types.TokenPair, error) {
-	pair, err := types.NewTokenPairSTRv2(denom)
+// CreateNewTokenMapping creates a new token mapping and stores it in the state.
+func (k Keeper) CreateNewTokenMapping(ctx sdk.Context, denom string) (types.TokenMapping, error) {
+	mapping, err := types.NewTokenMappingSTRv2(denom)
 	if err != nil {
-		return types.TokenPair{}, err
+		return types.TokenMapping{}, err
 	}
-	if account := k.evmKeeper.GetAccount(ctx, pair.GetERC20Contract()); account != nil && account.IsContract() {
-		return types.TokenPair{}, errorsmod.Wrapf(types.ErrTokenPairAlreadyExists, "token already exists for token %s", pair.Erc20Address)
+	if account := k.evmKeeper.GetAccount(ctx, mapping.GetERC20Contract()); account != nil && account.IsContract() {
+		return types.TokenMapping{}, errorsmod.Wrapf(types.ErrTokenMappingAlreadyExists, "token already exists for token %s", mapping.Erc20Address)
 	}
-	err = k.SetToken(ctx, pair)
+	err = k.SetToken(ctx, mapping)
 	if err != nil {
-		return types.TokenPair{}, err
+		return types.TokenMapping{}, err
 	}
-	return pair, nil
+	return mapping, nil
 }
 
-// SetToken stores a token pair, denom map and erc20 map.
-func (k *Keeper) SetToken(ctx sdk.Context, pair types.TokenPair) error {
-	if k.IsDenomRegistered(ctx, pair.Denom) {
-		return errorsmod.Wrapf(types.ErrTokenPairAlreadyExists, "token already exists for denom %s", pair.Denom)
+// SetToken stores a token mapping, denom map and erc20 map.
+func (k *Keeper) SetToken(ctx sdk.Context, mapping types.TokenMapping) error {
+	if k.IsDenomRegistered(ctx, mapping.Denom) {
+		return errorsmod.Wrapf(types.ErrTokenMappingAlreadyExists, "token already exists for denom %s", mapping.Denom)
 	}
-	if k.IsERC20Registered(ctx, pair.GetERC20Contract()) {
-		return errorsmod.Wrapf(types.ErrTokenPairAlreadyExists, "token already exists for token %s", pair.Erc20Address)
+	if k.IsERC20Registered(ctx, mapping.GetERC20Contract()) {
+		return errorsmod.Wrapf(types.ErrTokenMappingAlreadyExists, "token already exists for token %s", mapping.Erc20Address)
 	}
-	k.SetTokenPair(ctx, pair)
-	k.SetDenomMap(ctx, pair.Denom, pair.GetID())
-	k.SetERC20Map(ctx, pair.GetERC20Contract(), pair.GetID())
+	k.SetTokenMapping(ctx, mapping)
+	k.SetDenomMap(ctx, mapping.Denom, mapping.GetID())
+	k.SetERC20Map(ctx, mapping.GetERC20Contract(), mapping.GetID())
 	return nil
 }
 
-// GetTokenPairs gets all registered token tokenPairs.
-func (k Keeper) GetTokenPairs(ctx sdk.Context) []types.TokenPair {
-	tokenPairs := []types.TokenPair{}
+// GetTokenMappings gets all registered token tokenMappings.
+func (k Keeper) GetTokenMappings(ctx sdk.Context) []types.TokenMapping {
+	tokenMappings := []types.TokenMapping{}
 
-	k.IterateTokenPairs(ctx, func(tokenPair types.TokenPair) (stop bool) {
-		tokenPairs = append(tokenPairs, tokenPair)
+	k.IterateTokenMappings(ctx, func(tokenMapping types.TokenMapping) (stop bool) {
+		tokenMappings = append(tokenMappings, tokenMapping)
 		return false
 	})
 
-	return tokenPairs
+	return tokenMappings
 }
 
-// IterateTokenPairs iterates over all the stored token pairs.
-func (k Keeper) IterateTokenPairs(ctx sdk.Context, cb func(tokenPair types.TokenPair) (stop bool)) {
+// IterateTokenMappings iterates over all the stored token mappings.
+func (k Keeper) IterateTokenMappings(ctx sdk.Context, cb func(tokenMapping types.TokenMapping) (stop bool)) {
 	store := ctx.KVStore(k.storeKey)
-	iterator := storetypes.KVStorePrefixIterator(store, types.KeyPrefixTokenPair)
+	iterator := storetypes.KVStorePrefixIterator(store, types.KeyPrefixTokenMapping)
 	defer iterator.Close()
 
 	for ; iterator.Valid(); iterator.Next() {
-		var tokenPair types.TokenPair
-		k.cdc.MustUnmarshal(iterator.Value(), &tokenPair)
+		var tokenMapping types.TokenMapping
+		k.cdc.MustUnmarshal(iterator.Value(), &tokenMapping)
 
-		if cb(tokenPair) {
+		if cb(tokenMapping) {
 			break
 		}
 	}
 }
 
-// GetTokenPairID returns the pair id for the specified token. Hex address or Denom can be used as token argument.
+// GetTokenMappingID returns the mapping id for the specified token. Hex address or Denom can be used as token argument.
 // If the token is not registered empty bytes are returned.
-func (k Keeper) GetTokenPairID(ctx sdk.Context, token string) []byte {
+func (k Keeper) GetTokenMappingID(ctx sdk.Context, token string) []byte {
 	if common.IsHexAddress(token) {
 		addr := common.HexToAddress(token)
 		return k.GetERC20Map(ctx, addr)
@@ -81,97 +81,97 @@ func (k Keeper) GetTokenPairID(ctx sdk.Context, token string) []byte {
 	return k.GetDenomMap(ctx, token)
 }
 
-// GetTokenPair gets a registered token pair from the identifier.
-func (k Keeper) GetTokenPair(ctx sdk.Context, id []byte) (types.TokenPair, bool) {
+// GetTokenMapping gets a registered token mapping from the identifier.
+func (k Keeper) GetTokenMapping(ctx sdk.Context, id []byte) (types.TokenMapping, bool) {
 	if id == nil {
-		return types.TokenPair{}, false
+		return types.TokenMapping{}, false
 	}
 
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixTokenPair)
-	var tokenPair types.TokenPair
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixTokenMapping)
+	var tokenMapping types.TokenMapping
 	bz := store.Get(id)
 	if len(bz) == 0 {
-		return types.TokenPair{}, false
+		return types.TokenMapping{}, false
 	}
 
-	k.cdc.MustUnmarshal(bz, &tokenPair)
-	return tokenPair, true
+	k.cdc.MustUnmarshal(bz, &tokenMapping)
+	return tokenMapping, true
 }
 
-// SetTokenPair stores a token pair.
-func (k Keeper) SetTokenPair(ctx sdk.Context, tokenPair types.TokenPair) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixTokenPair)
-	key := tokenPair.GetID()
-	bz := k.cdc.MustMarshal(&tokenPair)
+// SetTokenMapping stores a token mapping.
+func (k Keeper) SetTokenMapping(ctx sdk.Context, tokenMapping types.TokenMapping) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixTokenMapping)
+	key := tokenMapping.GetID()
+	bz := k.cdc.MustMarshal(&tokenMapping)
 	store.Set(key, bz)
 }
 
-// DeleteTokenPair removes a token pair.
-func (k Keeper) DeleteTokenPair(ctx sdk.Context, tokenPair types.TokenPair) {
-	id := tokenPair.GetID()
-	k.deleteTokenPair(ctx, id)
-	k.deleteERC20Map(ctx, tokenPair.GetERC20Contract())
-	k.deleteDenomMap(ctx, tokenPair.Denom)
-	k.deleteAllowances(ctx, tokenPair.GetERC20Contract())
+// DeleteTokenMapping removes a token mapping.
+func (k Keeper) DeleteTokenMapping(ctx sdk.Context, tokenMapping types.TokenMapping) {
+	id := tokenMapping.GetID()
+	k.deleteTokenMapping(ctx, id)
+	k.deleteERC20Map(ctx, tokenMapping.GetERC20Contract())
+	k.deleteDenomMap(ctx, tokenMapping.Denom)
+	k.deleteAllowances(ctx, tokenMapping.GetERC20Contract())
 }
 
-// deleteTokenPair deletes the token pair for the given id.
-func (k Keeper) deleteTokenPair(ctx sdk.Context, id []byte) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixTokenPair)
+// deleteTokenMapping deletes the token mapping for the given id.
+func (k Keeper) deleteTokenMapping(ctx sdk.Context, id []byte) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixTokenMapping)
 	store.Delete(id)
 }
 
-// GetERC20Map returns the token pair id for the given address.
+// GetERC20Map returns the token mapping id for the given address.
 func (k Keeper) GetERC20Map(ctx sdk.Context, erc20 common.Address) []byte {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixTokenPairByERC20)
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixTokenMappingByERC20)
 	return store.Get(erc20.Bytes())
 }
 
-// GetDenomMap returns the token pair id for the given denomination.
+// GetDenomMap returns the token mapping id for the given denomination.
 func (k Keeper) GetDenomMap(ctx sdk.Context, denom string) []byte {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixTokenPairByDenom)
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixTokenMappingByDenom)
 	return store.Get([]byte(denom))
 }
 
-// SetERC20Map sets the token pair id for the given address.
+// SetERC20Map sets the token mapping id for the given address.
 func (k Keeper) SetERC20Map(ctx sdk.Context, erc20 common.Address, id []byte) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixTokenPairByERC20)
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixTokenMappingByERC20)
 	store.Set(erc20.Bytes(), id)
 }
 
-// deleteERC20Map deletes the token pair id for the given address.
+// deleteERC20Map deletes the token mapping id for the given address.
 func (k Keeper) deleteERC20Map(ctx sdk.Context, erc20 common.Address) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixTokenPairByERC20)
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixTokenMappingByERC20)
 	store.Delete(erc20.Bytes())
 }
 
-// SetDenomMap sets the token pair id for the denomination.
+// SetDenomMap sets the token mapping id for the denomination.
 func (k Keeper) SetDenomMap(ctx sdk.Context, denom string, id []byte) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixTokenPairByDenom)
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixTokenMappingByDenom)
 	store.Set([]byte(denom), id)
 }
 
-// deleteDenomMap deletes the token pair id for the given denom.
+// deleteDenomMap deletes the token mapping id for the given denom.
 func (k Keeper) deleteDenomMap(ctx sdk.Context, denom string) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixTokenPairByDenom)
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixTokenMappingByDenom)
 	store.Delete([]byte(denom))
 }
 
-// IsTokenPairRegistered - check if registered token tokenPair is registered.
-func (k Keeper) IsTokenPairRegistered(ctx sdk.Context, id []byte) bool {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixTokenPair)
+// IsTokenMappingRegistered - check if registered token tokenMapping is registered.
+func (k Keeper) IsTokenMappingRegistered(ctx sdk.Context, id []byte) bool {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixTokenMapping)
 	return store.Has(id)
 }
 
 // IsERC20Registered check if registered ERC20 token is registered.
 func (k Keeper) IsERC20Registered(ctx sdk.Context, erc20 common.Address) bool {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixTokenPairByERC20)
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixTokenMappingByERC20)
 	return store.Has(erc20.Bytes())
 }
 
 // IsDenomRegistered check if registered coin denom is registered.
 func (k Keeper) IsDenomRegistered(ctx sdk.Context, denom string) bool {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixTokenPairByDenom)
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPrefixTokenMappingByDenom)
 	return store.Has([]byte(denom))
 }
 
@@ -186,34 +186,34 @@ func (k Keeper) GetCoinAddress(ctx sdk.Context, denom string) (common.Address, e
 		return utils.GetIBCDenomAddress(denom)
 	}
 
-	tokenPair, found := k.GetTokenPair(ctx, id)
+	tokenMapping, found := k.GetTokenMapping(ctx, id)
 	if !found {
 		// safety check, should never happen
 		return common.Address{}, errorsmod.Wrapf(
-			types.ErrTokenPairNotFound, "coin '%s' not registered", denom,
+			types.ErrTokenMappingNotFound, "coin '%s' not registered", denom,
 		)
 	}
 
-	return tokenPair.GetERC20Contract(), nil
+	return tokenMapping.GetERC20Contract(), nil
 }
 
 // GetTokenDenom returns the denom associated with the tokenAddress or an error
-// if the TokenPair does not exist.
+// if the TokenMapping does not exist.
 func (k Keeper) GetTokenDenom(ctx sdk.Context, tokenAddress common.Address) (string, error) {
-	tokenPairID := k.GetERC20Map(ctx, tokenAddress)
-	if len(tokenPairID) == 0 {
+	tokenMappingID := k.GetERC20Map(ctx, tokenAddress)
+	if len(tokenMappingID) == 0 {
 		return "", errorsmod.Wrapf(
-			types.ErrTokenPairNotFound, "token '%s' not registered", tokenAddress,
+			types.ErrTokenMappingNotFound, "token '%s' not registered", tokenAddress,
 		)
 	}
 
-	tokenPair, found := k.GetTokenPair(ctx, tokenPairID)
+	tokenMapping, found := k.GetTokenMapping(ctx, tokenMappingID)
 	if !found {
 		// safety check, should never happen
 		return "", errorsmod.Wrapf(
-			types.ErrTokenPairNotFound, "token '%s' not registered", tokenAddress,
+			types.ErrTokenMappingNotFound, "token '%s' not registered", tokenAddress,
 		)
 	}
 
-	return tokenPair.Denom, nil
+	return tokenMapping.Denom, nil
 }

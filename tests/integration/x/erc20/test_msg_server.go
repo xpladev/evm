@@ -322,7 +322,7 @@ func (s *KeeperTestSuite) TestConvertERC20NativeERC20() {
 
 			s.SetupTest()
 
-			contractAddr, err = s.setupRegisterERC20Pair(tc.contractType)
+			contractAddr, err = s.setupRegisterERC20Mapping(tc.contractType)
 			s.Require().NoError(err)
 
 			tc.malleate(contractAddr)
@@ -360,8 +360,8 @@ func (s *KeeperTestSuite) TestConvertERC20NativeERC20() {
 				}
 
 				if tc.selfdestructed || !acc.IsContract() {
-					id := s.network.App.GetErc20Keeper().GetTokenPairID(ctx, contractAddr.String())
-					_, found := s.network.App.GetErc20Keeper().GetTokenPair(ctx, id)
+					id := s.network.App.GetErc20Keeper().GetTokenMappingID(ctx, contractAddr.String())
+					_, found := s.network.App.GetErc20Keeper().GetTokenMapping(ctx, id)
 					s.Require().False(found)
 				} else {
 					s.Require().Equal(cosmosBalance.Amount, math.NewInt(tc.transfer))
@@ -596,7 +596,7 @@ func (s *KeeperTestSuite) TestConvertNativeERC20ToEVMERC20() {
 			}()
 			s.SetupTest()
 
-			contractAddr, err = s.setupRegisterERC20Pair(tc.contractType)
+			contractAddr, err = s.setupRegisterERC20Mapping(tc.contractType)
 			s.Require().NoError(err)
 
 			tc.malleate(contractAddr)
@@ -645,8 +645,8 @@ func (s *KeeperTestSuite) TestConvertNativeERC20ToEVMERC20() {
 				}
 
 				if tc.selfdestructed || !acc.IsContract() {
-					id := s.network.App.GetErc20Keeper().GetTokenPairID(s.network.GetContext(), contractAddr.String())
-					_, found := s.network.App.GetErc20Keeper().GetTokenPair(s.network.GetContext(), id)
+					id := s.network.App.GetErc20Keeper().GetTokenMappingID(s.network.GetContext(), contractAddr.String())
+					_, found := s.network.App.GetErc20Keeper().GetTokenMapping(s.network.GetContext(), id)
 					s.Require().False(found)
 				} else {
 					s.Require().Equal(cosmosBalance.Amount, math.NewInt(tc.mint-tc.transfer))

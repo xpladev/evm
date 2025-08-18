@@ -49,7 +49,7 @@ var _ vm.PrecompiledContract = &Precompile{}
 // Precompile defines the precompiled contract for ERC-20.
 type Precompile struct {
 	cmn.Precompile
-	tokenPair      erc20types.TokenPair
+	tokenMapping   erc20types.TokenMapping
 	transferKeeper transferkeeper.Keeper
 	erc20Keeper    Erc20Keeper
 	// BankKeeper is a public field so that the werc20 precompile can use it.
@@ -59,7 +59,7 @@ type Precompile struct {
 // NewPrecompile creates a new ERC-20 Precompile instance as a
 // PrecompiledContract interface.
 func NewPrecompile(
-	tokenPair erc20types.TokenPair,
+	tokenMapping erc20types.TokenMapping,
 	bankKeeper cmn.BankKeeper,
 	erc20Keeper Erc20Keeper,
 	transferKeeper transferkeeper.Keeper,
@@ -75,13 +75,13 @@ func NewPrecompile(
 			KvGasConfig:          storetypes.GasConfig{},
 			TransientKVGasConfig: storetypes.GasConfig{},
 		},
-		tokenPair:      tokenPair,
+		tokenMapping:   tokenMapping,
 		BankKeeper:     bankKeeper,
 		erc20Keeper:    erc20Keeper,
 		transferKeeper: transferKeeper,
 	}
 	// Address defines the address of the ERC-20 precompile contract.
-	p.SetAddress(p.tokenPair.GetERC20Contract())
+	p.SetAddress(p.tokenMapping.GetERC20Contract())
 	return p, nil
 }
 

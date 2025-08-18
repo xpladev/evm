@@ -33,27 +33,27 @@ func (k Keeper) ConvertERC20(
 	receiver := sdk.MustAccAddressFromBech32(msg.Receiver)
 	sender := common.HexToAddress(msg.Sender)
 
-	pair, err := k.MintingEnabled(ctx, sender.Bytes(), receiver, msg.ContractAddress)
+	mapping, err := k.MintingEnabled(ctx, sender.Bytes(), receiver, msg.ContractAddress)
 	if err != nil {
 		return nil, err
 	}
 
 	// Check ownership and execute conversion
-	if pair.IsNativeERC20() {
+	if mapping.IsNativeERC20() {
 		// Remove token pair if contract is suicided
-		acc := k.evmKeeper.GetAccountWithoutBalance(ctx, pair.GetERC20Contract())
+		acc := k.evmKeeper.GetAccountWithoutBalance(ctx, mapping.GetERC20Contract())
 		if acc == nil || !acc.IsContract() {
-			k.DeleteTokenPair(ctx, pair)
+			k.DeleteTokenMapping(ctx, mapping)
 			k.Logger(ctx).Debug(
 				"deleting selfdestructed token pair from state",
-				"contract", pair.Erc20Address,
+				"contract", mapping.Erc20Address,
 			)
 			// NOTE: return nil error to persist the changes from the deletion
 			return nil, nil
 		}
 
-		return k.convertERC20IntoCoinsForNativeToken(ctx, pair, msg, receiver, sender) // case 2.1
-	} else if pair.IsNativeCoin() {
+		return k.convertERC20IntoCoinsForNativeToken(ctx, mapping, msg, receiver, sender) // case 2.1
+	} else if mapping.IsNativeCoin() {
 		return nil, types.ErrNativeConversionDisabled
 	}
 
@@ -70,7 +70,7 @@ func (k Keeper) ConvertERC20(
 //   - check for unexpected `Approval` event in logs
 func (k Keeper) convertERC20IntoCoinsForNativeToken(
 	ctx sdk.Context,
-	pair types.TokenPair,
+	pair types.TokenMapping,
 	msg *types.MsgConvertERC20,
 	receiver sdk.AccAddress,
 	sender common.Address,
@@ -199,28 +199,28 @@ func (k Keeper) ConvertCoin(
 	sender := sdk.MustAccAddressFromBech32(msg.Sender)
 	receiver := common.HexToAddress(msg.Receiver)
 
-	pair, err := k.MintingEnabled(ctx, sender, receiver.Bytes(), msg.Coin.Denom)
+	mapping, err := k.MintingEnabled(ctx, sender, receiver.Bytes(), msg.Coin.Denom)
 	if err != nil {
 		return nil, err
 	}
 
 	// Check ownership and execute conversion
 	switch {
-	case pair.IsNativeERC20():
+	case mapping.IsNativeERC20():
 		// Remove token pair if contract is suicided
-		acc := k.evmKeeper.GetAccountWithoutBalance(ctx, pair.GetERC20Contract())
+		acc := k.evmKeeper.GetAccountWithoutBalance(ctx, mapping.GetERC20Contract())
 		if acc == nil || !acc.IsContract() {
-			k.DeleteTokenPair(ctx, pair)
+			k.DeleteTokenMapping(ctx, mapping)
 			k.Logger(ctx).Debug(
 				"deleting selfdestructed token pair from state",
-				"contract", pair.Erc20Address,
+				"contract", mapping.Erc20Address,
 			)
 			// NOTE: return nil error to persist the changes from the deletion
 			return nil, nil
 		}
 
-		return nil, k.ConvertCoinNativeERC20(ctx, pair, msg.Coin.Amount, receiver, sender)
-	case pair.IsNativeCoin():
+		return nil, k.ConvertCoinNativeERC20(ctx, mapping, msg.Coin.Amount, receiver, sender)
+	case mapping.IsNativeCoin():
 		return nil, types.ErrNativeConversionDisabled
 	}
 
@@ -236,7 +236,7 @@ func (k Keeper) ConvertCoin(
 //   - check for unexpected `Approval` event in logs
 func (k Keeper) ConvertCoinNativeERC20(
 	ctx sdk.Context,
-	pair types.TokenPair,
+	pair types.TokenMapping,
 	amount math.Int,
 	receiver common.Address,
 	sender sdk.AccAddress,
@@ -344,7 +344,7 @@ func (k *Keeper) RegisterERC20(goCtx context.Context, req *types.MsgRegisterERC2
 			return nil, errortypes.ErrInvalidAddress.Wrapf("invalid ERC20 contract address: %s", addr)
 		}
 
-		pair, err := k.registerERC20(ctx, common.HexToAddress(addr))
+		mapping, err := k.registerERC20(ctx, common.HexToAddress(addr))
 		if err != nil {
 			return nil, err
 		}
@@ -352,8 +352,8 @@ func (k *Keeper) RegisterERC20(goCtx context.Context, req *types.MsgRegisterERC2
 		ctx.EventManager().EmitEvent(
 			sdk.NewEvent(
 				types.EventTypeRegisterERC20,
-				sdk.NewAttribute(types.AttributeKeyCosmosCoin, pair.Denom),
-				sdk.NewAttribute(types.AttributeKeyERC20Token, pair.Erc20Address),
+				sdk.NewAttribute(types.AttributeKeyCosmosCoin, mapping.Denom),
+				sdk.NewAttribute(types.AttributeKeyERC20Token, mapping.Erc20Address),
 			),
 		)
 	}

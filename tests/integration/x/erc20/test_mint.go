@@ -13,7 +13,7 @@ func (s *KeeperTestSuite) TestMintingEnabled() {
 	var ctx sdk.Context
 	sender := sdk.AccAddress(utiltx.GenerateAddress().Bytes())
 	receiver := sdk.AccAddress(utiltx.GenerateAddress().Bytes())
-	expPair := types.NewTokenPair(utiltx.GenerateAddress(), "coin", types.OWNER_MODULE)
+	expPair := types.NewTokenMapping(utiltx.GenerateAddress(), "coin", types.OWNER_MODULE)
 	id := expPair.GetID()
 
 	testCases := []struct {
@@ -39,7 +39,7 @@ func (s *KeeperTestSuite) TestMintingEnabled() {
 			"conversion is disabled for the given pair",
 			func() {
 				expPair.Enabled = false
-				s.network.App.GetErc20Keeper().SetTokenPair(ctx, expPair)
+				s.network.App.GetErc20Keeper().SetTokenMapping(ctx, expPair)
 				s.network.App.GetErc20Keeper().SetDenomMap(ctx, expPair.Denom, id)
 				s.network.App.GetErc20Keeper().SetERC20Map(ctx, expPair.GetERC20Contract(), id)
 			},
@@ -49,7 +49,7 @@ func (s *KeeperTestSuite) TestMintingEnabled() {
 			"token transfers are disabled",
 			func() {
 				expPair.Enabled = true
-				s.network.App.GetErc20Keeper().SetTokenPair(ctx, expPair)
+				s.network.App.GetErc20Keeper().SetTokenMapping(ctx, expPair)
 				s.network.App.GetErc20Keeper().SetDenomMap(ctx, expPair.Denom, id)
 				s.network.App.GetErc20Keeper().SetERC20Map(ctx, expPair.GetERC20Contract(), id)
 
@@ -68,7 +68,7 @@ func (s *KeeperTestSuite) TestMintingEnabled() {
 		{
 			"receiver address is blocked (module account)",
 			func() {
-				s.network.App.GetErc20Keeper().SetTokenPair(ctx, expPair)
+				s.network.App.GetErc20Keeper().SetTokenMapping(ctx, expPair)
 				s.network.App.GetErc20Keeper().SetDenomMap(ctx, expPair.Denom, id)
 				s.network.App.GetErc20Keeper().SetERC20Map(ctx, expPair.GetERC20Contract(), id)
 
@@ -80,7 +80,7 @@ func (s *KeeperTestSuite) TestMintingEnabled() {
 		{
 			"ok",
 			func() {
-				s.network.App.GetErc20Keeper().SetTokenPair(ctx, expPair)
+				s.network.App.GetErc20Keeper().SetTokenMapping(ctx, expPair)
 				s.network.App.GetErc20Keeper().SetDenomMap(ctx, expPair.Denom, id)
 				s.network.App.GetErc20Keeper().SetERC20Map(ctx, expPair.GetERC20Contract(), id)
 

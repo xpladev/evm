@@ -29,10 +29,10 @@ const (
 func RegisterEvmosERC20Coins(
 	network network.UnitTestNetwork,
 	tokenReceiver sdk.AccAddress,
-) (erc20types.TokenPair, error) {
+) (erc20types.TokenMapping, error) {
 	bondDenom, err := network.App.GetStakingKeeper().BondDenom(network.GetContext())
 	if err != nil {
-		return erc20types.TokenPair{}, err
+		return erc20types.TokenMapping{}, err
 	}
 
 	coin := sdk.NewCoin(bondDenom, math.NewInt(TokenToMint))
@@ -42,7 +42,7 @@ func RegisterEvmosERC20Coins(
 		sdk.NewCoins(coin),
 	)
 	if err != nil {
-		return erc20types.TokenPair{}, err
+		return erc20types.TokenMapping{}, err
 	}
 	err = network.App.GetBankKeeper().SendCoinsFromModuleToAccount(
 		network.GetContext(),
@@ -51,23 +51,23 @@ func RegisterEvmosERC20Coins(
 		sdk.NewCoins(coin),
 	)
 	if err != nil {
-		return erc20types.TokenPair{}, err
+		return erc20types.TokenMapping{}, err
 	}
 
 	cosmosEVMMetadata, found := network.App.GetBankKeeper().GetDenomMetaData(network.GetContext(), bondDenom)
 	if !found {
-		return erc20types.TokenPair{}, fmt.Errorf("expected evmos denom metadata")
+		return erc20types.TokenMapping{}, fmt.Errorf("expected evmos denom metadata")
 	}
 
 	_, err = network.App.GetErc20Keeper().RegisterERC20Extension(network.GetContext(), cosmosEVMMetadata.Base)
 	if err != nil {
-		return erc20types.TokenPair{}, err
+		return erc20types.TokenMapping{}, err
 	}
 
 	cosmosEVMDenomID := network.App.GetErc20Keeper().GetDenomMap(network.GetContext(), bondDenom)
-	tokenPair, ok := network.App.GetErc20Keeper().GetTokenPair(network.GetContext(), cosmosEVMDenomID)
+	tokenPair, ok := network.App.GetErc20Keeper().GetTokenMapping(network.GetContext(), cosmosEVMDenomID)
 	if !ok {
-		return erc20types.TokenPair{}, fmt.Errorf("expected evmos erc20 token pair")
+		return erc20types.TokenMapping{}, fmt.Errorf("expected evmos erc20 token pair")
 	}
 
 	return tokenPair, nil
@@ -83,7 +83,7 @@ func RegisterIBCERC20Coins(
 	network *network.UnitTestNetwork,
 	tokenReceiver sdk.AccAddress,
 	denom transfertypes.Denom,
-) (erc20types.TokenPair, error) {
+) (erc20types.TokenMapping, error) {
 	ibcDenom := denom.IBCDenom()
 	network.App.GetTransferKeeper().SetDenom(network.GetContext(), denom)
 	ibcMetadata := banktypes.Metadata{
@@ -112,7 +112,7 @@ func RegisterIBCERC20Coins(
 		sdk.NewCoins(coin),
 	)
 	if err != nil {
-		return erc20types.TokenPair{}, err
+		return erc20types.TokenMapping{}, err
 	}
 
 	err = network.App.GetBankKeeper().SendCoinsFromModuleToAccount(
@@ -122,21 +122,21 @@ func RegisterIBCERC20Coins(
 		sdk.NewCoins(coin),
 	)
 	if err != nil {
-		return erc20types.TokenPair{}, err
+		return erc20types.TokenMapping{}, err
 	}
 
 	_, err = network.App.GetErc20Keeper().RegisterERC20Extension(network.GetContext(), ibcMetadata.Base)
 	if err != nil {
-		return erc20types.TokenPair{}, err
+		return erc20types.TokenMapping{}, err
 	}
 
 	ibcDenomID := network.App.GetErc20Keeper().GetDenomMap(
 		network.GetContext(),
 		denom.IBCDenom(),
 	)
-	tokenPair, ok := network.App.GetErc20Keeper().GetTokenPair(network.GetContext(), ibcDenomID)
+	tokenPair, ok := network.App.GetErc20Keeper().GetTokenMapping(network.GetContext(), ibcDenomID)
 	if !ok {
-		return erc20types.TokenPair{}, fmt.Errorf("expected %s erc20 token pair", ibcDenom)
+		return erc20types.TokenMapping{}, fmt.Errorf("expected %s erc20 token pair", ibcDenom)
 	}
 
 	return tokenPair, nil

@@ -11,17 +11,17 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-// NewTokenPairSTRv2 creates a new TokenPair instance in the context of the
+// NewTokenMappingSTRv2 creates a new TokenMapping instance in the context of the
 // Single Token Representation v2.
 //
 // It derives the ERC-20 address from the hex suffix of the IBC denomination
 // (e.g. ibc/DF63978F803A2E27CA5CC9B7631654CCF0BBC788B3B7F0A10200508E37C70992).
-func NewTokenPairSTRv2(denom string) (TokenPair, error) {
+func NewTokenMappingSTRv2(denom string) (TokenMapping, error) {
 	address, err := utils.GetIBCDenomAddress(denom)
 	if err != nil {
-		return TokenPair{}, err
+		return TokenMapping{}, err
 	}
-	return TokenPair{
+	return TokenMapping{
 		Erc20Address:  address.String(),
 		Denom:         denom,
 		Enabled:       true,
@@ -29,9 +29,9 @@ func NewTokenPairSTRv2(denom string) (TokenPair, error) {
 	}, nil
 }
 
-// NewTokenPair returns an instance of TokenPair
-func NewTokenPair(erc20Address common.Address, denom string, contractOwner Owner) TokenPair {
-	return TokenPair{
+// NewTokenMapping returns an instance of TokenMapping
+func NewTokenMapping(erc20Address common.Address, denom string, contractOwner Owner) TokenMapping {
+	return TokenMapping{
 		Erc20Address:  erc20Address.String(),
 		Denom:         denom,
 		Enabled:       true,
@@ -40,18 +40,18 @@ func NewTokenPair(erc20Address common.Address, denom string, contractOwner Owner
 }
 
 // GetID returns the SHA256 hash of the ERC20 address and denomination
-func (tp TokenPair) GetID() []byte {
+func (tp TokenMapping) GetID() []byte {
 	id := tp.Erc20Address + "|" + tp.Denom
 	return tmhash.Sum([]byte(id))
 }
 
 // GetErc20Contract casts the hex string address of the ERC20 to common.Address
-func (tp TokenPair) GetERC20Contract() common.Address {
+func (tp TokenMapping) GetERC20Contract() common.Address {
 	return common.HexToAddress(tp.Erc20Address)
 }
 
-// Validate performs a stateless validation of a TokenPair
-func (tp TokenPair) Validate() error {
+// Validate performs a stateless validation of a TokenMapping
+func (tp TokenMapping) Validate() error {
 	if err := sdk.ValidateDenom(tp.Denom); err != nil {
 		return err
 	}
@@ -61,11 +61,11 @@ func (tp TokenPair) Validate() error {
 
 // IsNativeCoin returns true if the owner of the ERC20 contract is the
 // erc20 module account
-func (tp TokenPair) IsNativeCoin() bool {
+func (tp TokenMapping) IsNativeCoin() bool {
 	return tp.ContractOwner == OWNER_MODULE
 }
 
 // IsNativeERC20 returns true if the owner of the ERC20 contract is an EOA.
-func (tp TokenPair) IsNativeERC20() bool {
+func (tp TokenMapping) IsNativeERC20() bool {
 	return tp.ContractOwner == OWNER_EXTERNAL
 }

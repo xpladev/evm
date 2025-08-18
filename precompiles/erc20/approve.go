@@ -41,7 +41,7 @@ func (p Precompile) Approve(
 	// TODO: owner should be the owner of the contract
 	allowance, err := p.erc20Keeper.GetAllowance(ctx, p.Address(), owner, spender)
 	if err != nil {
-		return nil, sdkerrors.Wrap(err, fmt.Sprintf(ErrNoAllowanceForToken, p.tokenPair.Denom))
+		return nil, sdkerrors.Wrap(err, fmt.Sprintf(ErrNoAllowanceForToken, p.tokenMapping.Denom))
 	}
 
 	switch {

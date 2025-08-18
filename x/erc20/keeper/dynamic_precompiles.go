@@ -16,8 +16,8 @@ import (
 // EVM extension as an active dynamic precompile.
 //
 // CONTRACT: This must ONLY be called if there is no existing token pair for the given denom.
-func (k Keeper) RegisterERC20Extension(ctx sdk.Context, denom string) (*types.TokenPair, error) {
-	pair, err := k.CreateNewTokenPair(ctx, denom)
+func (k Keeper) RegisterERC20Extension(ctx sdk.Context, denom string) (*types.TokenMapping, error) {
+	pair, err := k.CreateNewTokenMapping(ctx, denom)
 	if err != nil {
 		return nil, err
 	}

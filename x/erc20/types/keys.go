@@ -27,9 +27,9 @@ func init() {
 
 // prefix bytes for the ERC-20 persistent store
 const (
-	prefixTokenPair = iota + 1
-	prefixTokenPairByERC20
-	prefixTokenPairByDenom
+	prefixTokenMapping = iota + 1
+	prefixTokenMappingByERC20
+	prefixTokenMappingByDenom
 	prefixSTRv2Addresses
 	prefixAllowance
 	prefixNativePrecompiles
@@ -38,13 +38,13 @@ const (
 
 // KVStore key prefixes
 var (
-	KeyPrefixTokenPair          = []byte{prefixTokenPair}
-	KeyPrefixTokenPairByERC20   = []byte{prefixTokenPairByERC20}
-	KeyPrefixTokenPairByDenom   = []byte{prefixTokenPairByDenom}
-	KeyPrefixSTRv2Addresses     = []byte{prefixSTRv2Addresses}
-	KeyPrefixAllowance          = []byte{prefixAllowance}
-	KeyPrefixNativePrecompiles  = []byte{prefixNativePrecompiles}
-	KeyPrefixDynamicPrecompiles = []byte{prefixDynamicPrecompiles}
+	KeyPrefixTokenMapping        = []byte{prefixTokenMapping}
+	KeyPrefixTokenMappingByERC20 = []byte{prefixTokenMappingByERC20}
+	KeyPrefixTokenMappingByDenom = []byte{prefixTokenMappingByDenom}
+	KeyPrefixSTRv2Addresses      = []byte{prefixSTRv2Addresses}
+	KeyPrefixAllowance           = []byte{prefixAllowance}
+	KeyPrefixNativePrecompiles   = []byte{prefixNativePrecompiles}
+	KeyPrefixDynamicPrecompiles  = []byte{prefixDynamicPrecompiles}
 )
 
 func AllowanceKey(

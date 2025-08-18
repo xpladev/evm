@@ -124,20 +124,20 @@ func TestPrecompileIntegrationTestSuite(t *testing.T, create network.CreateEvmAp
 			_, found := is.network.App.GetBankKeeper().GetDenomMetaData(ctx, evmtypes.GetEVMCoinDenom())
 			Expect(found).To(BeTrue(), "expected native token metadata to be registered")
 
-			// Check that WEVMOS is registered in the token pairs map.
-			tokenPairID := is.network.App.GetErc20Keeper().GetTokenPairID(ctx, is.wrappedCoinDenom)
-			tokenPair, found := is.network.App.GetErc20Keeper().GetTokenPair(ctx, tokenPairID)
+			// Check that WEVMOS is registered in the token mappings.
+			tokenMappingID := is.network.App.GetErc20Keeper().GetTokenMappingID(ctx, is.wrappedCoinDenom)
+			tokenMapping, found := is.network.App.GetErc20Keeper().GetTokenMapping(ctx, tokenMappingID)
 			Expect(found).To(BeTrue(), "expected wevmos precompile to be registered in the tokens map")
-			Expect(tokenPair.Erc20Address).To(Equal(is.precompileAddrHex))
+			Expect(tokenMapping.Erc20Address).To(Equal(is.precompileAddrHex))
 
 			precompileAddr := common.HexToAddress(is.precompileAddrHex)
-			tokenPair = erc20types.NewTokenPair(
+			tokenMapping = erc20types.NewTokenMapping(
 				precompileAddr,
 				evmtypes.GetEVMCoinDenom(),
 				erc20types.OWNER_MODULE,
 			)
 			precompile, err := werc20.NewPrecompile(
-				tokenPair,
+				tokenMapping,
 				is.network.App.GetBankKeeper(),
 				is.network.App.GetErc20Keeper(),
 				is.network.App.GetTransferKeeper(),

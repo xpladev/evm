@@ -273,15 +273,15 @@ func (suite *MiddlewareV2TestSuite) TestOnRecvPacket() {
 				voucherDenom := testutil.GetVoucherDenomFromPacketData(data, payload.GetSourcePort(), sourceClient)
 				voucherCoin := evmApp.BankKeeper.GetBalance(ctx, receiver, voucherDenom)
 				suite.Require().Equal(sendAmt.String(), voucherCoin.Amount.String())
-				// make sure token pair is registered
-				singleTokenRepresentation, err := types.NewTokenPairSTRv2(voucherDenom)
+				// make sure token mapping is registered
+				singleTokenRepresentation, err := types.NewTokenMappingSTRv2(voucherDenom)
 				suite.Require().NoError(err)
-				tokenPair, found := evmApp.Erc20Keeper.GetTokenPair(ctx, singleTokenRepresentation.GetID())
+				tokenMapping, found := evmApp.Erc20Keeper.GetTokenMapping(ctx, singleTokenRepresentation.GetID())
 				suite.Require().True(found)
-				suite.Require().Equal(voucherDenom, tokenPair.Denom)
+				suite.Require().Equal(voucherDenom, tokenMapping.Denom)
 
 				// Make sure dynamic precompile is registered
-				available := evmApp.Erc20Keeper.IsDynamicPrecompileAvailable(ctx, common.HexToAddress(tokenPair.Erc20Address))
+				available := evmApp.Erc20Keeper.IsDynamicPrecompileAvailable(ctx, common.HexToAddress(tokenMapping.Erc20Address))
 				suite.Require().True(available)
 			}
 		})

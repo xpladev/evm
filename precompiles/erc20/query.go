@@ -45,12 +45,12 @@ func (p Precompile) Name(
 	method *abi.Method,
 	_ []interface{},
 ) ([]byte, error) {
-	metadata, found := p.BankKeeper.GetDenomMetaData(ctx, p.tokenPair.Denom)
+	metadata, found := p.BankKeeper.GetDenomMetaData(ctx, p.tokenMapping.Denom)
 	if found {
 		return method.Outputs.Pack(metadata.Name)
 	}
 
-	baseDenom, err := p.getBaseDenomFromIBCVoucher(ctx, p.tokenPair.Denom)
+	baseDenom, err := p.getBaseDenomFromIBCVoucher(ctx, p.tokenMapping.Denom)
 	if err != nil {
 		return nil, ConvertErrToERC20Error(err)
 	}
@@ -69,12 +69,12 @@ func (p Precompile) Symbol(
 	method *abi.Method,
 	_ []interface{},
 ) ([]byte, error) {
-	metadata, found := p.BankKeeper.GetDenomMetaData(ctx, p.tokenPair.Denom)
+	metadata, found := p.BankKeeper.GetDenomMetaData(ctx, p.tokenMapping.Denom)
 	if found {
 		return method.Outputs.Pack(metadata.Symbol)
 	}
 
-	baseDenom, err := p.getBaseDenomFromIBCVoucher(ctx, p.tokenPair.Denom)
+	baseDenom, err := p.getBaseDenomFromIBCVoucher(ctx, p.tokenMapping.Denom)
 	if err != nil {
 		return nil, ConvertErrToERC20Error(err)
 	}
@@ -93,9 +93,9 @@ func (p Precompile) Decimals(
 	method *abi.Method,
 	_ []interface{},
 ) ([]byte, error) {
-	metadata, found := p.BankKeeper.GetDenomMetaData(ctx, p.tokenPair.Denom)
+	metadata, found := p.BankKeeper.GetDenomMetaData(ctx, p.tokenMapping.Denom)
 	if !found {
-		denom, err := ibc.GetDenom(p.transferKeeper, ctx, p.tokenPair.Denom)
+		denom, err := ibc.GetDenom(p.transferKeeper, ctx, p.tokenMapping.Denom)
 		if err != nil {
 			return nil, ConvertErrToERC20Error(err)
 		}
@@ -123,7 +123,7 @@ func (p Precompile) Decimals(
 	if !displayFound {
 		return nil, ConvertErrToERC20Error(fmt.Errorf(
 			"display denomination not found for denom: %q",
-			p.tokenPair.Denom,
+			p.tokenMapping.Denom,
 		))
 	}
 
@@ -146,7 +146,7 @@ func (p Precompile) TotalSupply(
 	method *abi.Method,
 	_ []interface{},
 ) ([]byte, error) {
-	supply := p.BankKeeper.GetSupply(ctx, p.tokenPair.Denom)
+	supply := p.BankKeeper.GetSupply(ctx, p.tokenMapping.Denom)
 
 	return method.Outputs.Pack(supply.Amount.BigInt())
 }
@@ -165,7 +165,7 @@ func (p Precompile) BalanceOf(
 		return nil, err
 	}
 
-	balance := p.BankKeeper.SpendableCoin(ctx, account.Bytes(), p.tokenPair.Denom)
+	balance := p.BankKeeper.SpendableCoin(ctx, account.Bytes(), p.tokenMapping.Denom)
 
 	return method.Outputs.Pack(balance.Amount.BigInt())
 }

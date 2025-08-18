@@ -22,19 +22,19 @@ func GetQueryCmd() *cobra.Command {
 	}
 
 	cmd.AddCommand(
-		GetTokenPairsCmd(),
-		GetTokenPairCmd(),
+		GetTokenMappingsCmd(),
+		GetTokenMappingCmd(),
 		GetParamsCmd(),
 	)
 	return cmd
 }
 
-// GetTokenPairsCmd queries all registered token pairs
-func GetTokenPairsCmd() *cobra.Command {
+// GetTokenMappingsCmd queries all registered token mappings
+func GetTokenMappingsCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "token-pairs",
-		Short: "Gets registered token pairs",
-		Long:  "Gets registered token pairs",
+		Use:   "token-mappings",
+		Short: "Gets registered token mappings",
+		Long:  "Gets registered token mappings",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)
@@ -49,11 +49,11 @@ func GetTokenPairsCmd() *cobra.Command {
 				return err
 			}
 
-			req := &types.QueryTokenPairsRequest{
+			req := &types.QueryTokenMappingsRequest{
 				Pagination: pageReq,
 			}
 
-			res, err := queryClient.TokenPairs(context.Background(), req)
+			res, err := queryClient.TokenMappings(context.Background(), req)
 			if err != nil {
 				return err
 			}
@@ -66,12 +66,12 @@ func GetTokenPairsCmd() *cobra.Command {
 	return cmd
 }
 
-// GetTokenPairsCmd queries a registered token pair
-func GetTokenPairCmd() *cobra.Command {
+// GetTokenMappingCmd queries a registered token mapping
+func GetTokenMappingCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "token-pair TOKEN",
-		Short: "Get a registered token pair",
-		Long:  "Get a registered token pair",
+		Use:   "token-mapping TOKEN",
+		Short: "Get a registered token mapping",
+		Long:  "Get a registered token mapping",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)
@@ -81,11 +81,11 @@ func GetTokenPairCmd() *cobra.Command {
 
 			queryClient := types.NewQueryClient(clientCtx)
 
-			req := &types.QueryTokenPairRequest{
+			req := &types.QueryTokenMappingRequest{
 				Token: args[0],
 			}
 
-			res, err := queryClient.TokenPair(context.Background(), req)
+			res, err := queryClient.TokenMapping(context.Background(), req)
 			if err != nil {
 				return err
 			}

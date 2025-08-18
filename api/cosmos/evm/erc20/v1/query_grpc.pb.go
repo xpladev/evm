@@ -19,19 +19,19 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Query_TokenPairs_FullMethodName = "/cosmos.evm.erc20.v1.Query/TokenPairs"
-	Query_TokenPair_FullMethodName  = "/cosmos.evm.erc20.v1.Query/TokenPair"
-	Query_Params_FullMethodName     = "/cosmos.evm.erc20.v1.Query/Params"
+	Query_TokenMappings_FullMethodName = "/cosmos.evm.erc20.v1.Query/TokenMappings"
+	Query_TokenMapping_FullMethodName  = "/cosmos.evm.erc20.v1.Query/TokenMapping"
+	Query_Params_FullMethodName        = "/cosmos.evm.erc20.v1.Query/Params"
 )
 
 // QueryClient is the client API for Query service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type QueryClient interface {
-	// TokenPairs retrieves registered token pairs
-	TokenPairs(ctx context.Context, in *QueryTokenPairsRequest, opts ...grpc.CallOption) (*QueryTokenPairsResponse, error)
-	// TokenPair retrieves a registered token pair
-	TokenPair(ctx context.Context, in *QueryTokenPairRequest, opts ...grpc.CallOption) (*QueryTokenPairResponse, error)
+	// TokenMappings retrieves registered token mappings
+	TokenMappings(ctx context.Context, in *QueryTokenMappingsRequest, opts ...grpc.CallOption) (*QueryTokenMappingsResponse, error)
+	// TokenMapping retrieves a registered token mapping
+	TokenMapping(ctx context.Context, in *QueryTokenMappingRequest, opts ...grpc.CallOption) (*QueryTokenMappingResponse, error)
 	// Params retrieves the erc20 module params
 	Params(ctx context.Context, in *QueryParamsRequest, opts ...grpc.CallOption) (*QueryParamsResponse, error)
 }
@@ -44,18 +44,18 @@ func NewQueryClient(cc grpc.ClientConnInterface) QueryClient {
 	return &queryClient{cc}
 }
 
-func (c *queryClient) TokenPairs(ctx context.Context, in *QueryTokenPairsRequest, opts ...grpc.CallOption) (*QueryTokenPairsResponse, error) {
-	out := new(QueryTokenPairsResponse)
-	err := c.cc.Invoke(ctx, Query_TokenPairs_FullMethodName, in, out, opts...)
+func (c *queryClient) TokenMappings(ctx context.Context, in *QueryTokenMappingsRequest, opts ...grpc.CallOption) (*QueryTokenMappingsResponse, error) {
+	out := new(QueryTokenMappingsResponse)
+	err := c.cc.Invoke(ctx, Query_TokenMappings_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *queryClient) TokenPair(ctx context.Context, in *QueryTokenPairRequest, opts ...grpc.CallOption) (*QueryTokenPairResponse, error) {
-	out := new(QueryTokenPairResponse)
-	err := c.cc.Invoke(ctx, Query_TokenPair_FullMethodName, in, out, opts...)
+func (c *queryClient) TokenMapping(ctx context.Context, in *QueryTokenMappingRequest, opts ...grpc.CallOption) (*QueryTokenMappingResponse, error) {
+	out := new(QueryTokenMappingResponse)
+	err := c.cc.Invoke(ctx, Query_TokenMapping_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -75,10 +75,10 @@ func (c *queryClient) Params(ctx context.Context, in *QueryParamsRequest, opts .
 // All implementations must embed UnimplementedQueryServer
 // for forward compatibility
 type QueryServer interface {
-	// TokenPairs retrieves registered token pairs
-	TokenPairs(context.Context, *QueryTokenPairsRequest) (*QueryTokenPairsResponse, error)
-	// TokenPair retrieves a registered token pair
-	TokenPair(context.Context, *QueryTokenPairRequest) (*QueryTokenPairResponse, error)
+	// TokenMappings retrieves registered token mappings
+	TokenMappings(context.Context, *QueryTokenMappingsRequest) (*QueryTokenMappingsResponse, error)
+	// TokenMapping retrieves a registered token mapping
+	TokenMapping(context.Context, *QueryTokenMappingRequest) (*QueryTokenMappingResponse, error)
 	// Params retrieves the erc20 module params
 	Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error)
 	mustEmbedUnimplementedQueryServer()
@@ -88,11 +88,11 @@ type QueryServer interface {
 type UnimplementedQueryServer struct {
 }
 
-func (UnimplementedQueryServer) TokenPairs(context.Context, *QueryTokenPairsRequest) (*QueryTokenPairsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method TokenPairs not implemented")
+func (UnimplementedQueryServer) TokenMappings(context.Context, *QueryTokenMappingsRequest) (*QueryTokenMappingsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method TokenMappings not implemented")
 }
-func (UnimplementedQueryServer) TokenPair(context.Context, *QueryTokenPairRequest) (*QueryTokenPairResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method TokenPair not implemented")
+func (UnimplementedQueryServer) TokenMapping(context.Context, *QueryTokenMappingRequest) (*QueryTokenMappingResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method TokenMapping not implemented")
 }
 func (UnimplementedQueryServer) Params(context.Context, *QueryParamsRequest) (*QueryParamsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Params not implemented")
@@ -110,38 +110,38 @@ func RegisterQueryServer(s grpc.ServiceRegistrar, srv QueryServer) {
 	s.RegisterService(&Query_ServiceDesc, srv)
 }
 
-func _Query_TokenPairs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryTokenPairsRequest)
+func _Query_TokenMappings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryTokenMappingsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(QueryServer).TokenPairs(ctx, in)
+		return srv.(QueryServer).TokenMappings(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Query_TokenPairs_FullMethodName,
+		FullMethod: Query_TokenMappings_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).TokenPairs(ctx, req.(*QueryTokenPairsRequest))
+		return srv.(QueryServer).TokenMappings(ctx, req.(*QueryTokenMappingsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Query_TokenPair_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryTokenPairRequest)
+func _Query_TokenMapping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryTokenMappingRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(QueryServer).TokenPair(ctx, in)
+		return srv.(QueryServer).TokenMapping(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Query_TokenPair_FullMethodName,
+		FullMethod: Query_TokenMapping_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(QueryServer).TokenPair(ctx, req.(*QueryTokenPairRequest))
+		return srv.(QueryServer).TokenMapping(ctx, req.(*QueryTokenMappingRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -172,12 +172,12 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*QueryServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "TokenPairs",
-			Handler:    _Query_TokenPairs_Handler,
+			MethodName: "TokenMappings",
+			Handler:    _Query_TokenMappings_Handler,
 		},
 		{
-			MethodName: "TokenPair",
-			Handler:    _Query_TokenPair_Handler,
+			MethodName: "TokenMapping",
+			Handler:    _Query_TokenMapping_Handler,
 		},
 		{
 			MethodName: "Params",

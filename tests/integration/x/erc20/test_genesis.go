@@ -53,7 +53,7 @@ func (s *GenesisTestSuite) TestERC20InitGenesis() {
 			name: "custom genesis",
 			genesisState: types.NewGenesisState(
 				types.DefaultParams(),
-				[]types.TokenPair{
+				[]types.TokenMapping{
 					{
 						Erc20Address:  osmoERC20ContractAddr,
 						Denom:         osmoDenom.IBCDenom(),
@@ -68,7 +68,7 @@ func (s *GenesisTestSuite) TestERC20InitGenesis() {
 			name: "custom genesis with allowances and enabled token pair",
 			genesisState: types.NewGenesisState(
 				types.DefaultParams(),
-				[]types.TokenPair{
+				[]types.TokenMapping{
 					{
 						Erc20Address:  osmoERC20ContractAddr,
 						Denom:         osmoDenom.IBCDenom(),
@@ -90,7 +90,7 @@ func (s *GenesisTestSuite) TestERC20InitGenesis() {
 			name: "custom genesis with allowances and disabled token pair",
 			genesisState: types.NewGenesisState(
 				types.DefaultParams(),
-				[]types.TokenPair{
+				[]types.TokenMapping{
 					{
 						Erc20Address:  osmoERC20ContractAddr,
 						Denom:         osmoDenom.IBCDenom(),
@@ -122,12 +122,12 @@ func (s *GenesisTestSuite) TestERC20InitGenesis() {
 
 		params := nw.App.GetErc20Keeper().GetParams(nw.GetContext())
 
-		tokenPairs := nw.App.GetErc20Keeper().GetTokenPairs(nw.GetContext())
+		tokenMappings := nw.App.GetErc20Keeper().GetTokenMappings(nw.GetContext())
 		s.Require().Equal(tc.genesisState.Params, params)
-		if len(tokenPairs) > 0 {
-			s.Require().Equal(tc.genesisState.TokenPairs, tokenPairs, tc.name)
+		if len(tokenMappings) > 0 {
+			s.Require().Equal(tc.genesisState.TokenMappings, tokenMappings, tc.name)
 		} else {
-			s.Require().Len(tc.genesisState.TokenPairs, 0, tc.name)
+			s.Require().Len(tc.genesisState.TokenMappings, 0, tc.name)
 		}
 
 		allowances := nw.App.GetErc20Keeper().GetAllowances(nw.GetContext())
@@ -156,7 +156,7 @@ func (s *GenesisTestSuite) TestErc20ExportGenesis() {
 			name: "custom genesis with empty allowance",
 			genesisState: types.NewGenesisState(
 				types.DefaultParams(),
-				[]types.TokenPair{
+				[]types.TokenMapping{
 					{
 						Erc20Address:  osmoERC20ContractAddr,
 						Denom:         osmoDenom.IBCDenom(),
@@ -171,7 +171,7 @@ func (s *GenesisTestSuite) TestErc20ExportGenesis() {
 			name: "custom genesis with allowances",
 			genesisState: types.NewGenesisState(
 				types.DefaultParams(),
-				[]types.TokenPair{
+				[]types.TokenMapping{
 					{
 						Erc20Address:  osmoERC20ContractAddr,
 						Denom:         osmoDenom.IBCDenom(),
@@ -205,11 +205,11 @@ func (s *GenesisTestSuite) TestErc20ExportGenesis() {
 			params := s.network.App.GetErc20Keeper().GetParams(s.network.GetContext())
 			s.Require().Equal(genesisExported.Params, params)
 
-			tokenPairs := s.network.App.GetErc20Keeper().GetTokenPairs(s.network.GetContext())
+			tokenPairs := s.network.App.GetErc20Keeper().GetTokenMappings(s.network.GetContext())
 			if len(tokenPairs) > 0 {
-				s.Require().Equal(genesisExported.TokenPairs, tokenPairs)
+				s.Require().Equal(genesisExported.TokenMappings, tokenPairs)
 			} else {
-				s.Require().Len(genesisExported.TokenPairs, 0)
+				s.Require().Len(genesisExported.TokenMappings, 0)
 			}
 		})
 	}

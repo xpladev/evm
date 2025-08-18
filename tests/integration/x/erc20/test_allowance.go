@@ -31,7 +31,7 @@ func (s *KeeperTestSuite) TestGetAllowance() {
 		errContains string
 	}{
 		{
-			"fail - token pair does not exist",
+			"fail - token mapping does not exist",
 			func() {
 				expRes = common.Big0
 			},
@@ -39,11 +39,11 @@ func (s *KeeperTestSuite) TestGetAllowance() {
 			"",
 		},
 		{
-			"pass - token pair is disabled",
+			"pass - token mapping is disabled",
 			func() {
-				pair := types.NewTokenPair(erc20Addr, "coin", types.OWNER_MODULE)
-				pair.Enabled = false
-				err := s.network.App.GetErc20Keeper().SetToken(ctx, pair)
+				mapping := types.NewTokenMapping(erc20Addr, "coin", types.OWNER_MODULE)
+				mapping.Enabled = false
+				err := s.network.App.GetErc20Keeper().SetToken(ctx, mapping)
 				s.Require().NoError(err)
 				expRes = common.Big0
 			},
@@ -53,8 +53,8 @@ func (s *KeeperTestSuite) TestGetAllowance() {
 		{
 			"pass - allowance does not exist",
 			func() {
-				pair := types.NewTokenPair(erc20Addr, "coin", types.OWNER_MODULE)
-				err := s.network.App.GetErc20Keeper().SetToken(ctx, pair)
+				mapping := types.NewTokenMapping(erc20Addr, "coin", types.OWNER_MODULE)
+				err := s.network.App.GetErc20Keeper().SetToken(ctx, mapping)
 				s.Require().NoError(err)
 				expRes = common.Big0
 			},
@@ -64,9 +64,9 @@ func (s *KeeperTestSuite) TestGetAllowance() {
 		{
 			"pass",
 			func() {
-				// Set TokenPair
-				pair := types.NewTokenPair(erc20Addr, "coin", types.OWNER_MODULE)
-				err := s.network.App.GetErc20Keeper().SetToken(ctx, pair)
+				// Set TokenMapping
+				mapping := types.NewTokenMapping(erc20Addr, "coin", types.OWNER_MODULE)
+				err := s.network.App.GetErc20Keeper().SetToken(ctx, mapping)
 				s.Require().NoError(err)
 
 				// Set Allowance
@@ -122,27 +122,27 @@ func (s *KeeperTestSuite) TestSetAllowance() {
 		errContains string
 	}{
 		{
-			"fail - no token pair exists",
+			"fail - no token mapping exists",
 			func() {},
 			false,
-			types.ErrTokenPairNotFound.Error(),
+			types.ErrTokenMappingNotFound.Error(),
 		},
 		{
-			"fail - token pair is disabled",
+			"fail - token mapping is disabled",
 			func() {
-				pair := types.NewTokenPair(erc20Addr, "coin", types.OWNER_MODULE)
-				pair.Enabled = false
-				err := s.network.App.GetErc20Keeper().SetToken(ctx, pair)
+				mapping := types.NewTokenMapping(erc20Addr, "coin", types.OWNER_MODULE)
+				mapping.Enabled = false
+				err := s.network.App.GetErc20Keeper().SetToken(ctx, mapping)
 				s.Require().NoError(err)
 			},
 			false,
-			types.ErrERC20TokenPairDisabled.Error(),
+			types.ErrERC20TokenMappingDisabled.Error(),
 		},
 		{
 			"fail - zero owner address",
 			func() {
-				pair := types.NewTokenPair(erc20Addr, "coin", types.OWNER_MODULE)
-				err := s.network.App.GetErc20Keeper().SetToken(ctx, pair)
+				mapping := types.NewTokenMapping(erc20Addr, "coin", types.OWNER_MODULE)
+				err := s.network.App.GetErc20Keeper().SetToken(ctx, mapping)
 				s.Require().NoError(err)
 				owner = common.HexToAddress("0x0")
 			},
@@ -152,8 +152,8 @@ func (s *KeeperTestSuite) TestSetAllowance() {
 		{
 			"fail - zero spender address",
 			func() {
-				pair := types.NewTokenPair(erc20Addr, "coin", types.OWNER_MODULE)
-				err := s.network.App.GetErc20Keeper().SetToken(ctx, pair)
+				mapping := types.NewTokenMapping(erc20Addr, "coin", types.OWNER_MODULE)
+				err := s.network.App.GetErc20Keeper().SetToken(ctx, mapping)
 				s.Require().NoError(err)
 				spender = common.HexToAddress("0x0")
 			},
@@ -163,8 +163,8 @@ func (s *KeeperTestSuite) TestSetAllowance() {
 		{
 			"fail - negative value",
 			func() {
-				pair := types.NewTokenPair(erc20Addr, "coin", types.OWNER_MODULE)
-				err := s.network.App.GetErc20Keeper().SetToken(ctx, pair)
+				mapping := types.NewTokenMapping(erc20Addr, "coin", types.OWNER_MODULE)
+				err := s.network.App.GetErc20Keeper().SetToken(ctx, mapping)
 				s.Require().NoError(err)
 				value = big.NewInt(-100)
 			},
@@ -174,8 +174,8 @@ func (s *KeeperTestSuite) TestSetAllowance() {
 		{
 			"pass - zero value",
 			func() {
-				pair := types.NewTokenPair(erc20Addr, "coin", types.OWNER_MODULE)
-				err := s.network.App.GetErc20Keeper().SetToken(ctx, pair)
+				mapping := types.NewTokenMapping(erc20Addr, "coin", types.OWNER_MODULE)
+				err := s.network.App.GetErc20Keeper().SetToken(ctx, mapping)
 				s.Require().NoError(err)
 				value = big.NewInt(0)
 			},
@@ -185,8 +185,8 @@ func (s *KeeperTestSuite) TestSetAllowance() {
 		{
 			"pass - positive value",
 			func() {
-				pair := types.NewTokenPair(erc20Addr, "coin", types.OWNER_MODULE)
-				err := s.network.App.GetErc20Keeper().SetToken(ctx, pair)
+				mapping := types.NewTokenMapping(erc20Addr, "coin", types.OWNER_MODULE)
+				err := s.network.App.GetErc20Keeper().SetToken(ctx, mapping)
 				s.Require().NoError(err)
 				value = big.NewInt(100)
 			},
@@ -237,17 +237,17 @@ func (s *KeeperTestSuite) TestUnsafeSetAllowance() {
 		errContains string
 	}{
 		{
-			"fail - no token pair exists",
+			"fail - no token mapping exists",
 			func() {},
 			false,
-			types.ErrTokenPairNotFound.Error(),
+			types.ErrTokenMappingNotFound.Error(),
 		},
 		{
-			"pass - token pair is disabled",
+			"pass - token mapping is disabled",
 			func() {
-				pair := types.NewTokenPair(erc20Addr, "coin", types.OWNER_MODULE)
-				pair.Enabled = false
-				err := s.network.App.GetErc20Keeper().SetToken(ctx, pair)
+				mapping := types.NewTokenMapping(erc20Addr, "coin", types.OWNER_MODULE)
+				mapping.Enabled = false
+				err := s.network.App.GetErc20Keeper().SetToken(ctx, mapping)
 				s.Require().NoError(err)
 			},
 			true,
@@ -256,8 +256,8 @@ func (s *KeeperTestSuite) TestUnsafeSetAllowance() {
 		{
 			"fail - zero owner address",
 			func() {
-				pair := types.NewTokenPair(erc20Addr, "coin", types.OWNER_MODULE)
-				err := s.network.App.GetErc20Keeper().SetToken(ctx, pair)
+				mapping := types.NewTokenMapping(erc20Addr, "coin", types.OWNER_MODULE)
+				err := s.network.App.GetErc20Keeper().SetToken(ctx, mapping)
 				s.Require().NoError(err)
 				owner = common.HexToAddress("0x0")
 			},
@@ -267,8 +267,8 @@ func (s *KeeperTestSuite) TestUnsafeSetAllowance() {
 		{
 			"fail - zero spender address",
 			func() {
-				pair := types.NewTokenPair(erc20Addr, "coin", types.OWNER_MODULE)
-				err := s.network.App.GetErc20Keeper().SetToken(ctx, pair)
+				mapping := types.NewTokenMapping(erc20Addr, "coin", types.OWNER_MODULE)
+				err := s.network.App.GetErc20Keeper().SetToken(ctx, mapping)
 				s.Require().NoError(err)
 				spender = common.HexToAddress("0x0")
 			},
@@ -278,8 +278,8 @@ func (s *KeeperTestSuite) TestUnsafeSetAllowance() {
 		{
 			"fail - negative value",
 			func() {
-				pair := types.NewTokenPair(erc20Addr, "coin", types.OWNER_MODULE)
-				err := s.network.App.GetErc20Keeper().SetToken(ctx, pair)
+				mapping := types.NewTokenMapping(erc20Addr, "coin", types.OWNER_MODULE)
+				err := s.network.App.GetErc20Keeper().SetToken(ctx, mapping)
 				s.Require().NoError(err)
 				value = big.NewInt(-100)
 			},
@@ -289,8 +289,8 @@ func (s *KeeperTestSuite) TestUnsafeSetAllowance() {
 		{
 			"pass - zero value",
 			func() {
-				pair := types.NewTokenPair(erc20Addr, "coin", types.OWNER_MODULE)
-				err := s.network.App.GetErc20Keeper().SetToken(ctx, pair)
+				mapping := types.NewTokenMapping(erc20Addr, "coin", types.OWNER_MODULE)
+				err := s.network.App.GetErc20Keeper().SetToken(ctx, mapping)
 				s.Require().NoError(err)
 				value = big.NewInt(0)
 			},
@@ -300,8 +300,8 @@ func (s *KeeperTestSuite) TestUnsafeSetAllowance() {
 		{
 			"pass - positive value",
 			func() {
-				pair := types.NewTokenPair(erc20Addr, "coin", types.OWNER_MODULE)
-				err := s.network.App.GetErc20Keeper().SetToken(ctx, pair)
+				mapping := types.NewTokenMapping(erc20Addr, "coin", types.OWNER_MODULE)
+				err := s.network.App.GetErc20Keeper().SetToken(ctx, mapping)
 				s.Require().NoError(err)
 				value = big.NewInt(100)
 			},
@@ -350,27 +350,27 @@ func (s *KeeperTestSuite) TestDeleteAllowance() {
 		errContains string
 	}{
 		{
-			"fail - no token pair exists",
+			"fail - no token mapping exists",
 			func() {},
 			false,
-			types.ErrTokenPairNotFound.Error(),
+			types.ErrTokenMappingNotFound.Error(),
 		},
 		{
-			"fail - token pair is disabled",
+			"fail - token mapping is disabled",
 			func() {
-				pair := types.NewTokenPair(erc20Addr, "coin", types.OWNER_MODULE)
-				pair.Enabled = false
-				err := s.network.App.GetErc20Keeper().SetToken(ctx, pair)
+				mapping := types.NewTokenMapping(erc20Addr, "coin", types.OWNER_MODULE)
+				mapping.Enabled = false
+				err := s.network.App.GetErc20Keeper().SetToken(ctx, mapping)
 				s.Require().NoError(err)
 			},
 			false,
-			types.ErrERC20TokenPairDisabled.Error(),
+			types.ErrERC20TokenMappingDisabled.Error(),
 		},
 		{
 			"fail - zero owner address",
 			func() {
-				pair := types.NewTokenPair(erc20Addr, "coin", types.OWNER_MODULE)
-				err := s.network.App.GetErc20Keeper().SetToken(ctx, pair)
+				mapping := types.NewTokenMapping(erc20Addr, "coin", types.OWNER_MODULE)
+				err := s.network.App.GetErc20Keeper().SetToken(ctx, mapping)
 				s.Require().NoError(err)
 				owner = common.HexToAddress("0x0")
 			},
@@ -380,8 +380,8 @@ func (s *KeeperTestSuite) TestDeleteAllowance() {
 		{
 			"fail - zero spender address",
 			func() {
-				pair := types.NewTokenPair(erc20Addr, "coin", types.OWNER_MODULE)
-				err := s.network.App.GetErc20Keeper().SetToken(ctx, pair)
+				mapping := types.NewTokenMapping(erc20Addr, "coin", types.OWNER_MODULE)
+				err := s.network.App.GetErc20Keeper().SetToken(ctx, mapping)
 				s.Require().NoError(err)
 				spender = common.HexToAddress("0x0")
 			},
@@ -391,8 +391,8 @@ func (s *KeeperTestSuite) TestDeleteAllowance() {
 		{
 			"pass - for non-existing allowance",
 			func() {
-				pair := types.NewTokenPair(erc20Addr, "coin", types.OWNER_MODULE)
-				err := s.network.App.GetErc20Keeper().SetToken(ctx, pair)
+				mapping := types.NewTokenMapping(erc20Addr, "coin", types.OWNER_MODULE)
+				err := s.network.App.GetErc20Keeper().SetToken(ctx, mapping)
 				s.Require().NoError(err)
 			},
 			true,
@@ -437,40 +437,40 @@ func (s *KeeperTestSuite) TestGetAllowances() {
 			// NOTES: This case doesn’t actually occur in practice.
 			// It is because, while Allowances exist only for the ERC20 precompile,
 			// only ERC20 token that was initially deployed on EVM state can be deleted.
-			"pass - even if token pair were deleted, allowances are deleted together and returns empty allowances",
+			"pass - even if token mapping were deleted, allowances are deleted together and returns empty allowances",
 			func() {
-				pair := types.NewTokenPair(erc20Addr, "coin", types.OWNER_MODULE)
-				err := s.network.App.GetErc20Keeper().SetToken(ctx, pair)
+				mapping := types.NewTokenMapping(erc20Addr, "coin", types.OWNER_MODULE)
+				err := s.network.App.GetErc20Keeper().SetToken(ctx, mapping)
 				s.Require().NoError(err)
 
 				err = s.network.App.GetErc20Keeper().SetAllowance(ctx, erc20Addr, owner, spender, value)
 				s.Require().NoError(err)
 
-				// Delete TokenPair
-				s.network.App.GetErc20Keeper().DeleteTokenPair(ctx, pair)
+				// Delete TokenMapping
+				s.network.App.GetErc20Keeper().DeleteTokenMapping(ctx, mapping)
 
 				expRes = []types.Allowance{}
 			},
 		},
 		{
 			// NOTES: GetAllowances() is only for genesis import & export.
-			// Because disabled token pair can be enabled later,
-			// when allowances related to disabled token pair should also be included in the exported state.
-			"pass - even if token pair is disabled, return allowances",
+			// Because disabled token mapping can be enabled later,
+			// when allowances related to disabled token mapping should also be included in the exported state.
+			"pass - even if token mapping is disabled, return allowances",
 			func() {
-				pair := types.NewTokenPair(erc20Addr, "coin", types.OWNER_MODULE)
-				err := s.network.App.GetErc20Keeper().SetToken(ctx, pair)
+				mapping := types.NewTokenMapping(erc20Addr, "coin", types.OWNER_MODULE)
+				err := s.network.App.GetErc20Keeper().SetToken(ctx, mapping)
 				s.Require().NoError(err)
 
 				err = s.network.App.GetErc20Keeper().SetAllowance(ctx, erc20Addr, owner, spender, value)
 				s.Require().NoError(err)
 
-				pair.Enabled = false
-				s.network.App.GetErc20Keeper().SetTokenPair(ctx, pair)
-				pairID := s.network.App.GetErc20Keeper().GetDenomMap(ctx, pair.Denom)
-				pair, ok := s.network.App.GetErc20Keeper().GetTokenPair(ctx, pairID)
+				mapping.Enabled = false
+				s.network.App.GetErc20Keeper().SetTokenMapping(ctx, mapping)
+				mappingID := s.network.App.GetErc20Keeper().GetDenomMap(ctx, mapping.Denom)
+				mapping, ok := s.network.App.GetErc20Keeper().GetTokenMapping(ctx, mappingID)
 				s.Require().True(ok)
-				s.Require().False(pair.Enabled)
+				s.Require().False(mapping.Enabled)
 
 				expRes = []types.Allowance{
 					{
@@ -491,8 +491,8 @@ func (s *KeeperTestSuite) TestGetAllowances() {
 		{
 			"pass",
 			func() {
-				pair := types.NewTokenPair(erc20Addr, "coin", types.OWNER_MODULE)
-				err := s.network.App.GetErc20Keeper().SetToken(ctx, pair)
+				mapping := types.NewTokenMapping(erc20Addr, "coin", types.OWNER_MODULE)
+				err := s.network.App.GetErc20Keeper().SetToken(ctx, mapping)
 				s.Require().NoError(err)
 
 				err = s.network.App.GetErc20Keeper().SetAllowance(ctx, erc20Addr, owner, spender, value)

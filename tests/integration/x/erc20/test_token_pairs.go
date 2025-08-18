@@ -12,10 +12,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-func (s *KeeperTestSuite) TestGetTokenPairs() {
+func (s *KeeperTestSuite) TestGetTokenMappings() {
 	var (
 		ctx    sdk.Context
-		expRes []types.TokenPair
+		expRes []types.TokenMapping
 	)
 
 	testCases := []struct {
@@ -23,26 +23,26 @@ func (s *KeeperTestSuite) TestGetTokenPairs() {
 		malleate func()
 	}{
 		{
-			"no pair registered", func() { expRes = testconstants.ExampleTokenPairs },
+			"no mapping registered", func() { expRes = testconstants.ExampleTokenMappings },
 		},
 		{
-			"1 pair registered",
+			"1 mapping registered",
 			func() {
-				pair := types.NewTokenPair(utiltx.GenerateAddress(), "coin", types.OWNER_MODULE)
-				s.network.App.GetErc20Keeper().SetTokenPair(ctx, pair)
-				expRes = testconstants.ExampleTokenPairs
-				expRes = append(expRes, pair)
+				mapping := types.NewTokenMapping(utiltx.GenerateAddress(), "coin", types.OWNER_MODULE)
+				s.network.App.GetErc20Keeper().SetTokenMapping(ctx, mapping)
+				expRes = testconstants.ExampleTokenMappings
+				expRes = append(expRes, mapping)
 			},
 		},
 		{
-			"2 pairs registered",
+			"2 mappings registered",
 			func() {
-				pair := types.NewTokenPair(utiltx.GenerateAddress(), "coin", types.OWNER_MODULE)
-				pair2 := types.NewTokenPair(utiltx.GenerateAddress(), "coin2", types.OWNER_MODULE)
-				s.network.App.GetErc20Keeper().SetTokenPair(ctx, pair)
-				s.network.App.GetErc20Keeper().SetTokenPair(ctx, pair2)
-				expRes = testconstants.ExampleTokenPairs
-				expRes = append(expRes, []types.TokenPair{pair, pair2}...)
+				mapping := types.NewTokenMapping(utiltx.GenerateAddress(), "coin", types.OWNER_MODULE)
+				mapping2 := types.NewTokenMapping(utiltx.GenerateAddress(), "coin2", types.OWNER_MODULE)
+				s.network.App.GetErc20Keeper().SetTokenMapping(ctx, mapping)
+				s.network.App.GetErc20Keeper().SetTokenMapping(ctx, mapping2)
+				expRes = testconstants.ExampleTokenMappings
+				expRes = append(expRes, []types.TokenMapping{mapping, mapping2}...)
 			},
 		},
 	}
@@ -52,18 +52,18 @@ func (s *KeeperTestSuite) TestGetTokenPairs() {
 			ctx = s.network.GetContext()
 
 			tc.malleate()
-			res := s.network.App.GetErc20Keeper().GetTokenPairs(ctx)
+			res := s.network.App.GetErc20Keeper().GetTokenMappings(ctx)
 
 			s.Require().ElementsMatch(expRes, res, tc.name)
 		})
 	}
 }
 
-func (s *KeeperTestSuite) TestGetTokenPairID() {
+func (s *KeeperTestSuite) TestGetTokenMappingID() {
 	baseDenom, err := sdk.GetBaseDenom()
 	s.Require().NoError(err, "failed to get base denom")
 
-	pair := types.NewTokenPair(utiltx.GenerateAddress(), baseDenom, types.OWNER_MODULE)
+	mapping := types.NewTokenMapping(utiltx.GenerateAddress(), baseDenom, types.OWNER_MODULE)
 
 	testCases := []struct {
 		name  string
@@ -78,9 +78,9 @@ func (s *KeeperTestSuite) TestGetTokenPairID() {
 		s.SetupTest()
 		ctx := s.network.GetContext()
 
-		s.network.App.GetErc20Keeper().SetTokenPair(ctx, pair)
+		s.network.App.GetErc20Keeper().SetTokenMapping(ctx, mapping)
 
-		id := s.network.App.GetErc20Keeper().GetTokenPairID(ctx, tc.token)
+		id := s.network.App.GetErc20Keeper().GetTokenMappingID(ctx, tc.token)
 		if id != nil {
 			s.Require().Equal(tc.expID, id, tc.name)
 		} else {
@@ -89,11 +89,11 @@ func (s *KeeperTestSuite) TestGetTokenPairID() {
 	}
 }
 
-func (s *KeeperTestSuite) TestGetTokenPair() {
+func (s *KeeperTestSuite) TestGetTokenMapping() {
 	baseDenom, err := sdk.GetBaseDenom()
 	s.Require().NoError(err, "failed to get base denom")
 
-	pair := types.NewTokenPair(utiltx.GenerateAddress(), baseDenom, types.OWNER_MODULE)
+	mapping := types.NewTokenMapping(utiltx.GenerateAddress(), baseDenom, types.OWNER_MODULE)
 
 	testCases := []struct {
 		name string
@@ -101,30 +101,30 @@ func (s *KeeperTestSuite) TestGetTokenPair() {
 		ok   bool
 	}{
 		{"nil id", nil, false},
-		{"valid id", pair.GetID(), true},
-		{"pair not found", []byte{}, false},
+		{"valid id", mapping.GetID(), true},
+		{"mapping not found", []byte{}, false},
 	}
 	for _, tc := range testCases {
 		s.SetupTest()
 		ctx := s.network.GetContext()
 
-		s.network.App.GetErc20Keeper().SetTokenPair(ctx, pair)
-		p, found := s.network.App.GetErc20Keeper().GetTokenPair(ctx, tc.id)
+		s.network.App.GetErc20Keeper().SetTokenMapping(ctx, mapping)
+		p, found := s.network.App.GetErc20Keeper().GetTokenMapping(ctx, tc.id)
 		if tc.ok {
 			s.Require().True(found, tc.name)
-			s.Require().Equal(pair, p, tc.name)
+			s.Require().Equal(mapping, p, tc.name)
 		} else {
 			s.Require().False(found, tc.name)
 		}
 	}
 }
 
-func (s *KeeperTestSuite) TestDeleteTokenPair() {
+func (s *KeeperTestSuite) TestDeleteTokenMapping() {
 	tokenDenom := "random"
 
 	var ctx sdk.Context
-	pair := types.NewTokenPair(utiltx.GenerateAddress(), tokenDenom, types.OWNER_MODULE)
-	id := pair.GetID()
+	mapping := types.NewTokenMapping(utiltx.GenerateAddress(), tokenDenom, types.OWNER_MODULE)
+	id := mapping.GetID()
 
 	testCases := []struct {
 		name     string
@@ -133,13 +133,13 @@ func (s *KeeperTestSuite) TestDeleteTokenPair() {
 		ok       bool
 	}{
 		{"nil id", nil, func() {}, false},
-		{"pair not found", []byte{}, func() {}, false},
+		{"mapping not found", []byte{}, func() {}, false},
 		{"valid id", id, func() {}, true},
 		{
-			"delete tokenpair",
+			"delete token mapping",
 			id,
 			func() {
-				s.network.App.GetErc20Keeper().DeleteTokenPair(ctx, pair)
+				s.network.App.GetErc20Keeper().DeleteTokenMapping(ctx, mapping)
 			},
 			false,
 		},
@@ -147,41 +147,41 @@ func (s *KeeperTestSuite) TestDeleteTokenPair() {
 	for _, tc := range testCases {
 		s.SetupTest()
 		ctx = s.network.GetContext()
-		err := s.network.App.GetErc20Keeper().SetToken(ctx, pair)
+		err := s.network.App.GetErc20Keeper().SetToken(ctx, mapping)
 		s.Require().NoError(err)
 
 		tc.malleate()
-		p, found := s.network.App.GetErc20Keeper().GetTokenPair(ctx, tc.id)
+		p, found := s.network.App.GetErc20Keeper().GetTokenMapping(ctx, tc.id)
 		if tc.ok {
 			s.Require().True(found, tc.name)
-			s.Require().Equal(pair, p, tc.name)
+			s.Require().Equal(mapping, p, tc.name)
 		} else {
 			s.Require().False(found, tc.name)
 		}
 	}
 }
 
-func (s *KeeperTestSuite) TestIsTokenPairRegistered() {
+func (s *KeeperTestSuite) TestIsTokenMappingRegistered() {
 	baseDenom, err := sdk.GetBaseDenom()
 	s.Require().NoError(err, "failed to get base denom")
 
 	var ctx sdk.Context
-	pair := types.NewTokenPair(utiltx.GenerateAddress(), baseDenom, types.OWNER_MODULE)
+	mapping := types.NewTokenMapping(utiltx.GenerateAddress(), baseDenom, types.OWNER_MODULE)
 
 	testCases := []struct {
 		name string
 		id   []byte
 		ok   bool
 	}{
-		{"valid id", pair.GetID(), true},
-		{"pair not found", []byte{}, false},
+		{"valid id", mapping.GetID(), true},
+		{"mapping not found", []byte{}, false},
 	}
 	for _, tc := range testCases {
 		s.SetupTest()
 		ctx = s.network.GetContext()
 
-		s.network.App.GetErc20Keeper().SetTokenPair(ctx, pair)
-		found := s.network.App.GetErc20Keeper().IsTokenPairRegistered(ctx, tc.id)
+		s.network.App.GetErc20Keeper().SetTokenMapping(ctx, mapping)
+		found := s.network.App.GetErc20Keeper().IsTokenMappingRegistered(ctx, tc.id)
 		if tc.ok {
 			s.Require().True(found, tc.name)
 		} else {
@@ -193,7 +193,7 @@ func (s *KeeperTestSuite) TestIsTokenPairRegistered() {
 func (s *KeeperTestSuite) TestIsERC20Registered() {
 	var ctx sdk.Context
 	addr := utiltx.GenerateAddress()
-	pair := types.NewTokenPair(addr, "coin", types.OWNER_MODULE)
+	mapping := types.NewTokenMapping(addr, "coin", types.OWNER_MODULE)
 
 	testCases := []struct {
 		name     string
@@ -202,12 +202,12 @@ func (s *KeeperTestSuite) TestIsERC20Registered() {
 		ok       bool
 	}{
 		{"nil erc20 address", common.Address{}, func() {}, false},
-		{"valid erc20 address", pair.GetERC20Contract(), func() {}, true},
+		{"valid erc20 address", mapping.GetERC20Contract(), func() {}, true},
 		{
 			"deleted erc20 map",
-			pair.GetERC20Contract(),
+			mapping.GetERC20Contract(),
 			func() {
-				s.network.App.GetErc20Keeper().DeleteTokenPair(ctx, pair)
+				s.network.App.GetErc20Keeper().DeleteTokenMapping(ctx, mapping)
 			},
 			false,
 		},
@@ -216,7 +216,7 @@ func (s *KeeperTestSuite) TestIsERC20Registered() {
 		s.SetupTest()
 		ctx = s.network.GetContext()
 
-		err := s.network.App.GetErc20Keeper().SetToken(ctx, pair)
+		err := s.network.App.GetErc20Keeper().SetToken(ctx, mapping)
 		s.Require().NoError(err)
 
 		tc.malleate()
@@ -234,7 +234,7 @@ func (s *KeeperTestSuite) TestIsERC20Registered() {
 func (s *KeeperTestSuite) TestIsDenomRegistered() {
 	var ctx sdk.Context
 	addr := utiltx.GenerateAddress()
-	pair := types.NewTokenPair(addr, "coin", types.OWNER_MODULE)
+	mapping := types.NewTokenMapping(addr, "coin", types.OWNER_MODULE)
 
 	testCases := []struct {
 		name     string
@@ -243,12 +243,12 @@ func (s *KeeperTestSuite) TestIsDenomRegistered() {
 		ok       bool
 	}{
 		{"empty denom", "", func() {}, false},
-		{"valid denom", pair.GetDenom(), func() {}, true},
+		{"valid denom", mapping.GetDenom(), func() {}, true},
 		{
 			"deleted denom map",
-			pair.GetDenom(),
+			mapping.GetDenom(),
 			func() {
-				s.network.App.GetErc20Keeper().DeleteTokenPair(ctx, pair)
+				s.network.App.GetErc20Keeper().DeleteTokenMapping(ctx, mapping)
 			},
 			false,
 		},
@@ -257,7 +257,7 @@ func (s *KeeperTestSuite) TestIsDenomRegistered() {
 		s.SetupTest()
 		ctx = s.network.GetContext()
 
-		err := s.network.App.GetErc20Keeper().SetToken(ctx, pair)
+		err := s.network.App.GetErc20Keeper().SetToken(ctx, mapping)
 		s.Require().NoError(err)
 
 		tc.malleate()
@@ -288,9 +288,9 @@ func (s *KeeperTestSuite) TestGetTokenDenom() {
 			"denom found",
 			tokenDenom,
 			func() {
-				pair := types.NewTokenPair(tokenAddress, tokenDenom, types.OWNER_MODULE)
-				s.network.App.GetErc20Keeper().SetTokenPair(ctx, pair)
-				s.network.App.GetErc20Keeper().SetERC20Map(ctx, tokenAddress, pair.GetID())
+				mapping := types.NewTokenMapping(tokenAddress, tokenDenom, types.OWNER_MODULE)
+				s.network.App.GetErc20Keeper().SetTokenMapping(ctx, mapping)
+				s.network.App.GetErc20Keeper().SetERC20Map(ctx, tokenAddress, mapping.GetID())
 			},
 			true,
 			"",
@@ -300,9 +300,9 @@ func (s *KeeperTestSuite) TestGetTokenDenom() {
 			tokenDenom,
 			func() {
 				address := utiltx.GenerateAddress()
-				pair := types.NewTokenPair(address, tokenDenom, types.OWNER_MODULE)
-				s.network.App.GetErc20Keeper().SetTokenPair(ctx, pair)
-				s.network.App.GetErc20Keeper().SetERC20Map(ctx, address, pair.GetID())
+				mapping := types.NewTokenMapping(address, tokenDenom, types.OWNER_MODULE)
+				s.network.App.GetErc20Keeper().SetTokenMapping(ctx, mapping)
+				s.network.App.GetErc20Keeper().SetERC20Map(ctx, address, mapping.GetID())
 			},
 			false,
 			fmt.Sprintf("token '%s' not registered", tokenAddress),
@@ -330,22 +330,22 @@ func (s *KeeperTestSuite) TestGetTokenDenom() {
 func (s *KeeperTestSuite) TestSetToken() {
 	testCases := []struct {
 		name     string
-		pair1    types.TokenPair
-		pair2    types.TokenPair
+		mapping1 types.TokenMapping
+		mapping2 types.TokenMapping
 		expError bool
 	}{
-		{"same denom", types.NewTokenPair(common.HexToAddress("0x1"), "denom1", types.OWNER_MODULE), types.NewTokenPair(common.HexToAddress("0x2"), "denom1", types.OWNER_MODULE), true},
-		{"same erc20", types.NewTokenPair(common.HexToAddress("0x1"), "denom1", types.OWNER_MODULE), types.NewTokenPair(common.HexToAddress("0x1"), "denom2", types.OWNER_MODULE), true},
-		{"same pair", types.NewTokenPair(common.HexToAddress("0x1"), "denom1", types.OWNER_MODULE), types.NewTokenPair(common.HexToAddress("0x1"), "denom1", types.OWNER_MODULE), true},
-		{"two different pairs", types.NewTokenPair(common.HexToAddress("0x1"), "denom1", types.OWNER_MODULE), types.NewTokenPair(common.HexToAddress("0x2"), "denom2", types.OWNER_MODULE), false},
+		{"same denom", types.NewTokenMapping(common.HexToAddress("0x1"), "denom1", types.OWNER_MODULE), types.NewTokenMapping(common.HexToAddress("0x2"), "denom1", types.OWNER_MODULE), true},
+		{"same erc20", types.NewTokenMapping(common.HexToAddress("0x1"), "denom1", types.OWNER_MODULE), types.NewTokenMapping(common.HexToAddress("0x1"), "denom2", types.OWNER_MODULE), true},
+		{"same mapping", types.NewTokenMapping(common.HexToAddress("0x1"), "denom1", types.OWNER_MODULE), types.NewTokenMapping(common.HexToAddress("0x1"), "denom1", types.OWNER_MODULE), true},
+		{"two different mappings", types.NewTokenMapping(common.HexToAddress("0x1"), "denom1", types.OWNER_MODULE), types.NewTokenMapping(common.HexToAddress("0x2"), "denom2", types.OWNER_MODULE), false},
 	}
 	for _, tc := range testCases {
 		s.SetupTest()
 		ctx := s.network.GetContext()
 
-		err := s.network.App.GetErc20Keeper().SetToken(ctx, tc.pair1)
+		err := s.network.App.GetErc20Keeper().SetToken(ctx, tc.mapping1)
 		s.Require().NoError(err)
-		err = s.network.App.GetErc20Keeper().SetToken(ctx, tc.pair2)
+		err = s.network.App.GetErc20Keeper().SetToken(ctx, tc.mapping2)
 		if tc.expError {
 			s.Require().Error(err)
 		} else {

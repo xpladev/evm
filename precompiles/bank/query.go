@@ -121,13 +121,13 @@ func (p Precompile) SupplyOf(
 		return nil, fmt.Errorf("error getting the supply in bank precompile: %s", err)
 	}
 
-	tokenPairID := p.erc20Keeper.GetERC20Map(ctx, erc20ContractAddress)
-	tokenPair, found := p.erc20Keeper.GetTokenPair(ctx, tokenPairID)
+	tokenMappingID := p.erc20Keeper.GetERC20Map(ctx, erc20ContractAddress)
+	tokenMapping, found := p.erc20Keeper.GetTokenMapping(ctx, tokenMappingID)
 	if !found {
 		return method.Outputs.Pack(big.NewInt(0))
 	}
 
-	supply := p.bankKeeper.GetSupply(ctx, tokenPair.Denom)
+	supply := p.bankKeeper.GetSupply(ctx, tokenMapping.Denom)
 
 	return method.Outputs.Pack(supply.Amount.BigInt())
 }

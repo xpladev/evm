@@ -271,7 +271,7 @@ func (s *KeeperTestSuite) TestOnRecvPacketRegistered() {
 			ctx = s.network.GetContext()
 
 			// Register Token Pair for testing
-			contractAddr, err := s.setupRegisterERC20Pair(contractMinterBurner)
+			contractAddr, err := s.setupRegisterERC20Mapping(contractMinterBurner)
 			s.Require().NoError(err, "failed to register pair")
 			// get updated context after registering ERC20 pair
 			ctx = s.network.GetContext()
@@ -310,8 +310,8 @@ func (s *KeeperTestSuite) TestOnRecvPacketRegistered() {
 			err = testutil.FundAccount(ctx, s.network.App.GetBankKeeper(), tc.receiver, coins)
 			s.Require().NoError(err)
 
-			id := s.network.App.GetErc20Keeper().GetTokenPairID(ctx, contractAddr.String())
-			pair, _ := s.network.App.GetErc20Keeper().GetTokenPair(ctx, id)
+			id := s.network.App.GetErc20Keeper().GetTokenMappingID(ctx, contractAddr.String())
+			pair, _ := s.network.App.GetErc20Keeper().GetTokenMapping(ctx, id)
 			s.Require().NotNil(pair)
 
 			if tc.disableERC20 {
@@ -384,11 +384,11 @@ func (s *KeeperTestSuite) TestConvertCoinToERC20FromPacket() {
 			name: "pass - erc20 is disabled",
 			malleate: func() transfertypes.FungibleTokenPacketData {
 				// Register Token Pair for testing
-				contractAddr, err := s.setupRegisterERC20Pair(contractMinterBurner)
+				contractAddr, err := s.setupRegisterERC20Mapping(contractMinterBurner)
 				s.Require().NoError(err, "failed to register pair")
 				ctx = s.network.GetContext()
-				id := s.network.App.GetErc20Keeper().GetTokenPairID(ctx, contractAddr.String())
-				pair, _ := s.network.App.GetErc20Keeper().GetTokenPair(ctx, id)
+				id := s.network.App.GetErc20Keeper().GetTokenMappingID(ctx, contractAddr.String())
+				pair, _ := s.network.App.GetErc20Keeper().GetTokenMapping(ctx, id)
 				s.Require().NotNil(pair)
 
 				params := s.network.App.GetErc20Keeper().GetParams(ctx)
@@ -409,19 +409,19 @@ func (s *KeeperTestSuite) TestConvertCoinToERC20FromPacket() {
 			name: "pass - erc20 is disabled",
 			malleate: func() transfertypes.FungibleTokenPacketData {
 				// Register Token Pair for testing
-				contractAddr, err := s.setupRegisterERC20Pair(contractMinterBurner)
+				contractAddr, err := s.setupRegisterERC20Mapping(contractMinterBurner)
 				s.Require().NoError(err, "failed to register pair")
 				ctx = s.network.GetContext()
-				id := s.network.App.GetErc20Keeper().GetTokenPairID(ctx, contractAddr.String())
-				pair, _ := s.network.App.GetErc20Keeper().GetTokenPair(ctx, id)
-				s.Require().NotNil(pair)
+				id := s.network.App.GetErc20Keeper().GetTokenMappingID(ctx, contractAddr.String())
+				mapping, _ := s.network.App.GetErc20Keeper().GetTokenMapping(ctx, id)
+				s.Require().NotNil(mapping)
 
 				err = testutil.FundAccount(
 					ctx,
 					s.network.App.GetBankKeeper(),
 					sdk.MustAccAddressFromBech32(senderAddr),
 					sdk.NewCoins(
-						sdk.NewCoin(pair.Denom, math.NewInt(100)),
+						sdk.NewCoin(mapping.Denom, math.NewInt(100)),
 					),
 				)
 				s.Require().NoError(err)
@@ -429,7 +429,7 @@ func (s *KeeperTestSuite) TestConvertCoinToERC20FromPacket() {
 				_, err = s.network.App.GetEVMKeeper().CallEVM(ctx, contracts.ERC20MinterBurnerDecimalsContract.ABI, s.keyring.GetAddr(0), contractAddr, true, nil, "mint", types.ModuleAddress, big.NewInt(10))
 				s.Require().NoError(err)
 
-				return transfertypes.NewFungibleTokenPacketData(pair.Denom, "10", senderAddr, "", "")
+				return transfertypes.NewFungibleTokenPacketData(mapping.Denom, "10", senderAddr, "", "")
 			},
 			expPass: true,
 		},
@@ -456,10 +456,10 @@ func (s *KeeperTestSuite) TestConvertCoinToERC20FromPacket() {
 
 func (s *KeeperTestSuite) TestOnAcknowledgementPacket() {
 	var (
-		ctx  sdk.Context
-		data transfertypes.FungibleTokenPacketData
-		ack  channeltypes.Acknowledgement
-		pair types.TokenPair
+		ctx     sdk.Context
+		data    transfertypes.FungibleTokenPacketData
+		ack     channeltypes.Acknowledgement
+		mapping types.TokenMapping
 	)
 
 	// secp256k1 account
@@ -479,12 +479,12 @@ func (s *KeeperTestSuite) TestOnAcknowledgementPacket() {
 			name: "no-op - ack error sender is module account",
 			malleate: func() {
 				// Register Token Pair for testing
-				contractAddr, err := s.setupRegisterERC20Pair(contractMinterBurner)
+				contractAddr, err := s.setupRegisterERC20Mapping(contractMinterBurner)
 				s.Require().NoError(err, "failed to register pair")
 				ctx = s.network.GetContext()
-				id := s.network.App.GetErc20Keeper().GetTokenPairID(ctx, contractAddr.String())
-				pair, _ = s.network.App.GetErc20Keeper().GetTokenPair(ctx, id)
-				s.Require().NotNil(pair)
+				id := s.network.App.GetErc20Keeper().GetTokenMappingID(ctx, contractAddr.String())
+				mapping, _ = s.network.App.GetErc20Keeper().GetTokenMapping(ctx, id)
+				s.Require().NotNil(mapping)
 
 				// for testing purposes we can only fund is not allowed to receive funds
 				moduleAcc := s.network.App.GetAccountKeeper().GetModuleAccount(ctx, "erc20")
@@ -494,13 +494,13 @@ func (s *KeeperTestSuite) TestOnAcknowledgementPacket() {
 					s.network.App.GetBankKeeper(),
 					moduleAcc.GetName(),
 					sdk.NewCoins(
-						sdk.NewCoin(pair.Denom, math.NewInt(100)),
+						sdk.NewCoin(mapping.Denom, math.NewInt(100)),
 					),
 				)
 				s.Require().NoError(err)
 
 				ack = channeltypes.NewErrorAcknowledgement(errors.New(""))
-				data = transfertypes.NewFungibleTokenPacketData(pair.Denom, "100", sender.String(), receiver.String(), "")
+				data = transfertypes.NewFungibleTokenPacketData(mapping.Denom, "100", sender.String(), receiver.String(), "")
 			},
 			expPass:        true,
 			expERC20:       big.NewInt(0),
@@ -510,12 +510,12 @@ func (s *KeeperTestSuite) TestOnAcknowledgementPacket() {
 			name: "no-op - positive ack",
 			malleate: func() {
 				// Register Token Pair for testing
-				contractAddr, err := s.setupRegisterERC20Pair(contractMinterBurner)
+				contractAddr, err := s.setupRegisterERC20Mapping(contractMinterBurner)
 				s.Require().NoError(err, "failed to register pair")
 				ctx = s.network.GetContext()
-				id := s.network.App.GetErc20Keeper().GetTokenPairID(ctx, contractAddr.String())
-				pair, _ = s.network.App.GetErc20Keeper().GetTokenPair(ctx, id)
-				s.Require().NotNil(pair)
+				id := s.network.App.GetErc20Keeper().GetTokenMappingID(ctx, contractAddr.String())
+				mapping, _ = s.network.App.GetErc20Keeper().GetTokenMapping(ctx, id)
+				s.Require().NotNil(mapping)
 
 				sender = sdk.AccAddress(senderPk.PubKey().Address())
 
@@ -526,7 +526,7 @@ func (s *KeeperTestSuite) TestOnAcknowledgementPacket() {
 					s.network.App.GetBankKeeper(),
 					sender,
 					sdk.NewCoins(
-						sdk.NewCoin(pair.Denom, math.NewInt(100)),
+						sdk.NewCoin(mapping.Denom, math.NewInt(100)),
 					),
 				)
 				s.Require().NoError(err)
@@ -541,12 +541,12 @@ func (s *KeeperTestSuite) TestOnAcknowledgementPacket() {
 			name: "convert - error ack",
 			malleate: func() {
 				// Register Token Pair for testing
-				contractAddr, err := s.setupRegisterERC20Pair(contractMinterBurner)
+				contractAddr, err := s.setupRegisterERC20Mapping(contractMinterBurner)
 				s.Require().NoError(err, "failed to register pair")
 				ctx = s.network.GetContext()
-				id := s.network.App.GetErc20Keeper().GetTokenPairID(ctx, contractAddr.String())
-				pair, _ = s.network.App.GetErc20Keeper().GetTokenPair(ctx, id)
-				s.Require().NotNil(pair)
+				id := s.network.App.GetErc20Keeper().GetTokenMappingID(ctx, contractAddr.String())
+				mapping, _ = s.network.App.GetErc20Keeper().GetTokenMapping(ctx, id)
+				s.Require().NotNil(mapping)
 
 				sender = sdk.AccAddress(senderPk.PubKey().Address())
 
@@ -557,7 +557,7 @@ func (s *KeeperTestSuite) TestOnAcknowledgementPacket() {
 					s.network.App.GetBankKeeper(),
 					sender,
 					sdk.NewCoins(
-						sdk.NewCoin(pair.Denom, math.NewInt(100)),
+						sdk.NewCoin(mapping.Denom, math.NewInt(100)),
 					),
 				)
 				s.Require().NoError(err)
@@ -566,7 +566,7 @@ func (s *KeeperTestSuite) TestOnAcknowledgementPacket() {
 				s.Require().NoError(err)
 
 				ack = channeltypes.NewErrorAcknowledgement(errors.New("error"))
-				data = transfertypes.NewFungibleTokenPacketData(pair.Denom, "100", sender.String(), receiver.String(), "")
+				data = transfertypes.NewFungibleTokenPacketData(mapping.Denom, "100", sender.String(), receiver.String(), "")
 			},
 			expERC20:       big.NewInt(100),
 			expPass:        true,
@@ -576,12 +576,12 @@ func (s *KeeperTestSuite) TestOnAcknowledgementPacket() {
 			name: "err - self-destructed contract",
 			malleate: func() {
 				// Register Token Pair for testing
-				contractAddr, err := s.setupRegisterERC20Pair(contractMinterBurner)
+				contractAddr, err := s.setupRegisterERC20Mapping(contractMinterBurner)
 				s.Require().NoError(err, "failed to register pair")
 				ctx = s.network.GetContext()
-				id := s.network.App.GetErc20Keeper().GetTokenPairID(ctx, contractAddr.String())
-				pair, _ = s.network.App.GetErc20Keeper().GetTokenPair(ctx, id)
-				s.Require().NotNil(pair)
+				id := s.network.App.GetErc20Keeper().GetTokenMappingID(ctx, contractAddr.String())
+				mapping, _ = s.network.App.GetErc20Keeper().GetTokenMapping(ctx, id)
+				s.Require().NotNil(mapping)
 
 				// self destruct the token
 				err = s.network.App.GetEVMKeeper().DeleteAccount(s.network.GetContext(), contractAddr)
@@ -596,13 +596,13 @@ func (s *KeeperTestSuite) TestOnAcknowledgementPacket() {
 					s.network.App.GetBankKeeper(),
 					sender,
 					sdk.NewCoins(
-						sdk.NewCoin(pair.Denom, math.NewInt(100)),
+						sdk.NewCoin(mapping.Denom, math.NewInt(100)),
 					),
 				)
 				s.Require().NoError(err)
 
 				ack = channeltypes.NewErrorAcknowledgement(errors.New("error"))
-				data = transfertypes.NewFungibleTokenPacketData(pair.Denom, "100", sender.String(), receiver.String(), "")
+				data = transfertypes.NewFungibleTokenPacketData(mapping.Denom, "100", sender.String(), receiver.String(), "")
 			},
 			expERC20: big.NewInt(0),
 			expPass:  false,
@@ -628,7 +628,7 @@ func (s *KeeperTestSuite) TestOnAcknowledgementPacket() {
 				// check balance is the same as expected
 				balance := s.network.App.GetErc20Keeper().BalanceOf(
 					ctx, contracts.ERC20MinterBurnerDecimalsContract.ABI,
-					pair.GetERC20Contract(),
+					mapping.GetERC20Contract(),
 					common.BytesToAddress(sender.Bytes()),
 				)
 				s.Require().Equal(tc.expERC20.Int64(), balance.Int64())
@@ -641,9 +641,9 @@ func (s *KeeperTestSuite) TestOnAcknowledgementPacket() {
 
 func (s *KeeperTestSuite) TestOnTimeoutPacket() {
 	var (
-		ctx  sdk.Context
-		data transfertypes.FungibleTokenPacketData
-		pair types.TokenPair
+		ctx     sdk.Context
+		data    transfertypes.FungibleTokenPacketData
+		mapping types.TokenMapping
 	)
 	senderPk := secp256k1.GenPrivKey()
 	sender := sdk.AccAddress(senderPk.PubKey().Address())
@@ -661,12 +661,12 @@ func (s *KeeperTestSuite) TestOnTimeoutPacket() {
 			name: "convert - pass timeout",
 			malleate: func() {
 				// Register Token Pair for testing
-				contractAddr, err := s.setupRegisterERC20Pair(contractMinterBurner)
+				contractAddr, err := s.setupRegisterERC20Mapping(contractMinterBurner)
 				s.Require().NoError(err, "failed to register pair")
 				ctx = s.network.GetContext()
-				id := s.network.App.GetErc20Keeper().GetTokenPairID(ctx, contractAddr.String())
-				pair, _ = s.network.App.GetErc20Keeper().GetTokenPair(ctx, id)
-				s.Require().NotNil(pair)
+				id := s.network.App.GetErc20Keeper().GetTokenMappingID(ctx, contractAddr.String())
+				mapping, _ = s.network.App.GetErc20Keeper().GetTokenMapping(ctx, id)
+				s.Require().NotNil(mapping)
 
 				_, err = s.network.App.GetEVMKeeper().CallEVM(ctx, contracts.ERC20MinterBurnerDecimalsContract.ABI, s.keyring.GetAddr(0), contractAddr, true, nil, "mint", types.ModuleAddress, big.NewInt(100))
 				s.Require().NoError(err)
@@ -678,12 +678,12 @@ func (s *KeeperTestSuite) TestOnTimeoutPacket() {
 					s.network.App.GetBankKeeper(),
 					sender,
 					sdk.NewCoins(
-						sdk.NewCoin(pair.Denom, math.NewInt(100)),
+						sdk.NewCoin(mapping.Denom, math.NewInt(100)),
 					),
 				)
 				s.Require().NoError(err)
 
-				data = transfertypes.NewFungibleTokenPacketData(pair.Denom, "10", sender.String(), receiver.String(), "")
+				data = transfertypes.NewFungibleTokenPacketData(mapping.Denom, "10", sender.String(), receiver.String(), "")
 			},
 			expERC20:       big.NewInt(10),
 			expPass:        true,
@@ -693,17 +693,17 @@ func (s *KeeperTestSuite) TestOnTimeoutPacket() {
 			name: "no-op - sender is module account",
 			malleate: func() {
 				// Register Token Pair for testing
-				contractAddr, err := s.setupRegisterERC20Pair(contractMinterBurner)
+				contractAddr, err := s.setupRegisterERC20Mapping(contractMinterBurner)
 				s.Require().NoError(err, "failed to register pair")
 				ctx = s.network.GetContext()
-				id := s.network.App.GetErc20Keeper().GetTokenPairID(ctx, contractAddr.String())
-				pair, _ = s.network.App.GetErc20Keeper().GetTokenPair(ctx, id)
-				s.Require().NotNil(pair)
+				id := s.network.App.GetErc20Keeper().GetTokenMappingID(ctx, contractAddr.String())
+				mapping, _ = s.network.App.GetErc20Keeper().GetTokenMapping(ctx, id)
+				s.Require().NotNil(mapping)
 
 				// any module account can be passed here
 				moduleAcc := s.network.App.GetAccountKeeper().GetModuleAccount(ctx, evmtypes.ModuleName)
 
-				data = transfertypes.NewFungibleTokenPacketData(pair.Denom, "10", moduleAcc.GetAddress().String(), "", "")
+				data = transfertypes.NewFungibleTokenPacketData(mapping.Denom, "10", moduleAcc.GetAddress().String(), "", "")
 			},
 			expERC20:       big.NewInt(0),
 			expPass:        true,
@@ -713,12 +713,12 @@ func (s *KeeperTestSuite) TestOnTimeoutPacket() {
 			name: "err - self-destructed contract",
 			malleate: func() {
 				// Register Token Pair for testing
-				contractAddr, err := s.setupRegisterERC20Pair(contractMinterBurner)
+				contractAddr, err := s.setupRegisterERC20Mapping(contractMinterBurner)
 				s.Require().NoError(err, "failed to register pair")
 				ctx = s.network.GetContext()
-				id := s.network.App.GetErc20Keeper().GetTokenPairID(ctx, contractAddr.String())
-				pair, _ = s.network.App.GetErc20Keeper().GetTokenPair(ctx, id)
-				s.Require().NotNil(pair)
+				id := s.network.App.GetErc20Keeper().GetTokenMappingID(ctx, contractAddr.String())
+				mapping, _ = s.network.App.GetErc20Keeper().GetTokenMapping(ctx, id)
+				s.Require().NotNil(mapping)
 				// self destruct the token
 				err = s.network.App.GetEVMKeeper().DeleteAccount(s.network.GetContext(), contractAddr)
 				s.Require().NoError(err)
@@ -730,12 +730,12 @@ func (s *KeeperTestSuite) TestOnTimeoutPacket() {
 					s.network.App.GetBankKeeper(),
 					sender,
 					sdk.NewCoins(
-						sdk.NewCoin(pair.Denom, math.NewInt(100)),
+						sdk.NewCoin(mapping.Denom, math.NewInt(100)),
 					),
 				)
 				s.Require().NoError(err)
 
-				data = transfertypes.NewFungibleTokenPacketData(pair.Denom, "100", sender.String(), receiver.String(), "")
+				data = transfertypes.NewFungibleTokenPacketData(mapping.Denom, "100", sender.String(), receiver.String(), "")
 			},
 			expERC20: big.NewInt(0),
 			expPass:  false,
@@ -758,7 +758,7 @@ func (s *KeeperTestSuite) TestOnTimeoutPacket() {
 				// check balance is the same as expected
 				balance := s.network.App.GetErc20Keeper().BalanceOf(
 					ctx, contracts.ERC20MinterBurnerDecimalsContract.ABI,
-					pair.GetERC20Contract(),
+					mapping.GetERC20Contract(),
 					common.BytesToAddress(sender.Bytes()),
 				)
 				s.Require().Equal(tc.expERC20.Int64(), balance.Int64())

@@ -99,14 +99,14 @@ func TestPrecompileIntegrationTestSuite(t *testing.T, create network.CreateEvmAp
 					It("should create a token pair owned by the contract deployer", func() {
 						qc := s.network.GetERC20Client()
 
-						res, err := qc.TokenPairs(s.network.GetContext(), &types.QueryTokenPairsRequest{})
+						res, err := qc.TokenMappings(s.network.GetContext(), &types.QueryTokenMappingsRequest{})
 						Expect(err).To(BeNil())
 
-						tokenPairs := res.TokenPairs
-						Expect(tokenPairs).To(HaveLen(2))
-						for i, tokenPair := range tokenPairs {
-							if tokenPair.Erc20Address == contract.Hex() {
-								Expect(tokenPairs[i].ContractOwner).To(Equal(types.OWNER_EXTERNAL))
+						tokenMappings := res.TokenMappings
+						Expect(tokenMappings).To(HaveLen(2))
+						for i, tokenMapping := range tokenMappings {
+							if tokenMapping.Erc20Address == contract.Hex() {
+								Expect(tokenMappings[i].ContractOwner).To(Equal(types.OWNER_EXTERNAL))
 							}
 						}
 					})
@@ -126,16 +126,16 @@ func TestPrecompileIntegrationTestSuite(t *testing.T, create network.CreateEvmAp
 						Expect(err).To(BeNil())
 					})
 
-					It("should create a token pairs owned by the contract deployer", func() {
+					It("should create a token mappings owned by the contract deployer", func() {
 						qc := s.network.GetERC20Client()
-						res, err := qc.TokenPairs(s.network.GetContext(), &types.QueryTokenPairsRequest{})
+						res, err := qc.TokenMappings(s.network.GetContext(), &types.QueryTokenMappingsRequest{})
 						Expect(err).To(BeNil())
 
-						tokenPairs := res.TokenPairs
-						Expect(tokenPairs).To(HaveLen(3))
-						for i, tokenPair := range tokenPairs {
-							if tokenPair.Erc20Address == contract2.Hex() {
-								Expect(tokenPairs[i].ContractOwner).To(Equal(types.OWNER_EXTERNAL))
+						tokenMappings := res.TokenMappings
+						Expect(tokenMappings).To(HaveLen(3))
+						for i, tokenMapping := range tokenMappings {
+							if tokenMapping.Erc20Address == contract2.Hex() {
+								Expect(tokenMappings[i].ContractOwner).To(Equal(types.OWNER_EXTERNAL))
 							}
 						}
 					})
@@ -147,7 +147,7 @@ func TestPrecompileIntegrationTestSuite(t *testing.T, create network.CreateEvmAp
 			Context("with a registered ERC20", func() {
 				BeforeEach(func() {
 					var err error
-					contract, err = s.setupRegisterERC20Pair(contractMinterBurner)
+					contract, err = s.setupRegisterERC20Mapping(contractMinterBurner)
 					Expect(err).To(BeNil())
 
 					res, err := s.MintERC20Token(contract, s.keyring.GetAddr(0), big.NewInt(amt.Int64()))
@@ -192,7 +192,7 @@ func TestPrecompileIntegrationTestSuite(t *testing.T, create network.CreateEvmAp
 				BeforeEach(func() {
 					var err error
 					// Deploy a contract like Bytes32MetadataToken.sol that returns name()/symbol() as bytes32
-					contract, err = s.setupRegisterERC20Pair(contractBytes32Metadata)
+					contract, err = s.setupRegisterERC20Mapping(contractBytes32Metadata)
 					Expect(err).To(BeNil())
 				})
 

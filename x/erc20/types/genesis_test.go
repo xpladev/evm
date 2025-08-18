@@ -23,7 +23,7 @@ func TestGenesisTestSuite(t *testing.T) {
 }
 
 func (suite *GenesisTestSuite) TestValidateGenesis() {
-	newGen := types.NewGenesisState(types.DefaultParams(), testconstants.ExampleTokenPairs, testconstants.ExampleAllowances)
+	newGen := types.NewGenesisState(types.DefaultParams(), testconstants.ExampleTokenMappings, testconstants.ExampleAllowances)
 
 	testCases := []struct {
 		name     string
@@ -43,9 +43,9 @@ func (suite *GenesisTestSuite) TestValidateGenesis() {
 		{
 			name: "valid genesis",
 			genState: &types.GenesisState{
-				Params:     types.DefaultParams(),
-				TokenPairs: testconstants.ExampleTokenPairs,
-				Allowances: testconstants.ExampleAllowances,
+				Params:        types.DefaultParams(),
+				TokenMappings: testconstants.ExampleTokenMappings,
+				Allowances:    testconstants.ExampleAllowances,
 			},
 			expPass: true,
 		},
@@ -53,7 +53,7 @@ func (suite *GenesisTestSuite) TestValidateGenesis() {
 			name: "valid genesis - with tokens pairs",
 			genState: &types.GenesisState{
 				Params: types.DefaultParams(),
-				TokenPairs: []types.TokenPair{
+				TokenMappings: []types.TokenMapping{
 					{
 						Erc20Address: "0xdac17f958d2ee523a2206206994597c13d831ec7",
 						Denom:        "usdt",
@@ -73,7 +73,7 @@ func (suite *GenesisTestSuite) TestValidateGenesis() {
 			name: "invalid genesis - duplicated token pair",
 			genState: &types.GenesisState{
 				Params: types.DefaultParams(),
-				TokenPairs: []types.TokenPair{
+				TokenMappings: []types.TokenMapping{
 					{
 						Erc20Address: "0xdac17f958d2ee523a2206206994597c13d831ec7",
 						Denom:        "usdt",
@@ -98,7 +98,7 @@ func (suite *GenesisTestSuite) TestValidateGenesis() {
 			name: "invalid genesis - duplicated token pair",
 			genState: &types.GenesisState{
 				Params: types.DefaultParams(),
-				TokenPairs: []types.TokenPair{
+				TokenMappings: []types.TokenMapping{
 					{
 						Erc20Address: "0xdac17f958d2ee523a2206206994597c13d831ec7",
 						Denom:        "usdt",
@@ -123,7 +123,7 @@ func (suite *GenesisTestSuite) TestValidateGenesis() {
 			name: "invalid genesis - duplicated token pair",
 			genState: &types.GenesisState{
 				Params: types.DefaultParams(),
-				TokenPairs: []types.TokenPair{
+				TokenMappings: []types.TokenMapping{
 					{
 						Erc20Address: "0xdac17f958d2ee523a2206206994597c13d831ec7",
 						Denom:        "usdt",
@@ -148,7 +148,7 @@ func (suite *GenesisTestSuite) TestValidateGenesis() {
 			name: "invalid genesis - invalid token pair",
 			genState: &types.GenesisState{
 				Params: types.DefaultParams(),
-				TokenPairs: []types.TokenPair{
+				TokenMappings: []types.TokenMapping{
 					{
 						Erc20Address: "0xinvalidaddress",
 						Denom:        "bad",
@@ -168,7 +168,7 @@ func (suite *GenesisTestSuite) TestValidateGenesis() {
 			name: "invalid genesis - missing wevmos token pair",
 			genState: &types.GenesisState{
 				Params: types.DefaultParams(),
-				TokenPairs: []types.TokenPair{
+				TokenMappings: []types.TokenMapping{
 					{
 						Erc20Address: "0xinvalidaddress",
 						Denom:        "bad",
@@ -182,8 +182,8 @@ func (suite *GenesisTestSuite) TestValidateGenesis() {
 		{
 			name: "invalid genesis - duplicated allowances",
 			genState: &types.GenesisState{
-				Params:     types.DefaultParams(),
-				TokenPairs: testconstants.ExampleTokenPairs,
+				Params:        types.DefaultParams(),
+				TokenMappings: testconstants.ExampleTokenMappings,
 				Allowances: []types.Allowance{
 					{
 						Erc20Address: testconstants.WEVMOSContractMainnet,
@@ -205,7 +205,7 @@ func (suite *GenesisTestSuite) TestValidateGenesis() {
 			name: "invalid genesis - invalid allowance erc20 address",
 			genState: &types.GenesisState{
 				Params: types.DefaultParams(),
-				TokenPairs: []types.TokenPair{
+				TokenMappings: []types.TokenMapping{
 					{
 						Erc20Address: testconstants.WEVMOSContractMainnet,
 						Denom:        testconstants.ExampleAttoDenom,
@@ -227,7 +227,7 @@ func (suite *GenesisTestSuite) TestValidateGenesis() {
 			name: "invalid genesis - invalid allowance owner",
 			genState: &types.GenesisState{
 				Params: types.DefaultParams(),
-				TokenPairs: []types.TokenPair{
+				TokenMappings: []types.TokenMapping{
 					{
 						Erc20Address: testconstants.WEVMOSContractMainnet,
 						Denom:        testconstants.ExampleAttoDenom,
@@ -249,7 +249,7 @@ func (suite *GenesisTestSuite) TestValidateGenesis() {
 			name: "invalid genesis - invalid allowance spender",
 			genState: &types.GenesisState{
 				Params: types.DefaultParams(),
-				TokenPairs: []types.TokenPair{
+				TokenMappings: []types.TokenMapping{
 					{
 						Erc20Address: testconstants.WEVMOSContractMainnet,
 						Denom:        testconstants.ExampleAttoDenom,
@@ -271,7 +271,7 @@ func (suite *GenesisTestSuite) TestValidateGenesis() {
 			name: "invalid genesis - invalid allowance value",
 			genState: &types.GenesisState{
 				Params: types.DefaultParams(),
-				TokenPairs: []types.TokenPair{
+				TokenMappings: []types.TokenMapping{
 					{
 						Erc20Address: testconstants.WEVMOSContractMainnet,
 						Denom:        testconstants.ExampleAttoDenom,
@@ -293,7 +293,7 @@ func (suite *GenesisTestSuite) TestValidateGenesis() {
 			name: "invalid genesis - invalid allowance value",
 			genState: &types.GenesisState{
 				Params: types.DefaultParams(),
-				TokenPairs: []types.TokenPair{
+				TokenMappings: []types.TokenMapping{
 					{
 						Erc20Address: testconstants.WEVMOSContractMainnet,
 						Denom:        testconstants.ExampleAttoDenom,

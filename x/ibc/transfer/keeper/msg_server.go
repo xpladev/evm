@@ -45,14 +45,14 @@ func (k Keeper) Transfer(goCtx context.Context, msg *types.MsgTransfer) (*types.
 	// use native denom or contract address
 	denom := strings.TrimPrefix(msg.Token.Denom, erc20types.Erc20NativeCoinDenomPrefix)
 
-	pairID := k.erc20Keeper.GetTokenPairID(ctx, denom)
-	if len(pairID) == 0 {
+	tokenMappingID := k.erc20Keeper.GetTokenMappingID(ctx, denom)
+	if len(tokenMappingID) == 0 {
 		// no-op: token is not registered so we can proceed with regular transfer
 		return k.Keeper.Transfer(ctx, msg)
 	}
 
-	pair, _ := k.erc20Keeper.GetTokenPair(ctx, pairID)
-	if !pair.Enabled {
+	mapping, _ := k.erc20Keeper.GetTokenMapping(ctx, tokenMappingID)
+	if !mapping.Enabled {
 		// no-op: pair is not enabled so we can proceed with regular transfer
 		return k.Keeper.Transfer(ctx, msg)
 	}
@@ -65,13 +65,13 @@ func (k Keeper) Transfer(goCtx context.Context, msg *types.MsgTransfer) (*types.
 	}
 
 	// update the msg denom to the token pair denom
-	msg.Token.Denom = pair.Denom
+	msg.Token.Denom = mapping.Denom
 
-	if !pair.IsNativeERC20() {
+	if !mapping.IsNativeERC20() {
 		return k.Keeper.Transfer(ctx, msg)
 	}
 	// if the user has enough balance of the Cosmos representation, then we don't need to Convert
-	balance := k.bankKeeper.SpendableCoin(ctx, sender, pair.Denom)
+	balance := k.bankKeeper.SpendableCoin(ctx, sender, mapping.Denom)
 	if balance.Amount.GTE(msg.Token.Amount) {
 
 		defer func() {
@@ -79,7 +79,7 @@ func (k Keeper) Transfer(goCtx context.Context, msg *types.MsgTransfer) (*types.
 				[]string{"erc20", "ibc", "transfer", "total"},
 				1,
 				[]metrics.Label{
-					telemetry.NewLabel("denom", pair.Denom),
+					telemetry.NewLabel("denom", mapping.Denom),
 				},
 			)
 		}()
@@ -94,7 +94,7 @@ func (k Keeper) Transfer(goCtx context.Context, msg *types.MsgTransfer) (*types.
 	msgConvertERC20 := erc20types.NewMsgConvertERC20(
 		difference,
 		sender,
-		pair.GetERC20Contract(),
+		mapping.GetERC20Contract(),
 		common.BytesToAddress(sender.Bytes()),
 	)
 
@@ -108,7 +108,7 @@ func (k Keeper) Transfer(goCtx context.Context, msg *types.MsgTransfer) (*types.
 			[]string{"erc20", "ibc", "transfer", "total"},
 			1,
 			[]metrics.Label{
-				telemetry.NewLabel("denom", pair.Denom),
+				telemetry.NewLabel("denom", mapping.Denom),
 			},
 		)
 	}()

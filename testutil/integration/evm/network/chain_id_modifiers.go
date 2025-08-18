@@ -73,23 +73,23 @@ func generateBankGenesisMetadata() []banktypes.Metadata {
 // updateErc20GenesisStateForChainID modify the default genesis state for the
 // erc20 module on the testing suite depending on the chainID.
 func updateErc20GenesisStateForChainID(chainID testconstants.ChainID, erc20GenesisState erc20types.GenesisState) erc20types.GenesisState {
-	erc20GenesisState.TokenPairs = updateErc20TokenPairs(chainID, erc20GenesisState.TokenPairs)
+	erc20GenesisState.TokenMappings = updateErc20TokenPairs(chainID, erc20GenesisState.TokenMappings)
 
 	return erc20GenesisState
 }
 
 // updateErc20TokenPairs modifies the erc20 token pairs to use the correct
 // WEVMOS depending on ChainID
-func updateErc20TokenPairs(chainID testconstants.ChainID, tokenPairs []erc20types.TokenPair) []erc20types.TokenPair {
+func updateErc20TokenPairs(chainID testconstants.ChainID, tokenPairs []erc20types.TokenMapping) []erc20types.TokenMapping {
 	testnetAddress := GetWEVMOSContractHex(chainID)
 	coinInfo := testconstants.ExampleChainCoinInfo[chainID]
 
 	mainnetAddress := GetWEVMOSContractHex(testconstants.ExampleChainID)
 
-	updatedTokenPairs := make([]erc20types.TokenPair, len(tokenPairs))
+	updatedTokenPairs := make([]erc20types.TokenMapping, len(tokenPairs))
 	for i, tokenPair := range tokenPairs {
 		if tokenPair.Erc20Address == mainnetAddress {
-			updatedTokenPairs[i] = erc20types.TokenPair{
+			updatedTokenPairs[i] = erc20types.TokenMapping{
 				Erc20Address:  testnetAddress,
 				Denom:         coinInfo.Denom,
 				Enabled:       tokenPair.Enabled,

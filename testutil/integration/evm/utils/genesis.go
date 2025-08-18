@@ -47,16 +47,16 @@ func CreateGenesisWithTokenPairs(keyring testkeyring.Keyring, denoms ...string) 
 	}
 
 	// Add token pairs to genesis
-	tokenPairs := make([]erc20types.TokenPair, 0, len(denoms)+1)
+	tokenPairs := make([]erc20types.TokenMapping, 0, len(denoms)+1)
 	tokenPairs = append(tokenPairs,
 		// NOTE: the example token pairs are being added in the integration test utils
-		testconstants.ExampleTokenPairs...,
+		testconstants.ExampleTokenMappings...,
 	)
 
 	dynPrecAddr := make([]string, 0, len(denoms))
 	for _, denom := range denoms {
 		addr := utiltx.GenerateAddress().Hex()
-		tp := erc20types.TokenPair{
+		tp := erc20types.TokenMapping{
 			Erc20Address:  addr,
 			Denom:         denom,
 			Enabled:       true,
@@ -69,7 +69,7 @@ func CreateGenesisWithTokenPairs(keyring testkeyring.Keyring, denoms ...string) 
 	// STR v2: update the NativePrecompiles and DynamicPrecompiles
 	// with the WEVMOS (default is mainnet) and 'xmpl' tokens in the erc20 params
 	erc20GenesisState := erc20types.DefaultGenesisState()
-	erc20GenesisState.TokenPairs = tokenPairs
+	erc20GenesisState.TokenMappings = tokenPairs
 	erc20GenesisState.NativePrecompiles = []string{testconstants.WEVMOSContractMainnet}
 	erc20GenesisState.DynamicPrecompiles = dynPrecAddr
 
@@ -86,7 +86,7 @@ func CreateGenesisWithTokenPairs(keyring testkeyring.Keyring, denoms ...string) 
 // which is the base denomination of the chain (i.e. the WEVMOS contract).
 func NewErc20GenesisState() *erc20types.GenesisState {
 	erc20GenState := erc20types.DefaultGenesisState()
-	erc20GenState.TokenPairs = testconstants.ExampleTokenPairs
+	erc20GenState.TokenMappings = testconstants.ExampleTokenMappings
 	erc20GenState.NativePrecompiles = []string{testconstants.WEVMOSContractMainnet}
 
 	return erc20GenState
