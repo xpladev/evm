@@ -353,9 +353,9 @@ func DefaultTLSConfig() *TLSConfig {
 // DefaultChainConfig returns the default chain configuration
 func DefaultChainConfig() *ChainConfig {
 	return &ChainConfig{
-		Denom:         "aatom",
-		ExtendedDenom: "aatom",
-		DisplayDenom:  "atom",
+		Denom:         "atest",
+		ExtendedDenom: "atest",
+		DisplayDenom:  "test",
 		Decimals:      18,
 	}
 }
