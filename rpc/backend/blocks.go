@@ -261,8 +261,9 @@ func (b *Backend) EthMsgsFromTendermintBlock(
 		}
 
 		for _, msg := range tx.GetMsgs() {
-			ethMsg, ok := msg.(*evmtypes.MsgEthereumTx)
-			if !ok {
+			//ethMsg, ok := msg.(*evmtypes.MsgEthereumTx)
+			ethMsg, err := getEthereumMsg(b.clientCtx.InterfaceRegistry, msg)
+			if err != nil {
 				continue
 			}
 
