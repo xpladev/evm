@@ -2,6 +2,7 @@ package integration
 
 import (
 	"encoding/json"
+	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 
 	dbm "github.com/cosmos/cosmos-db"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/cosmos/evm"
 	"github.com/cosmos/evm/config"
+	"github.com/cosmos/evm/encoding"
 	"github.com/cosmos/evm/evmd"
 	srvflags "github.com/cosmos/evm/server/flags"
 	"github.com/cosmos/evm/testutil/constants"
@@ -38,7 +40,8 @@ func CreateEvmd(chainID string, evmChainID uint64, customBaseAppOptions ...func(
 
 	baseAppOptions := append(customBaseAppOptions, baseapp.SetChainID(chainID))
 
-	return evmd.NewExampleApp(
+	// Start the app
+	app := evmd.NewExampleApp(
 		logger,
 		db,
 		nil,
@@ -46,6 +49,17 @@ func CreateEvmd(chainID string, evmChainID uint64, customBaseAppOptions ...func(
 		appOptions,
 		baseAppOptions...,
 	)
+
+	// Prepare the client context
+	encodingConfig := encoding.MakeConfig(constants.ExampleChainID.EVMChainID)
+	clientCtx := client.Context{}.WithChainID(constants.ExampleChainID.ChainID).
+		WithHeight(1).
+		WithTxConfig(encodingConfig.TxConfig)
+
+	// Set the client context in the app
+	app.SetClientCtx(clientCtx)
+
+	return app
 }
 
 // SetupEvmd initializes a new evmd app with default genesis state.
