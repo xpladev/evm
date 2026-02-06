@@ -157,8 +157,16 @@ func (s *Store) LatestVersion() int64 {
 	return int64(s.head)
 }
 
-// Write calls Write on each underlying store.
+// Write flushes all pending changes in the current store layer
 func (s *Store) Write() {
+	for _, key := range s.storeKeys {
+		s.stores[key].Flush()
+	}
+}
+
+// Commit commits all the cached stores from top to bottom in order
+// and clears the cache stack by setting an empty slice of cache store.
+func (s *Store) Commit() {
 	for _, key := range s.storeKeys {
 		s.stores[key].Commit()
 	}

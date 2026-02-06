@@ -59,7 +59,13 @@ func TestSnapshotMultiRevertAndWrite(t *testing.T) {
 
 	require.Equal(t, []byte("4"), kv.Get([]byte("d")))
 	idx := snapshotStore.Snapshot()
+	require.Equal(t, 1, idx)
+
+	snapshotStore.Commit()
+	require.Equal(t, []byte("4"), kv.Get([]byte("d")))
+	idx = snapshotStore.Snapshot()
 	require.Equal(t, 0, idx)
+
 }
 
 func TestSnapshotMultiRevertOverwriteSameKey(t *testing.T) {
@@ -89,12 +95,12 @@ func TestSnapshotMultiRevertOverwriteSameKey(t *testing.T) {
 	// Overwrite "a" with "4"
 	idx2 := snapshotStore.Snapshot()
 	snapshotStore.GetKVStore(key).Set([]byte("a"), []byte("4"))
-	snapshotStore.Write()
+	snapshotStore.Commit()
 
-	// After write, the base store should have "4"
+	// After commit, the base store should have "4"
 	require.Equal(t, []byte("4"), kv.Get([]byte("a")))
 
-	// Write clears the snapshot stack, so reverting to idx2 should panic
+	// Commit clears the snapshot stack, so reverting to idx2 should panic
 	expectedErr := fmt.Sprintf("snapshot index %d out of bound [%d..%d)", idx2, 0, 0)
 	require.PanicsWithErrorf(t, expectedErr, func() {
 		snapshotStore.RevertToSnapshot(idx2)

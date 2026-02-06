@@ -188,7 +188,7 @@ func (s *StateDB) RevertMultiStore(snapshot int, events sdk.Events) {
 	s.snapshotter.RevertToSnapshot(snapshot)
 	s.writeCache = func() {
 		s.ctx.EventManager().EmitEvents(events)
-		s.cacheCtx.MultiStore().(storetypes.CacheMultiStore).Write()
+		s.snapshotter.Commit()
 	}
 }
 
@@ -209,7 +209,7 @@ func (s *StateDB) cache() error {
 	s.cacheCtx = s.cacheCtx.WithMultiStore(snapshotStore)
 	s.writeCache = func() {
 		s.ctx.EventManager().EmitEvents(s.cacheCtx.EventManager().Events())
-		s.cacheCtx.MultiStore().(storetypes.CacheMultiStore).Write()
+		s.snapshotter.Commit()
 	}
 
 	return nil
